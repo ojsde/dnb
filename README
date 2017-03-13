@@ -1,0 +1,53 @@
+=============================================================
+=== OJS DNB Export Plugin
+=== Version: 1
+=== Author: Bozana Bokan <bozana.bokan@posteo.net>
+=== Last update: March 15, 2017
+=============================================================
+
+About
+-----
+This plugin provides the export of articles metadata and full texts (in PDF and EPUB format) for their depositing in DNB (German National Library) using the DNB Hotfolder method.
+Details on the Hotfolder method are available at: http://nbn-resolving.de/urn:nbn:de:101-2016111401
+Details on the XML format and data requirements are available at: http://nbn-resolving.de/urn:nbn:de:101-2014071124
+
+License
+-------
+This plugin is licensed under the GNU General Public License v2. See the file LICENSE for the complete terms of this license.
+
+System Requirements
+-------------------
+This plugin is compatible with...
+ - OJS 2.4.8-1
+ 
+For the depositing from within OJS, additionally CURL library is needed.
+
+Installation
+------------
+To install the plugin:
+ - Unpack the plugin tar.gz file to your plugins/importexport directory
+ 	$ tar xvzf dnb-ojs-stable-2_4_8.tar.gz
+ - If necessary, rename the plugin folder into 'dnb':
+ 	$ mv dnb-ojs-stable-2_4_8 dnb
+ - From your application's installation directory, run the upgrade script:
+    $ php tools/upgrade.php upgrade
+   (NOTE: It is recommended to back up your database first.)
+
+Export
+------------
+The plugin settings can be found at:
+Journal Management > Import/Export Data > DNB Export Plugin > Settings
+
+The plugin export interface can be found at:
+Journal Management > Import/Export Data > DNB Export Plugin > Export articles
+
+Note
+---------
+In order to deposit articles to DNB from within OJS you will have to enter your username, password and subfolder ID in the plugin settings. 
+If you do not enter this information you'll still be able to export the DNB packages but you cannot deposit them from within OJS.
+Please note, that the password will be saved as plain text, i.e. not encrypted, due to DNB service requirements.
+
+Contact/Support
+---------------
+Documentation, bug listings, and updates can be found on this plugin's homepage
+at <http://github.com/ojsde/dnbExport>.

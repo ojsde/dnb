@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  * plugins/importexport/dnb/scheduledTasks.xml
+  *
+  * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
+  * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
+  * Author: Bozana Bokan
+  * Last update: March 15, 2017
+  *
+  * DNBExport Plugin Deposit
+  *
+  * This file describes the schedule task that will send deposits to DNB in the background.
+  *
+  -->
+
+<!DOCTYPE scheduled_tasks SYSTEM "../../../lib/pkp/dtd/scheduledTasks.dtd">
+
+<scheduled_tasks>
+	<task class="plugins.importexport.dnb.DNBInfoSender">
+		<descr>Deposit article packages to DNB Hotfolder.</descr>
+		<frequency minute="0"/>
+	</task>
+</scheduled_tasks>

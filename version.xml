@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE version SYSTEM "../../../lib/pkp/dtd/pluginVersion.dtd">
+
+<!--
+  * plugins/importexport/dnb/version.xml
+  *
+  * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
+  * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
+  * Author: Bozana Bokan
+  * Last update: March 15, 2017
+  *
+  * Plugin version information.
+  -->
+<version>
+	<application>dnb</application>
+	<type>plugins.importexport</type>
+	<release>1.0.0.0</release>
+	<date>2017-03-15</date>
+</version>
