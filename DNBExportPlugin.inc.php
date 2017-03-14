@@ -160,6 +160,9 @@ class DNBExportPlugin extends ImportExportPlugin {
 	function displayPluginHomePage($templateMgr, $journal) {
 		$this->setBreadcrumbs();
 		$checkForTarResult = $this->checkForTar();
+		$issn = $journal->getSetting('onlineIssn');
+		if (empty($issn)) $issn = $journal->getSetting('printIssn');
+		$templateMgr->assign('issn', !empty($issn));
 		$templateMgr->assign('checkTar', !is_array($checkForTarResult));
 		$templateMgr->assign('checkSettings', $this->checkPluginSettings($journal));
 		$templateMgr->display($this->getTemplatePath() . 'index.tpl');

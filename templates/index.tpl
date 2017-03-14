@@ -21,7 +21,9 @@
 
 <br />
 <h3>{translate key="plugins.importexport.dnb.export"}</h3>
-{if !$checkTar}
+{if !$issn}
+<p>{translate key="plugins.importexport.dnb.noISSN"}</p>
+{elseif !$checkTar}
 <p>{translate key="plugins.importexport.dnb.noTAR"}</p>
 {elseif !$checkSettings}
 <p>{translate key="plugins.importexport.dnb.archiveAccess.required"}</p>

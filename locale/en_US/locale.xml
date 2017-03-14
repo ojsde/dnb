@@ -22,6 +22,7 @@
 	<message key="plugins.importexport.dnb.archiveAccess.required"><![CDATA[<strong>Note:</strong> This journal is not open access, thus you have to first chose one of the possible access options for the archived articles at DNB in the plugin settings before you can proceed with the export.]]></message>
 	<message key="plugins.importexport.dnb.registrationIntro"><![CDATA[In order to deposit the articles directly from within OJS, you will need to enter your DNB Hotfolder username, password and subfolder in the plugin settings below. If you do not enter these credentials, you can still export the DNB packages.]]></message>
 	<message key="plugins.importexport.dnb.settings.description"><![CDATA[You can <a href="{$settingsUrl}">configure the DNB export plugin here</a>.]]></message>
+	<message key="plugins.importexport.dnb.noISSN">ISSN (s. Setup 1) is required for export and deposit.</message>
 	<message key="plugins.importexport.dnb.noTAR">TAR command (s. cli part in the config.inc.php) is required for export and deposit.</message>
 
 	<message key="plugins.importexport.dnb.settings.form.description">Please configure the DNBExport plugin:</message>
