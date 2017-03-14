@@ -9,8 +9,8 @@ About
 -----
 This plugin provides the export of article metadata and full texts (in PDF and EPUB format) for their tranfer to the German National Library (DNB)
 using the DNB Hotfolder method. The plugin also offers the option of directly depositing the transfer package into the DNB Hotfolder.
-Details on the Hotfolder method are available at: http://nbn-resolving.de/urn:nbn:de:101-2016111401
-Details on the XML format and data requirements are available at: http://nbn-resolving.de/urn:nbn:de:101-2014071124
+Details on the Hotfolder method are available at: http://nbn-resolving.de/urn%3Anbn%3Ade%3A101-2016111401
+Details on the XML format and data requirements are available at: http://nbn-resolving.de/urn%3Anbn%3Ade%3A101-2014071124
 
 License
 -------
@@ -28,12 +28,12 @@ Installation
 ------------
 To install the plugin:
  - Unpack the plugin tar.gz file to your plugins/importexport directory
- 	$ tar xvzf dnb-ojs-stable-2_4_8.tar.gz
+	$ tar xvzf dnb-ojs-stable-2_4_8.tar.gz
  - If necessary, rename the plugin folder into 'dnb':
- 	$ mv dnb-ojs-stable-2_4_8 dnb
+	$ mv dnb-ojs-stable-2_4_8 dnb
  - From your application's installation directory, run the upgrade script:
-    $ php tools/upgrade.php upgrade
-   (NOTE: It is recommended to back up your database first.)
+	$ php tools/upgrade.php upgrade
+	(NOTE: It is recommended to back up your database first.)
 
 Export
 ------------

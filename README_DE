@@ -9,8 +9,8 @@
 -----
 Dieses Plug-In ermöglicht den Export von Artikel-Metadaten und -Volltexten (im PDF- und EPUB-Format) zwecks ihrer Pflichtablieferung an die Deutsche Nationalbibliothek (DNB)
 mittels DNB-Hotfolder-Verfahren. Das Plug-In bietet auch die Option, das Transferpaket direkt in den DNB-Hotfolder abzuliefern.
-Details über das Hotfolder-Verfahren sind hier zu finden: http://nbn-resolving.de/urn:nbn:de:101-2016111401
-Details über das XML-Format und die Datenanforderungen sind hier zu finden: http://nbn-resolving.de/urn:nbn:de:101-2014071124
+Details über das Hotfolder-Verfahren sind hier zu finden: <http://nbn-resolving.de/urn:nbn:de:101-2016111401>
+Details über das XML-Format und die Datenanforderungen sind hier zu finden: <http://nbn-resolving.de/urn:nbn:de:101-2014071124>
 
 Lizenz
 -------
@@ -28,11 +28,11 @@ Installation
 ------------
 Um das Plug-In zu installieren:
  - entpacken Sie das Plug-In in Ihr Verzeichnis plugins/importexport:
-    $ tar xvzf dnb-ojs-stable-2_4_8.tar.gz
+	$ tar xvzf dnb-ojs-stable-2_4_8.tar.gz
  - wenn nötig, benennen Sie den Plug-In-Ordner in "dnb" um:
- 	$ mv dnb-ojs-stable-2_4_8 dnb 
+	$ mv dnb-ojs-stable-2_4_8 dnb 
  - aus Ihrem OJS-Verzeichnis führen Sie aus:
-    $ php tools/upgrade.php upgrade
+	$ php tools/upgrade.php upgrade
 	(HINWEIS: Es empfiehlt sich zuerst ein Backup ihrer Datenbank zu erstellen.)
 
 Export
