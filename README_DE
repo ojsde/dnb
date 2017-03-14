@@ -7,7 +7,8 @@
 
 Über
 -----
-Das DNB-Export-Plug-In ermöglicht den Export von Artikel-Metadaten und -Volltexten (im PDF- und EPUB-Format) zwecks ihrer Pflichtablieferung an die DNB (Deutsche Nationalbibliothek) mittels DNB-Hotfolder-Verfahren.
+Dieses Plug-In ermöglicht den Export von Artikel-Metadaten und -Volltexten (im PDF- und EPUB-Format) zwecks ihrer Pflichtablieferung an die Deutsche Nationalbibliothek (DNB)
+mittels DNB-Hotfolder-Verfahren. Das Plug-In bietet auch die Option, das Transferpaket direkt in den DNB-Hotfolder abzuliefern.
 Details über das Hotfolder-Verfahren sind hier zu finden: http://nbn-resolving.de/urn:nbn:de:101-2016111401
 Details über das XML-Format und die Datenanforderungen sind hier zu finden: http://nbn-resolving.de/urn:nbn:de:101-2014071124
 
@@ -18,6 +19,7 @@ Das Plug-In ist unter GNU General Public License v2 lizenziert. Sehen Sie die Da
 Systemanforderungen
 -------------------
 Dieses Plug-In ist kompatibel mit...
+ - OJS 2.4.8
  - OJS 2.4.8-1
 
 Für die Ablieferung aus OJS heraus wird zusätzlich die CURL-Bibliothek benötigt.

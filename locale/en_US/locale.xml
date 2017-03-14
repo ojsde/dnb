@@ -17,7 +17,7 @@
 	<message key="plugins.importexport.dnb.displayName">DNB Export Plugin</message>
 	<message key="plugins.importexport.dnb.description">Export or deposit articles in DNB format.</message>
 
-	<message key="plugins.importexport.dnb.intro">This plugin provides the export of articles metadata and full texts (in PDF and EPUB format) for their depositing in DNB (German National Library) using the DNB Hotfolder method. </message>
+	<message key="plugins.importexport.dnb.intro">This plugin provides the export of article metadata and full texts (in PDF and EPUB format) for their tranfer to the German National Library (DNB) using the DNB Hotfolder method. The plugin also offers the option of directly depositing the transfer package into the DNB Hotfolder.</message>
 	<message key="plugins.importexport.dnb.archiveAccess.intro">Closed and journals with restricted access have to chose one of the possible access options for the archived articles at DNB in the plugin settings below.</message>
 	<message key="plugins.importexport.dnb.archiveAccess.required"><![CDATA[<strong>Note:</strong> This journal is not open access, thus you have to first chose one of the possible access options for the archived articles at DNB in the plugin settings before you can proceed with the export.]]></message>
 	<message key="plugins.importexport.dnb.registrationIntro"><![CDATA[In order to deposit the articles directly from within OJS, you will need to enter your DNB Hotfolder username, password and subfolder in the plugin settings below. If you do not enter these credentials, you can still export the DNB packages.]]></message>
