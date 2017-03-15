@@ -8,9 +8,9 @@
   * Author: Bozana Bokan
   * Last update: March 15, 2017
   *
-  * DNBExport Plugin Deposit
+  * DNB plugin deposit scheduled task information
   *
-  * This file describes the schedule task that will send deposits to DNB in the background.
+  * This file describes the scheduled task that will send deposits to DNB in the background.
   *
   -->
 

@@ -37,7 +37,7 @@ class DNBExportDom {
 	/**
 	 * Add an error to the errors list.
 	 * @param $errorTranslationKey string An i18n key.
-	 * @param $param string|null An additional translation parameter.
+	 * @param $param string An additional translation parameter.
 	 */
 	function _addError($errorTranslationKey, $param = null) {
 		$this->_errors[] = array($errorTranslationKey, $param);
@@ -80,7 +80,7 @@ class DNBExportDom {
 		$authors = $article->getAuthors();
 		if (is_array($authors) && !empty($authors)) {
 			// get and remove first author from the array
-			// so the array can be used in the field 700 1 _
+			// so the array can be used later in the field 700 1 _
 			$firstAuthor = array_shift($authors);
 		}
 		assert($firstAuthor);
@@ -128,7 +128,7 @@ class DNBExportDom {
 		// language
 		$datafield041 = $this->createDatafieldNode($doc, $recordNode, '041', ' ', ' ');
 		$this->createSubfieldNode($doc, $datafield041, 'a', $language);
-		// access to the archived example
+		// access to the archived article
 		$datafield093 = $this->createDatafieldNode($doc, $recordNode, '093', ' ', ' ');
 		if ($openAccess) {
 			$this->createSubfieldNode($doc, $datafield093, 'b', 'b');
@@ -148,7 +148,7 @@ class DNBExportDom {
 		// date published
 		$datafield260 = $this->createDatafieldNode($doc, $recordNode, '260', ' ', ' ');
 		$this->createSubfieldNode($doc, $datafield260, 'c', $datePublishedShort);
-		// article level URN and DOI (only if galley level URN and URN do not exist)
+		// article level URN and DOI (only if galley level URN and DOI do not exist)
 		if (empty($urn) && empty($doi)) {
 			$articleURN = $article->getPubId('other::urnDNB');
 			if (empty($articleURN)) $articleURN = $article->getPubId('other::urn');

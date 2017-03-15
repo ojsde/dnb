@@ -18,9 +18,9 @@
 	<message key="plugins.importexport.dnb.description">Export or deposit articles in DNB format.</message>
 
 	<message key="plugins.importexport.dnb.intro">This plugin provides the export of article metadata and full texts (in PDF and EPUB format) for their tranfer to the German National Library (DNB) using the DNB Hotfolder method. The plugin also offers the option of directly depositing the transfer package into the DNB Hotfolder.</message>
-	<message key="plugins.importexport.dnb.archiveAccess.intro">Closed and journals with restricted access have to chose one of the possible access options for the archived articles at DNB in the plugin settings below.</message>
+	<message key="plugins.importexport.dnb.archiveAccess.intro">Closed journals and journals with restricted access have to choose one of the possible access options for the archived articles at the DNB in the plugin settings below.</message>
 	<message key="plugins.importexport.dnb.archiveAccess.required"><![CDATA[<strong>Note:</strong> This journal is not open access, thus you have to first chose one of the possible access options for the archived articles at DNB in the plugin settings before you can proceed with the export.]]></message>
-	<message key="plugins.importexport.dnb.registrationIntro"><![CDATA[In order to deposit the articles directly from within OJS, you will need to enter your DNB Hotfolder username, password and subfolder in the plugin settings below. If you do not enter these credentials, you can still export the DNB packages.]]></message>
+	<message key="plugins.importexport.dnb.registrationIntro">In order to deposit the articles directly from within OJS, you will need to enter your DNB Hotfolder username, password and subfolder in the plugin settings below. If you do not enter these credentials, you can still export the DNB packages.</message>
 	<message key="plugins.importexport.dnb.settings.description"><![CDATA[You can <a href="{$settingsUrl}">configure the DNB export plugin here</a>.]]></message>
 	<message key="plugins.importexport.dnb.noISSN">ISSN (s. Setup 1) is required for export and deposit.</message>
 	<message key="plugins.importexport.dnb.noTAR">TAR command (s. cli part in the config.inc.php) is required for export and deposit.</message>
@@ -66,7 +66,7 @@
 	<message key="plugins.importexport.dnb.markRegistered">Mark registered</message>
 	<message key="plugins.importexport.dnb.markRegisteredDescription">Click this button to mark the articles registered (e.g. if registered earlier or manually).</message>
 	<message key="plugins.importexport.dnb.deposit.confirm">You have selected already deposited articles. Are you sure you want to proceed with the deposit?</message>
-	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Note:</strong> The deposit can take a long time. So please choose a few articles and be patient after clicking the "Deposit" button. You'll be notified when the process is completed.]]></message>
+	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Note:</strong> The deposit can take a long time. So please choose only a few articles each time and be patient after clicking the "Deposit" button. You'll be notified when the process is completed.]]></message>
 
 	<message key="plugins.importexport.dnb.articles.notDeposited">All published articles have already been deposited (or none of them has PDF or EPUB galley).</message>
 	<message key="plugins.importexport.dnb.articles.deposited">There are no deposited articles.</message>

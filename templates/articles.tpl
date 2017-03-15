@@ -6,7 +6,7 @@
  * Author: Bozana Bokan
  * Last update: March 15, 2017
  *
- * Select articles for export.
+ * Select articles for export/deposit.
  *}
 {strip}
 {assign var="pageTitle" value="plugins.importexport.common.export.selectArticle"}

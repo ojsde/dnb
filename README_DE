@@ -22,6 +22,8 @@ Dieses Plug-In ist kompatibel mit...
  - OJS 2.4.8
  - OJS 2.4.8-1
 
+TAR-Programm wird benötigt und es muss in der Datei config.inc.php konfiguriert werden.
+
 Für die Ablieferung aus OJS heraus wird zusätzlich die CURL-Bibliothek benötigt.
 
 Installation
@@ -45,8 +47,8 @@ Zeitschriftenverwaltung > Daten importieren/exportieren > DNB-Export-Plug-In > A
 
 Hinweis
 ---------
-Wenn Sie Artikel aus OJS heraus an die DNB abliefern möchten, müssen Sie Ihren Benutzer/innennamen, Passwort und Unterordner-ID in die Plug-In-Einstellungen eintragen.
-Wenn Sie diese Informationen nicht eintragen, können Sie immer noch die DNB-Pakete exportieren, aber Sie können sie nicht aus OJS heraus abliefern.
+Wenn Sie Artikel direkt aus OJS heraus abliefern möchten, müssen Sie Ihren Benutzernamen, Ihr Passwort und Ihre Unterordner-ID in die Plug-In-Einstellungen eintragen.
+Exportieren können Sie die DNB-Pakete aber auch ohne die Zugangsdaten eingetragen zu haben.
 Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Klartext, d.h. unverschlüsselt, gespeichert werden wird. 
 
 Kontakt/Support

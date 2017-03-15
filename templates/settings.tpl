@@ -6,7 +6,7 @@
  * Author: Bozana Bokan
  * Last update: March 15, 2017
  *
- * DNBExportPlugin settings
+ * DNB plugin settings
  *}
 {strip}
 {assign var="pageTitle" value="plugins.importexport.common.settings"}

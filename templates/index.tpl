@@ -6,7 +6,7 @@
  * Author: Bozana Bokan
  * Last update: March 15, 2017
  *
- * Plugin home/start page
+ * DNB plugin home/start page
  *
  *}
 {strip}

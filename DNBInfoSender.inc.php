@@ -77,8 +77,10 @@ class DNBInfoSender extends ScheduledTask {
 			}
 
 			if (count($notDepositedArticlesIds)) {
+				// Deposit articles
 				$result = $plugin->depositArticles($request, $notDepositedArticlesIds, $journal);
 				if ($result !== true) {
+					// Error occured, add it to the scheduled task log
 					if (is_array($result)) {
 						foreach($result as $error) {
 							assert(is_array($error) && count($error) >= 1);
@@ -95,8 +97,8 @@ class DNBInfoSender extends ScheduledTask {
 	}
 
 	/**
-	 * Get all journals that meet the requirements to have
-	 * their articles deposit to DNB.
+	 * Get all journals that meet the requirements for
+	 * automatic articles deposit to DNB.
 	 * @return array
 	 */
 	function _getJournals() {

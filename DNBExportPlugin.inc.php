@@ -11,7 +11,7 @@
  * @class DNBExportPlugin
  * @ingroup plugins_importexport_dnb
  *
- * @brief DNB import/export plugin
+ * @brief DNB export/deposit plugin
  */
 
 import('lib.pkp.classes.xml.XMLCustomWriter');
@@ -132,9 +132,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 	 *
 	 * This supports the following actions:
 	 * - articles: lists with exportable objects
-	 * - process: process (deposit) the lists with exportable objects
-	 * - markRegistered: mark a single object (article) as registered
-	 * - export: export a single object (article)
+	 * - process: process (deposit, export or mark registered) the selected objects
 	 */
 	function display($args, $request) {
 		$templateMgr = TemplateManager::getManager();
@@ -159,9 +157,9 @@ class DNBExportPlugin extends ImportExportPlugin {
 	 */
 	function displayPluginHomePage($templateMgr, $journal) {
 		$this->setBreadcrumbs();
-		$checkForTarResult = $this->checkForTar();
 		$issn = $journal->getSetting('onlineIssn');
 		if (empty($issn)) $issn = $journal->getSetting('printIssn');
+		$checkForTarResult = $this->checkForTar();
 		$templateMgr->assign('issn', !empty($issn));
 		$templateMgr->assign('checkTar', !is_array($checkForTarResult));
 		$templateMgr->assign('checkSettings', $this->checkPluginSettings($journal));
@@ -178,10 +176,9 @@ class DNBExportPlugin extends ImportExportPlugin {
 		// if required plugin settings are missing, redirect to the plugin home page
 		if (!$this->checkPluginSettings($journal)) $request->redirect(null, null, null, array('plugin', $this->getName()));;
 
-		// Prepare information specific to this plugin.
 		$this->setBreadcrumbs(array(), true);
 
-		// Retrieve all published articles.
+		// Retrieve all published articles
 		$publishedArticleDao = DAORegistry::getDAO('PublishedArticleDAO'); /* @var $publishedArticleDao PublishedArticleDAO */
 		$articles = array();
 		if ($filter) {
@@ -197,7 +194,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 			$articles = $articleIterator->toArray();
 		}
 
-		// Retrieve articles that can be exported.
+		// Retrieve articles that can be exported
 		$articleData = array();
 		foreach($articles as $article) {
 			$preparedArticle = $this->prepareArticleData($article);
@@ -207,13 +204,13 @@ class DNBExportPlugin extends ImportExportPlugin {
 		}
 		unset($articles);
 
-		// Paginate articles.
+		// Paginate articles
 		$totalArticles = count($articleData);
 		$rangeInfo = Handler::getRangeInfo('articles');
 		if ($rangeInfo->isValid()) {
 			$articleData = array_slice($articleData, $rangeInfo->getCount() * ($rangeInfo->getPage()-1), $rangeInfo->getCount());
 		}
-		// Instantiate article iterator.
+		// Instantiate article iterator
 		import('lib.pkp.classes.core.VirtualArrayIterator');
 		$iterator = new VirtualArrayIterator($articleData, $totalArticles, $rangeInfo->getPage(), $rangeInfo->getCount());
 
@@ -246,7 +243,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 		// if required plugin settings are missing, redirect to the plugin home page
 		if (!$this->checkPluginSettings($journal)) $request->redirect(null, null, null, array('plugin', $this->getName()));;
 
-		// Dispatch the action.
+		// Dispatch the action
 		switch(true) {
 			case $request->getUserVar('export'):
 			case $request->getUserVar('deposit'):
@@ -257,7 +254,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 				}
 
 				if ($request->getUserVar('export')) {
-					// Export selected objects.
+					// Export selected objects
 					$result = $this->exportArticles($request, $selectedIds, $journal);
 				} elseif ($request->getUserVar('markRegistered')) {
 					$this->updateStatus($request, $selectedIds, $journal, DNB_STATUS_MARKEDREGISTERED);
@@ -267,29 +264,28 @@ class DNBExportPlugin extends ImportExportPlugin {
 						'plugins.importexport.dnb.markedRegistered.success',
 						NOTIFICATION_TYPE_SUCCESS
 					);
-					// Redisplay the changed object list.
+					// Redisplay the changed object list
 					$request->redirect(null, null, null, array('plugin', $this->getName(), 'articles'));
 					break;
 				} else {
-					// Deposit selected objects.
+					// Deposit selected objects
 					assert($request->getUserVar('deposit') != false);
 					$result = $this->depositArticles($request, $selectedIds, $journal);
-					// Provide the user with some visual feedback that
-					// deposit was successful.
+					// Provide the user with some visual feedback that deposit was successful
 					if ($result === true) {
 						$this->_sendNotification(
 							$request,
 							'plugins.importexport.dnb.deposited.success',
 							NOTIFICATION_TYPE_SUCCESS
 						);
-						// Redisplay the changed object list.
+						// Redisplay the changed object list
 						$request->redirect(null, null, null, array('plugin', $this->getName(), 'articles'));
 					}
 				}
 				break;
 		}
 
-		// Redirect to the index page.
+		// Redirect to the index page
 		if ($result !== true) {
 			if (is_array($result)) {
 				foreach($result as $error) {
@@ -315,10 +311,11 @@ class DNBExportPlugin extends ImportExportPlugin {
 	 */
 	function updateStatus($request, $articleIds, $journal, $status) {
 		$articleDao = DAORegistry::getDAO('ArticleDAO');
-		// check for articles
 		foreach((array) $articleIds as $articleId) {
+			// Get article
 			$article = $articleDao->getArticle($articleId, $journal->getId());
 			assert($article);
+			// Update article status
 			$articleDao->updateSetting($articleId, $this->getStatusSettingName(), $status, 'string');
 		}
 	}
@@ -327,7 +324,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 	 * Export articles.
 	 *
 	 * @param $request Request
-	 * @param $selectedIds IDs of selected articles for export.
+	 * @param $selectedIds array
 	 * @param $journal Journal
 	 *
 	 * @return boolean|array True for success or an array of error messages.
@@ -335,7 +332,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 	function exportArticles($request, $selectedIds, $journal) {
 		$errors = $exportFiles = array();
 
-		// Get this journal target export directory.
+		// Get the journal target export directory.
 		// The data will be exported in this structure:
 		// dnb/<journalId>-<dateTime>/
 		$result = $this->getExportPath($journal->getId());
@@ -344,7 +341,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 
 		$fileManager = new FileManager();
 
-		// Get the TAR/ZIP packages for each article
+		// Get the TAR packages for each article
 		$result = $this->getPackages($request, $selectedIds, $journal, $journalExportPath, $exportFiles);
 		// If errors occured, remove all created directories and return the errors
 		if (is_array($result)) {
@@ -352,8 +349,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 			return $result;
 		}
 
-		// If there is more than one export package, package them all
-		// in as a single .tar.gz.
+		// If there is more than one export package, package them all in a single .tar.gz
 		$exportFilesNames = array_keys($exportFiles);
 		assert(count($exportFilesNames) >= 1);
 		if (count($exportFilesNames) > 1) {
@@ -363,7 +359,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 			$finalExportFileName = reset($exportFilesNames);
 		}
 
-		// Stream the results to the browser.
+		// Stream the results to the browser
 		$fileManager->downloadFile($finalExportFileName);
 		$fileManager->rmtree($journalExportPath);
 		return true;
@@ -373,7 +369,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 	 * Deposit articles.
 	 *
 	 * @param $request Request
-	 * @param $selectedIds IDs of selected articles for export .
+	 * @param $selectedIds array
 	 * @param $journal Journal
 	 *
 	 * @return boolean|array True for success or an array of error messages.
@@ -390,7 +386,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 
 		$fileManager = new FileManager();
 
-		// Get the TAR/ZIP packages for each article
+		// Get the TAR packages for each article
 		$result = $this->getPackages($request, $selectedIds, $journal, $journalExportPath, $exportFiles);
 		// If errors occured, remove all created directories and return the errors
 		if (is_array($result)) {
@@ -432,8 +428,10 @@ class DNBExportPlugin extends ImportExportPlugin {
 			$response = curl_exec($curlCh);
 			$curlError = curl_error($curlCh);
 			if ($curlError) {
+				// error occured
 				$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($exportFile), 'error' => $curlError));
 				$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
+				// add article to the list of not fully deposited articles
 				if (!in_array($articleId, $notFullyDeposited)) $notFullyDeposited[] = $articleId;
 			}
 			curl_close($curlCh);
@@ -479,7 +477,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 	 * Copy galley file to the export content path, that will be packed.
 	 *
 	 * @param $galley ArticleGalley
-	 * @param $exportPath string The final directory path, containing data to be packaged
+	 * @param $exportPath string The final directory path, containing data to be packed
 	 *
 	 * @return string|array The export directory name or an array with
 	 *  errors if something went wrong.
@@ -504,13 +502,13 @@ class DNBExportPlugin extends ImportExportPlugin {
 	}
 
 	/**
-	 * Generate TAR/ZIP packages for each selected article.
+	 * Generate TAR packages for each selected article.
 	 *
 	 * @param $request Request
-	 * @param $selectedIds IDs of selected articles for export .
+	 * @param $selectedIds array
 	 * @param $journal Journal
 	 * @param $journalExportPath string Directory path where to put all export files
-	 * @param $exportFiles array Just to return the exported TAR/ZIP packages
+	 * @param $exportFiles array Just to return the exported TAR packages
 	 *
 	 * @return boolean|array True for success or an array of error messages.
 	 */
@@ -562,8 +560,8 @@ class DNBExportPlugin extends ImportExportPlugin {
 				if (is_array($result)) return $result;
 				$galleyFileExportPath = $result;
 
-				// TAR/ZIP the metadata and file.
-				// The package file name will be tehn <journalId>-<articleId>-<galleyId>.tar
+				// TAR the metadata and file.
+				// The package file name will be then <journalId>-<articleId>-<galleyId>.tar
 				$exportPackageName = $journalExportPath . $exportContentDir . '.tar';
 				$this->tarFiles($exportPath, $exportPackageName);
 
@@ -650,7 +648,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 	 *
 	 * @param $journalId integer
 	 * @param $currentExportPath string (optional) The base path, the content directory should be added to
-	 * @param $exportContentDir string (optional) The final directory containing data to be packaged
+	 * @param $exportContentDir string (optional) The final directory containing data to be packed
 	 *
 	 * @return string|array The export directory name or an array with
 	 *  errors if something went wrong.
@@ -677,7 +675,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 
 	/**
 	 * Test whether the tar binary is available.
-	 * @return boolean|array Boolean true if available otherwise
+	 * @return boolean|array True if available otherwise
 	 *  an array with an error message.
 	 */
 	function checkForTar() {
@@ -762,7 +760,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 	 * @return array
 	 */
 	function &_getNotDepositedArticles(&$journal) {
-		// Retrieve all published articles that have not yet been deposited.
+		// Retrieve all published articles that have not been deposited yet.
 		$publishedArticleDao =& DAORegistry::getDAO('PublishedArticleDAO'); /* @var $publishedArticleDao PublishedArticleDAO */
 		$articles = $publishedArticleDao->getBySetting($this->getStatusSettingName(), null, $journal->getId());
 		return $articles;
