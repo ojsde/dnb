@@ -163,15 +163,25 @@ class DNBExportDom {
 		$copyrightNotice = $journal->getSetting('copyrightNotice', $galley->getLocale());
 		if (empty($copyrightNotice)) $copyrightNotice = $journal->getSetting('copyrightNotice', $journal->getPrimaryLocale());
 		if (!empty($copyrightNotice)) {
+			$copyrightNotice = String::html2text($copyrightNotice);
+			if (strlen($copyrightNotice) > 999)  {
+				$copyrightNotice = substr($copyrightNotice, 0, 996);
+				$copyrightNotice .= '...';
+			}
 			$datafield506 = $this->createDatafieldNode($doc, $recordNode, '506', ' ', ' ');
-			$this->createSubfieldNode($doc, $datafield506, 'a', String::html2text($copyrightNotice));
+			$this->createSubfieldNode($doc, $datafield506, 'a', $copyrightNotice);
 		}
 		// abstract
 		$abstract = $article->getAbstract($galley->getLocale());
 		if (empty($abstract)) $abstract = $article->getAbstract($article->getLocale());
 		if (!empty($abstract)) {
+			$abstract = String::html2text($abstract);
+			if (strlen($abstract) > 999)  {
+				$abstract = substr($abstract, 0, 996);
+				$abstract .= '...';
+			}
 			$datafield520 = $this->createDatafieldNode($doc, $recordNode, '520', ' ', ' ');
-			$this->createSubfieldNode($doc, $datafield520, 'a', String::html2text($abstract));
+			$this->createSubfieldNode($doc, $datafield520, 'a', $abstract);
 		}
 		// license URL
 		$licenseURL = $article->getLicenseURL();
