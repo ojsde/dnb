@@ -22,7 +22,7 @@ define('DNB_STATUS_MARKEDREGISTERED', 'markedRegistered');
 define('DNB_STATUS_DEPOSITED', 'deposited');
 define('DNB_STATUS_NOT_DEPOSITED', 'notDeposited');
 // The name of the setting used to save the article status.
-define('DNB_STATUS', 'DNBStatus');
+define('DNB_STATUS', 'status');
 
 class DNBExportPlugin extends ImportExportPlugin {
 	/** @var boolean */
