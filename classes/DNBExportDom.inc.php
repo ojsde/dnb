@@ -146,8 +146,8 @@ class DNBExportDom {
 		$datafield245 = $this->createDatafieldNode($doc, $recordNode, '245', '0', '0');
 		$this->createSubfieldNode($doc, $datafield245, 'a', $title);
 		// date published
-		$datafield260 = $this->createDatafieldNode($doc, $recordNode, '260', ' ', ' ');
-		$this->createSubfieldNode($doc, $datafield260, 'c', $datePublishedShort);
+		$datafield264 = $this->createDatafieldNode($doc, $recordNode, '264', ' ', ' ');
+		$this->createSubfieldNode($doc, $datafield264, 'c', $datePublishedShort);
 		// article level URN and DOI (only if galley level URN and DOI do not exist)
 		if (empty($urn) && empty($doi)) {
 			$articleURN = $article->getPubId('other::urnDNB');
@@ -180,7 +180,7 @@ class DNBExportDom {
 				$abstract = substr($abstract, 0, 996);
 				$abstract .= '...';
 			}
-			$datafield520 = $this->createDatafieldNode($doc, $recordNode, '520', ' ', ' ');
+			$datafield520 = $this->createDatafieldNode($doc, $recordNode, '520', '3', ' ');
 			$this->createSubfieldNode($doc, $datafield520, 'a', $abstract);
 		}
 		// license URL
