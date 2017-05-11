@@ -429,7 +429,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 			$curlError = curl_error($curlCh);
 			if ($curlError) {
 				// error occured
-				$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($exportFile), 'error' => $curlError));
+				$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($exportFile), 'articleId' => $articleId, 'error' => $curlError));
 				$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 				// add article to the list of not fully deposited articles
 				if (!in_array($articleId, $notFullyDeposited)) $notFullyDeposited[] = $articleId;
@@ -721,7 +721,7 @@ class DNBExportPlugin extends ImportExportPlugin {
 		} else {
 			// Add each file individually so that other files in the directory
 			// will not be included.
-			foreach($sourceFiles as $articleId => $sourceFile) {
+			foreach($sourceFiles as $sourceFile) {
 				assert(dirname($sourceFile) . '/' === $targetPath);
 				if (dirname($sourceFile) . '/' !== $targetPath) continue;
 				$tarCommand .= ' ' . escapeshellarg(basename($sourceFile));

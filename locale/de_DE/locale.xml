@@ -41,9 +41,7 @@
 	<message key="plugins.importexport.dnb.settings.form.automaticDeposit">Automatische Ablieferung der Artikel zur DNB</message>
 	<message key="plugins.importexport.dnb.settings.form.automaticDeposit.description"><![CDATA[OJS wird Artikel bei ihrer Veröffentlichung automatisch an DNB abliefern. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der <a href="{$articleListingURL}">Artikelauflistung</a> überprüfen.]]></message>
 
-	<message key="plugins.importexport.dnb.export">Artikel zum DNB exportieren</message>
 	<message key="plugins.importexport.dnb.export.article">Artikel exportieren</message>
-	<message key="plugins.importexport.dnb.export.articleInfo">Ausgewählte Artikel exportieren.</message>
 
 	<message key="plugins.importexport.dnb.status.all">Alle</message>
 	<message key="plugins.importexport.dnb.status.non">Nicht abgeliefert</message>
@@ -67,14 +65,15 @@
 	<message key="plugins.importexport.dnb.markRegisteredDescription">Klicken Sie diesen Knopf, um die ausgewählten Artikel als registriert zu markieren (z. B. wenn sie schon früher oder manuell registriert wurden).</message>
 	<message key="plugins.importexport.dnb.deposit.confirm">Sie haben schon abgelieferte Artikel ausgewählt. Sind Sie sicher, dass Sie mit der Ablieferung fortfahren möchten?</message>
 	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Hinweis:</strong> Die Ablieferung kann lange dauern. Bitte wählen Sie wenige Artikel aus und haben Sie Geduld, nachdem Sie den "Abliefern"-Knopf gedrückt haben. Sie werden benachrichtigt werden, wenn der Prozess fertig ist.]]></message>
+	<message key="plugins.importexport.dnb.selectDeselectAll">Auswählen/Abwählen</message>
 
 	<message key="plugins.importexport.dnb.articles.notDeposited">Alle veröffentlichten Artikel wurden schon abgeliefert (oder keine von denen hat PDF- oder EPUB-Fahne).</message>
 	<message key="plugins.importexport.dnb.articles.deposited">Keine Artikel wurden abgeliefert.</message>
 	<message key="plugins.importexport.dnb.articles.markedRegistered">Keine Artikel wurden als registriert markiert.</message>
 
 	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">Die Ausgabedatei {$param} ist nicht schreibbar.</message>
-	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">Das Hochladen per SFTP ist für die Paketdatei {$param} fehlgeschlagen.</message>
-	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">{$package}: {$error}</message>
+	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">Das Hochladen per SFTP ist fehlgeschlagen: {$param}.</message>
+	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">für die Paketdatei {$package} des Artikels {$articleId}: {$error}</message>
 
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 

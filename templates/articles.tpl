@@ -130,7 +130,7 @@
 			&nbsp;
 			<input type="submit" name="markRegistered" value="{translate key="plugins.importexport.dnb.markRegistered"}" title="{translate key="plugins.importexport.dnb.markRegisteredDescription"}" class="button"/>
 			&nbsp;
-			<input type="button" value="{translate key="common.selectAll"}" class="button" onclick="toggleChecked()" />
+			<input type="button" value="{translate key="plugins.importexport.dnb.selectDeselectAll"}" class="button" onclick="toggleChecked()" />
 		</p>
 	</form>
 	{if $hasCredentials}

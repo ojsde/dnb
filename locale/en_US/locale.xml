@@ -41,9 +41,7 @@
 	<message key="plugins.importexport.dnb.settings.form.automaticDeposit">Deposit articles to DNB automatically</message>
 	<message key="plugins.importexport.dnb.settings.form.automaticDeposit.description"><![CDATA[OJS will deposit articles automatically to DNB as articles are published. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the <a href="{$articleListingURL}">articles listing</a>.]]></message>
 
-	<message key="plugins.importexport.dnb.export">Export Articles to DNB</message>
 	<message key="plugins.importexport.dnb.export.article">Export articles</message>
-	<message key="plugins.importexport.dnb.export.articleInfo">Export selected articles</message>
 
 	<message key="plugins.importexport.dnb.status.all">All</message>
 	<message key="plugins.importexport.dnb.status.non">Not deposited</message>
@@ -67,14 +65,15 @@
 	<message key="plugins.importexport.dnb.markRegisteredDescription">Click this button to mark the articles registered (e.g. if registered earlier or manually).</message>
 	<message key="plugins.importexport.dnb.deposit.confirm">You have selected already deposited articles. Are you sure you want to proceed with the deposit?</message>
 	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Note:</strong> The deposit can take a long time. So please choose only a few articles each time and be patient after clicking the "Deposit" button. You'll be notified when the process is completed.]]></message>
+	<message key="plugins.importexport.dnb.selectDeselectAll">Select/Deselect</message>
 
 	<message key="plugins.importexport.dnb.articles.notDeposited">All published articles have already been deposited (or none of them has PDF or EPUB galley).</message>
 	<message key="plugins.importexport.dnb.articles.deposited">There are no deposited articles.</message>
 	<message key="plugins.importexport.dnb.articles.markedRegistered">There are no articles marked as registered.</message>
 
 	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">The output file {$param} is not writable.</message>
-	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">The SFTP upload failed for the package file {$param}</message>
-	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">{$package}: {$error}</message>
+	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">The SFTP upload failed for the {$param}</message>
+	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">package file {$package} of the article {$articleId}: {$error}</message>
 
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 
