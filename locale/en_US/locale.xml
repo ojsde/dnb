@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE locale SYSTEM "../../../../../lib/pkp/dtd/locale.dtd">
+
+<!--
+  * plugins/importexport/dnb/locale/en_US/locale.xml
+  *
+  * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
+  * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
+  * Author: Bozana Bokan
+  * Last update: March 15, 2017
+  *
+  * Localization strings for the en_US (English (US)) locale.
+  *
+  -->
+
+<locale name="en_US" full_name="U.S. English">
+	<message key="plugins.importexport.dnb.displayName">DNB Export Plugin</message>
+	<message key="plugins.importexport.dnb.description">Export or deposit articles in DNB format.</message>
+
+	<message key="plugins.importexport.dnb.archiveAccess.required"><![CDATA[<strong>Note:</strong> This journal is not open access, thus you have to first chose one of the possible access options for the archived articles at DNB in the plugin settings before you can proceed with the export.]]></message>
+	<message key="plugins.importexport.dnb.registrationIntro">In order to deposit the articles directly from within OJS, you will need to enter your DNB Hotfolder username, password and subfolder. If you do not enter these credentials, you can still export the DNB packages.</message>
+	<message key="plugins.importexport.dnb.noISSN"><![CDATA[ISSN (s. <a href="{$journalSettingsUrl}" target="_blank">Journal Settings Page</a>) is required for export and deposit.]]></message>
+	<message key="plugins.importexport.dnb.noTAR">TAR command (s. cli part in the config.inc.php) is required for export and deposit.</message>
+
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess">Please define the access to the articles in the DNB archive:</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.description">For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.a">Restricted access (access only on specially configured computers in the DNB reading rooms).</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.b">Unrestricted access for all.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.d">Access only for users registered with the DNB, also from outside the DNB.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccessRequired">Please define the access permissions for the archived articles.</message>
+	<message key="plugins.importexport.dnb.settings.form.folderId">Subfolder ID</message>
+	<message key="plugins.importexport.dnb.settings.form.folderId.description">This is the subfolder in your DNB Hotfolder, where the exported packages should be uploaded.</message>
+	<message key="plugins.importexport.dnb.settings.form.username">Username</message>
+	<message key="plugins.importexport.dnb.settings.form.password.description">Please note that the password will be saved as plain text, i.e. not encrypted.</message>
+	<message key="plugins.importexport.dnb.settings.form.automaticDeposit">Deposit articles to DNB automatically</message>
+	<message key="plugins.importexport.dnb.settings.form.automaticDeposit.description">OJS will deposit articles automatically to DNB as articles are published. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the articles listing.</message>
+
+	<message key="plugins.importexport.dnb.status.non">Not deposited</message>
+	<message key="plugins.importexport.dnb.status.deposited">Deposited</message>
+	<message key="plugins.importexport.dnb.status.legend"><![CDATA[
+		<p>Status:</p>
+		<p>
+		- Not deposited: no deposit attempt has been made for this article.<br />
+		- Deposited: the article has been deposited to DNB Hotfolder from within OJS.<br />
+		- Marked registered: the article was manually marked as registered.
+		</p>]]></message>
+	<message key="plugins.importexport.dnb.deposited.success">The selected articles were deposited!</message>
+
+	<message key="plugins.importexport.dnb.deposit">Deposit</message>
+	<message key="plugins.importexport.dnb.deposit.confirm">You have selected already deposited articles. Are you sure you want to proceed with the deposit?</message>
+	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Note:</strong> The deposit can take a long time. So please choose only a few articles each time and be patient after clicking the "Deposit" button. You'll be notified when the process is completed.]]></message>
+	<message key="plugins.importexport.dnb.selectDeselectAll">Select/Deselect</message>
+
+	<message key="plugins.importexport.dnb.export.error.articleCannotBeExported">The article {$param} cannot be exported because it does not have a PDF or an EPUB galley.</message>
+	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">The output file {$param} is not writable.</message>
+	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">The SFTP upload failed for the {$param}</message>
+	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">package file {$package} of the article {$articleId}: {$error}</message>
+
+	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
+
+</locale>

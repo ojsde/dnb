@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE locale SYSTEM "../../../../../lib/pkp/dtd/locale.dtd">
+
+<!--
+  * plugins/importexport/dnb/locale/de_DE/locale.xml
+  *
+  * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
+  * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
+  * Author: Bozana Bokan
+  * Last update: March 15, 2017
+  *
+  * Localization strings for the de_DE (Deutsch (Deutschland)) locale.
+  *
+  -->
+
+<locale name="de_DE" full_name="Deutsch (Deutschland)">
+	<message key="plugins.importexport.dnb.displayName">DNB-Export-Plug-In</message>
+	<message key="plugins.importexport.dnb.description">Artikel im DNB-Format exportieren oder abliefern.</message>
+
+	<message key="plugins.importexport.dnb.archiveAccess.required"><![CDATA[<strong>Hinweis:</strong> Diese Zeitschrift ist keine Open-Access-Zeitschrift, so dass Sie zuerst eine der möglichen Zugriffsoptionen für die bei der DNB archivierten Artikeln in den Plug-In-Einstellungen auswählen müssen, bevor Sie mit dem Export fortgahren können.]]></message>
+	<message key="plugins.importexport.dnb.registrationIntro">Um Artikel direkt aus OJS heraus abliefern zu können, müssen Sie Ihren Benutzernamen, Ihr Passwort und Ihre Unterordner-ID eintragen. Exportieren können Sie die DNB-Pakete aber auch ohne die Zugangsdaten eingetragen zu haben.</message>
+	<message key="plugins.importexport.dnb.noISSN"><![CDATA[ISSN (s. <a href="{$journalSettingsUrl}" target="_blank">Setup-Seite</a>) wird für Export und Ablieferung benötigt.]]></message>
+	<message key="plugins.importexport.dnb.noTAR">TAR-Befehl (s. Teil "cli" in der Datei config.inc.php) wird für Export und Ablieferung benötigt.</message>
+
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess">Bitte definieren Sie den Zugriff auf die Artikel im DNB-Archiv:</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.description">Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch uneingeschränkt für alle (zweite Option). Geschlossene und Zeitschriften mit beschränktem Zugriff müssen eine von diesen Zugriffsoptionen, die die DNB zur Verfügung stellt, für das Archivexemplar auswählen.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.a">Beschränkter Zugriff, d.h. nur an speziellen Rechnern in den Lesesälen der DNB.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.b">Uneingeschränkter Zugriff für alle.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.d">Zugriff für registrierte Nutzer/innen auch von außerhalb der DNB.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccessRequired">Bitte definieren Sie die Zugriffsberechtigungen auf die archivierten Artikel.</message>
+	<message key="plugins.importexport.dnb.settings.form.folderId">Unterordner-ID</message>
+	<message key="plugins.importexport.dnb.settings.form.folderId.description">Das ist der Unterordner in Ihrem DNB-Hotfolder, in den die exportierten Pakete hochgeladen werden sollen.</message>
+	<message key="plugins.importexport.dnb.settings.form.username">Benutzer/innennamen</message>
+	<message key="plugins.importexport.dnb.settings.form.password.description">Bitte beachten Sie, dass das Passwort im Klartext, d.h. unverschlüsselt, gespeichert wird.</message>
+	<message key="plugins.importexport.dnb.settings.form.automaticDeposit">Automatische Ablieferung der Artikel zur DNB</message>
+	<message key="plugins.importexport.dnb.settings.form.automaticDeposit.description">OJS wird Artikel bei ihrer Veröffentlichung automatisch an DNB abliefern. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der Artikelauflistung überprüfen.</message>
+
+	<message key="plugins.importexport.dnb.status.non">Nicht abgeliefert</message>
+	<message key="plugins.importexport.dnb.status.deposited">Abgeliefert</message>
+	<message key="plugins.importexport.dnb.status.legend"><![CDATA[
+		<p>Status:</p>
+		<p>
+		- Nicht abgeliefert: es wurde keine Ablieferung für diesen Artikel vorgenommen.<br />
+		- Abgeliefert: der Artikel wurde bei der DNB aus OJS heraus abgeliefert.<br />
+		- Als registriert markiert: der Artikel wurde manuell als registriert markiert.
+		</p>]]></message>
+	<message key="plugins.importexport.dnb.deposited.success">Die ausgewählten Artikel wurden abgeliefert!</message>
+
+	<message key="plugins.importexport.dnb.deposit">Abliefern</message>
+	<message key="plugins.importexport.dnb.deposit.confirm">Sie haben schon abgelieferte Artikel ausgewählt. Sind Sie sicher, dass Sie mit der Ablieferung fortfahren möchten?</message>
+	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Hinweis:</strong> Die Ablieferung kann lange dauern. Bitte wählen Sie wenige Artikel aus und haben Sie Geduld, nachdem Sie den "Abliefern"-Knopf gedrückt haben. Sie werden benachrichtigt werden, wenn der Prozess fertig ist.]]></message>
+	<message key="plugins.importexport.dnb.selectDeselectAll">Auswählen/Abwählen</message>
+
+	<message key="plugins.importexport.dnb.export.error.articleCannotBeExported">Der Artikel {$param} kann nicht exportiert werden, weil er keine PDF- oder EPUB-Fahne hat.</message>
+	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">Die Ausgabedatei {$param} ist nicht schreibbar.</message>
+	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">Das Hochladen per SFTP ist fehlgeschlagen: {$param}.</message>
+	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">für die Paketdatei {$package} des Artikels {$articleId}: {$error}</message>
+
+	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
+
+</locale>

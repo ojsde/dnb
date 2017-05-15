@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filterConfig SYSTEM "../../../../lib/pkp/dtd/filterConfig.dtd">
+
+<!--
+  * plugins/importexport/dnb/filter/filterConfig.xml
+  *
+  * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
+  * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
+  * Author: Bozana Bokan
+  * Last update: May 15, 2017
+  *
+  * Filter Configuration.
+  -->
+<filterConfig>
+	<filterGroups>
+		<!-- DNB XML galley output -->
+		<filterGroup
+			symbolic="galley=>dnb-xml"
+			displayName="plugins.importexport.dnb.displayName"
+			description="plugins.importexport.dnb.description"
+			inputType="class::classes.article.ArticleGalley"
+			outputType="xml::schema(http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd)" />
+	</filterGroups>
+	<filters>
+		<!-- DNB XML galley output -->
+		<filter
+			inGroup="galley=>dnb-xml"
+			class="plugins.importexport.dnb.filter.DNBXmlFilter"
+			isTemplate="0" />
+	</filters>
+</filterConfig>

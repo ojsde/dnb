@@ -1,0 +1,55 @@
+=============================================================
+=== OJS DNB-Export-Plug-In
+=== Version: 1
+=== Autor: Bozana Bokan <bozana.bokan@posteo.net>
+=== Letzte Änderung: 15. Mai 2017
+=============================================================
+
+Über
+-----
+Dieses Plug-In ermöglicht den Export von Artikel-Metadaten und -Volltexten (im PDF- und EPUB-Format) zwecks ihrer Pflichtablieferung an die Deutsche Nationalbibliothek (DNB)
+mittels DNB-Hotfolder-Verfahren. Das Plug-In bietet auch die Option, das Transferpaket direkt in den DNB-Hotfolder abzuliefern.
+Details über das Hotfolder-Verfahren sind hier zu finden: <http://nbn-resolving.de/urn:nbn:de:101-2016111401>
+Details über das XML-Format und die Datenanforderungen sind hier zu finden: <http://nbn-resolving.de/urn:nbn:de:101-2014071124>
+
+Lizenz
+-------
+Das Plug-In ist unter GNU General Public License v2 lizenziert. Sehen Sie die Datei LICENSE für mehr Informationen über die Lizenz.
+
+Systemanforderungen
+-------------------
+Dieses Plug-In ist kompatibel mit...
+ - OJS 3.0.2
+
+TAR-Programm wird benötigt und es muss in der Datei config.inc.php konfiguriert werden.
+
+Für die Ablieferung aus OJS heraus wird zusätzlich die CURL-Bibliothek benötigt.
+
+Installation
+------------
+Um das Plug-In zu installieren:
+ - entpacken Sie das Plug-In in Ihr Verzeichnis plugins/importexport:
+	$ tar xvzf dnb-ojs-stable-3_0_2.tar.gz
+ - wenn nötig, benennen Sie den Plug-In-Ordner in "dnb" um:
+	$ mv dnb-ojs-stable-3_0_2 dnb 
+ - aus Ihrem OJS-Verzeichnis führen Sie aus:
+	$ php tools/upgrade.php upgrade
+	(HINWEIS: Es empfiehlt sich zuerst ein Backup Ihrer Datenbank zu erstellen.)
+
+Export
+------------
+Die Plug-In-Einstellungen sind hier zu finden:
+Werkzeuge > Import/Export > DNB-Export-Plug-In > Einstellungen
+
+Die Plug-In-Export-Schnittstelle ist hier zu finden:
+Werkzeuge > Import/Export > DNB-Export-Plug-In > Artikel
+
+Hinweis
+---------
+Wenn Sie Artikel direkt aus OJS heraus abliefern möchten, müssen Sie Ihren Benutzernamen, Ihr Passwort und Ihre Unterordner-ID in die Plug-In-Einstellungen eintragen.
+Exportieren können Sie die DNB-Pakete aber auch ohne die Zugangsdaten eingetragen zu haben.
+Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Klartext, d.h. unverschlüsselt, gespeichert werden wird. 
+
+Kontakt/Support
+---------------
+Dokumentation, Fehlerauflistung und Updates können auf dieser Plug-Ins-Startseite gefunden werden <http://github.com/ojsde/dnb>.
