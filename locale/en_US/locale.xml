@@ -67,6 +67,7 @@
 	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Note:</strong> The deposit can take a long time. So please choose only a few articles each time and be patient after clicking the "Deposit" button. You'll be notified when the process is completed.]]></message>
 	<message key="plugins.importexport.dnb.selectDeselectAll">Select/Deselect</message>
 
+	<message key="plugins.importexport.dnb.articles.noArticles">There are no published articles (or none of them has PDF or EPUB galley).</message>
 	<message key="plugins.importexport.dnb.articles.notDeposited">All published articles have already been deposited (or none of them has PDF or EPUB galley).</message>
 	<message key="plugins.importexport.dnb.articles.deposited">There are no deposited articles.</message>
 	<message key="plugins.importexport.dnb.articles.markedRegistered">There are no articles marked as registered.</message>

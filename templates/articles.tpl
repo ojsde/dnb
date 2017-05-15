@@ -104,7 +104,7 @@
 				<tr>
 					<td colspan="6" class="nodata">
 						{if !$filter}
-							{translate key="plugins.importexport.common.export.noArticles"}
+							{translate key="plugins.importexport.dnb.articles.noArticles"}
 						{else}
 							{translate key="plugins.importexport.dnb.articles.$filter"}
 						{/if}
