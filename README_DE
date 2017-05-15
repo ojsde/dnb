@@ -35,7 +35,7 @@ Um das Plug-In zu installieren:
 	$ mv dnb-ojs-stable-2_4_8 dnb 
  - aus Ihrem OJS-Verzeichnis führen Sie aus:
 	$ php tools/upgrade.php upgrade
-	(HINWEIS: Es empfiehlt sich zuerst ein Backup ihrer Datenbank zu erstellen.)
+	(HINWEIS: Es empfiehlt sich zuerst ein Backup Ihrer Datenbank zu erstellen.)
 
 Export
 ------------

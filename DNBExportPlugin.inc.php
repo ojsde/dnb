@@ -558,7 +558,6 @@ class DNBExportPlugin extends ImportExportPlugin {
 				// Copy galley file.
 				$result = $this->copyGalleyFile($galley, $exportPath);
 				if (is_array($result)) return $result;
-				$galleyFileExportPath = $result;
 
 				// TAR the metadata and file.
 				// The package file name will be then <journalId>-<articleId>-<galleyId>.tar
