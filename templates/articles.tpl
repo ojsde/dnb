@@ -15,11 +15,20 @@
 {/strip}
 
 <script type="text/javascript">{literal}
-	function toggleChecked() {
+	function selectAll() {
 		var elements = document.getElementById('articlesForm').elements;
 		for (var i=0; i < elements.length; i++) {
 			if (elements[i].name == 'articleId[]') {
-				elements[i].checked = !elements[i].checked;
+				elements[i].checked = true;
+			}
+		}
+	}
+
+	function deselectAll() {
+		var elements = document.getElementById('articlesForm').elements;
+		for (var i=0; i < elements.length; i++) {
+			if (elements[i].name == 'articleId[]') {
+				elements[i].checked = false;
 			}
 		}
 	}
@@ -47,7 +56,8 @@
 <br />
 
 <div id="articles">
-	<br />
+	<div id="statusLegend">{translate key="plugins.importexport.dnb.status.legend"}</div>
+	<br /><br />
 	<ul class="menu">
 		<li><a href="{plugin_url path="articles"}"{if !$filter} class="current"{/if}>{translate key="plugins.importexport.dnb.status.all"}</a></li>
 		<li><a href="{plugin_url path="articles" filter=$smarty.const.DNB_STATUS_NOT_DEPOSITED}"{if $filter == $smarty.const.DNB_STATUS_NOT_DEPOSITED} class="current"{/if}>{translate key="plugins.importexport.dnb.status.non"}</a></li>
@@ -130,12 +140,13 @@
 			&nbsp;
 			<input type="submit" name="markRegistered" value="{translate key="plugins.importexport.dnb.markRegistered"}" title="{translate key="plugins.importexport.dnb.markRegisteredDescription"}" class="button"/>
 			&nbsp;
-			<input type="button" value="{translate key="plugins.importexport.dnb.selectDeselectAll"}" class="button" onclick="toggleChecked()" />
+			<input type="button" value="{translate key="plugins.importexport.dnb.selectAll"}" class="button" onclick="selectAll()" />
+			&nbsp;
+			<input type="button" value="{translate key="plugins.importexport.dnb.deselectAll"}" class="button" onclick="deselectAll()" />
 		</p>
 	</form>
 	{if $hasCredentials}
 		<p>{translate key="plugins.importexport.dnb.deposit.notice"}</p>
-		<p>{translate key="plugins.importexport.dnb.status.legend"}</p>
 	{/if}
 </div>
 
