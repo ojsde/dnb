@@ -13,11 +13,20 @@
 {/strip}
 
 <script type="text/javascript">{literal}
-	function toggleChecked() {
+	function articleSselectAll() {
 		var elements = document.getElementById('exportSubmissionXmlForm').elements;
 		for (var i=0; i < elements.length; i++) {
 			if (elements[i].name == 'selectedSubmissions[]') {
-				elements[i].checked = !elements[i].checked;
+				elements[i].checked = true;
+			}
+		}
+	}
+
+	function articleDeselectAll() {
+		var elements = document.getElementById('exportSubmissionXmlForm').elements;
+		for (var i=0; i < elements.length; i++) {
+			if (elements[i].name == 'selectedSubmissions[]') {
+				elements[i].checked = false;
 			}
 		}
 	}
@@ -90,6 +99,8 @@
 	</div>
 	{if $allowExport}
 		<div id="exportSubmissions-tab">
+			{translate key="plugins.importexport.dnb.status.legend"}
+			<br/>
 			<script type="text/javascript">
 				$(function() {ldelim}
 					// Attach the form handler.
@@ -119,7 +130,10 @@
 								</li>
 							{/foreach}
 							<li class="export_action">
-								<button id="selectAll" class="pkp_button selectAll" value="1" name="selectAll" type="button" onclick="toggleChecked()">{translate key="plugins.importexport.dnb.selectDeselectAll"}</button>
+								<button id="selectAll" class="pkp_button selectAll" value="1" name="selectAll" type="button" onclick="articleSselectAll()">{translate key="plugins.importexport.dnb.selectAll"}</button>
+							</li>
+							<li class="export_action">
+								<button id="deselectAll" class="pkp_button deselectAll" value="1" name="deselectAll" type="button" onclick="articleDeselectAll()">{translate key="plugins.importexport.dnb.deselectAll"}</button>
 							</li>
 						</ul>
 						{/fbvFormSection}
@@ -127,7 +141,6 @@
 				{/fbvFormArea}
 			</form>
 			{if $confirmationMessage}<p>{translate key="plugins.importexport.dnb.deposit.notice"}</p>{/if}
-			<p>{translate key="plugins.importexport.dnb.status.legend"}</p>
 		</div>
 	{/if}
 </div>

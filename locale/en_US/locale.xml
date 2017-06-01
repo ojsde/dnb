@@ -33,23 +33,23 @@
 	<message key="plugins.importexport.dnb.settings.form.username">Username</message>
 	<message key="plugins.importexport.dnb.settings.form.password.description">Please note that the password will be saved as plain text, i.e. not encrypted.</message>
 	<message key="plugins.importexport.dnb.settings.form.automaticDeposit">Deposit articles to DNB automatically</message>
-	<message key="plugins.importexport.dnb.settings.form.automaticDeposit.description">OJS will deposit articles automatically to DNB as articles are published. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the articles listing.</message>
+	<message key="plugins.importexport.dnb.settings.form.automaticDeposit.description">OJS regularly checks if there are articles not yet deposited (that is, articles that are not deposited from within OJS and not marked as registered) and automatically deposits them to the DNB Hotfolder. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the articles listing.</message>
 
 	<message key="plugins.importexport.dnb.status.non">Not deposited</message>
 	<message key="plugins.importexport.dnb.status.deposited">Deposited</message>
 	<message key="plugins.importexport.dnb.status.legend"><![CDATA[
-		<p>Status:</p>
-		<p>
-		- Not deposited: no deposit attempt has been made for this article.<br />
-		- Deposited: the article has been deposited to DNB Hotfolder from within OJS.<br />
-		- Marked registered: the article was manually marked as registered.
+		<p>An article can have one of the following status:<br/>
+		<strong>Not deposited</strong>: The article has not been delivered to the DNB yet (it was not deposited to the DNB Hotfolder from within OJS and not marked registered).<br/>
+		<strong>Deposited</strong>: The article has been deposited to the DNB Hotfolder from within OJS.<br/>
+		<strong>Marked registered</strong>: The article was manually marked as registered. You may mark articles as registered (see button "Mark Registered") to indicate that the article was delivered to the DNB outside of OJS, e.g. via the DNB web form.
 		</p>]]></message>
 	<message key="plugins.importexport.dnb.deposited.success">The selected articles were deposited!</message>
 
 	<message key="plugins.importexport.dnb.deposit">Deposit</message>
 	<message key="plugins.importexport.dnb.deposit.confirm">You have selected already deposited articles. Are you sure you want to proceed with the deposit?</message>
 	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Note:</strong> The deposit can take a long time. So please choose only a few articles each time and be patient after clicking the "Deposit" button. You'll be notified when the process is completed.]]></message>
-	<message key="plugins.importexport.dnb.selectDeselectAll">Select/Deselect</message>
+	<message key="plugins.importexport.dnb.selectAll">Select All</message>
+	<message key="plugins.importexport.dnb.deselectAll">Deselect All</message>
 
 	<message key="plugins.importexport.dnb.export.error.articleCannotBeExported">The article {$param} cannot be exported because it does not have a PDF or an EPUB galley.</message>
 	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">The output file {$param} is not writable.</message>

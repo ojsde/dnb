@@ -30,26 +30,26 @@
 	<message key="plugins.importexport.dnb.settings.form.archiveAccessRequired">Bitte definieren Sie die Zugriffsberechtigungen auf die archivierten Artikel.</message>
 	<message key="plugins.importexport.dnb.settings.form.folderId">Unterordner-ID</message>
 	<message key="plugins.importexport.dnb.settings.form.folderId.description">Das ist der Unterordner in Ihrem DNB-Hotfolder, in den die exportierten Pakete hochgeladen werden sollen.</message>
-	<message key="plugins.importexport.dnb.settings.form.username">Benutzer/innennamen</message>
+	<message key="plugins.importexport.dnb.settings.form.username">Benutzername</message>
 	<message key="plugins.importexport.dnb.settings.form.password.description">Bitte beachten Sie, dass das Passwort im Klartext, d.h. unverschlüsselt, gespeichert wird.</message>
 	<message key="plugins.importexport.dnb.settings.form.automaticDeposit">Automatische Ablieferung der Artikel zur DNB</message>
-	<message key="plugins.importexport.dnb.settings.form.automaticDeposit.description">OJS wird Artikel bei ihrer Veröffentlichung automatisch an DNB abliefern. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der Artikelauflistung überprüfen.</message>
+	<message key="plugins.importexport.dnb.settings.form.automaticDeposit.description">OJS prüft regelmäßig, ob es Artikel gibt, die noch nicht an die DNB abgeliefert wurden (d.h. Artikel, die noch nicht über OJS in den DNB Hotfolder abgeliefert und nicht als registriert markiert wurden) und liefert diese automatisch in den DNB Hotfolder ab. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der Artikelauflistung überprüfen.</message>
 
 	<message key="plugins.importexport.dnb.status.non">Nicht abgeliefert</message>
 	<message key="plugins.importexport.dnb.status.deposited">Abgeliefert</message>
 	<message key="plugins.importexport.dnb.status.legend"><![CDATA[
-		<p>Status:</p>
-		<p>
-		- Nicht abgeliefert: es wurde keine Ablieferung für diesen Artikel vorgenommen.<br />
-		- Abgeliefert: der Artikel wurde bei der DNB aus OJS heraus abgeliefert.<br />
-		- Als registriert markiert: der Artikel wurde manuell als registriert markiert.
+		<p>Ein Artikel kann einen der folgenden Status haben:<br/>
+		<strong>Nicht abgeliefert</strong>: Der Artikel wurde noch nicht bei der DNB abgeliefert (er wurde nicht über OJS in den DNB Hotfolder und auch nicht extern, z.B. über das DNB Webformular abgeliefert).<br/>
+		<strong>Abgeliefert</strong>: Der Artikel wurde über OJS in den DNB-Hotfolder abgeliefert.<br/>
+		<strong>Als registriert markiert</strong>: Der Artikel wurde manuell als registriert markiert. Sie können Artikel als registriert markieren (s. Button "Als registriert markieren"), um anzuzeigen, dass dieser Artikel außerhalb von OJS an die DNB abgeliefert wurde, z.B. über das DNB Webformular.
 		</p>]]></message>
 	<message key="plugins.importexport.dnb.deposited.success">Die ausgewählten Artikel wurden abgeliefert!</message>
 
 	<message key="plugins.importexport.dnb.deposit">Abliefern</message>
 	<message key="plugins.importexport.dnb.deposit.confirm">Sie haben schon abgelieferte Artikel ausgewählt. Sind Sie sicher, dass Sie mit der Ablieferung fortfahren möchten?</message>
 	<message key="plugins.importexport.dnb.deposit.notice"><![CDATA[<strong>Hinweis:</strong> Die Ablieferung kann lange dauern. Bitte wählen Sie wenige Artikel aus und haben Sie Geduld, nachdem Sie den "Abliefern"-Knopf gedrückt haben. Sie werden benachrichtigt werden, wenn der Prozess fertig ist.]]></message>
-	<message key="plugins.importexport.dnb.selectDeselectAll">Auswählen/Abwählen</message>
+	<message key="plugins.importexport.dnb.selectAll">Alle auswählen</message>
+	<message key="plugins.importexport.dnb.deselectAll">Alle abwählen</message>
 
 	<message key="plugins.importexport.dnb.export.error.articleCannotBeExported">Der Artikel {$param} kann nicht exportiert werden, weil er keine PDF- oder EPUB-Fahne hat.</message>
 	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">Die Ausgabedatei {$param} ist nicht schreibbar.</message>
