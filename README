@@ -28,31 +28,24 @@ For the depositing from within OJS, additionally CURL library is needed.
 
 Installation
 ------------
-To install the plugin via the OJS GUI:
+Installalion via OJS GUI:
+ - download ZIP-archive from https://github.com/ojsde/dnb (set to right branch first)
+ - unzip the archive, rename main folder to „dnb“, create archive „dnb.tar.gz“
+ - install plugin in OJS (journal management -> plugins -> „install new plugin“ -> upload dnb.tar.gz)
+ 
+Installation via command line without Git:
+ - download ZIP-archive from https://github.com/ojsde/dnb (set to right branch first)
+ - unzip the archive to plugins/importexport and rename the main plugin folder to "dnb"
+ - from your application's installation directory, run the upgrade script (it is recommended to back up your database first): 
+   php tools/upgrade.php upgrade or php tools/installPluginVersion.php (see https://github.com/pkp/pkp-lib/issues/2503)
 
-- download tar.gz file
-- install via the OJS GUI (journal management -> system plugins -> install a new plugin)
-
-To install the plugin via command line
-
-- Unpack the plugin tar.gz file to your plugins/importexport directory
-	$ tar xvzf dnb-ojs-stable-2_4_8.tar.gz
-- If necessary, rename the plugin folder into 'dnb':
-	$ mv dnb-ojs-stable-2_4_8 dnb
-- From your application's installation directory, run the upgrade script:
-	$ php tools/upgrade.php upgrade
-	(NOTE: It is recommended to back up your database first)
-	
-To install the plugin via command line and git:
-
-- cd [my_ojs_installation]/plugins/importexport
-- git clone https://github.com/cedis-epublishing/dnb.git 
-- cd dnb
-- git checkout [version]
-- cd [my_ojs_installation]
-- php tools/upgrade.php upgrade (NOTE: It is recommended to back up your database first) or 
-	php tools/installPluginVersion.php (see https://github.com/pkp/pkp-lib/issues/2503)
-
+Installation with Git:
+ - cd [my_ojs_installation]/plugins/importexport
+ - git clone https://github.com/cedis-epublishing/dnb.git 
+ - cd dnb
+ - git checkout [branch]
+ - cd [my_ojs_installation]
+ - php tools/upgrade.php upgrade or php tools/installPluginVersion.php (s. https://github.com/pkp/pkp-lib/issues/2503, it is recommended to back up your database first)
 
 Export
 ------------
