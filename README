@@ -9,8 +9,8 @@ About
 -----
 This plugin provides the export of article metadata and full texts (in PDF and EPUB format) for their tranfer to the German National Library (DNB)
 using the DNB Hotfolder method. The plugin also offers the option of directly depositing the transfer package into the DNB Hotfolder.
-Details on the Hotfolder method are available at: <http://nbn-resolving.de/urn:nbn:de:101-2016111401>
-Details on the XML format and data requirements are available at: <http://nbn-resolving.de/urn:nbn:de:101-2017011938>
+Details on the Hotfolder method are available at: http://nbn-resolving.de/urn%3Anbn%3Ade%3A101-2016111401
+Details on the XML format and data requirements are available at: <http://nbn-resolving.de/urn%3Anbn%3Ade%3A101-2017011938>
 The manual is available at: http://www.ojs-de.net/services/DNB-Export-Plugin
 
 License
