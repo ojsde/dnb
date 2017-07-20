@@ -30,9 +30,8 @@ For the depositing from within OJS, additionally CURL library is needed.
 Installation
 ------------
 Installalion via OJS GUI:
- - download ZIP-archive from https://github.com/ojsde/dnb (set to right branch first)
- - unzip the archive, rename main folder to „dnb“, create archive „dnb.tar.gz“
- - install plugin in OJS (journal management -> plugins -> „install new plugin“ -> upload dnb.tar.gz)
+ - download dnb-[version].tar.gz from https://github.com/ojsde/dnb/releases
+ - install plugin in OJS (journal management -> plugins -> „install new plugin“ -> upload dnb-[version].tar.gz)
  
 Installation via command line without Git:
  - download ZIP-archive from https://github.com/ojsde/dnb (set to right branch first)
