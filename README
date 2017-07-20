@@ -34,8 +34,8 @@ Installalion via OJS GUI:
  - install plugin in OJS (journal management -> plugins -> „install new plugin“ -> upload dnb-[version].tar.gz)
  
 Installation via command line without Git:
- - download ZIP-archive from https://github.com/ojsde/dnb (set to right branch first)
- - unzip the archive to plugins/importexport and rename the main plugin folder to "dnb"
+ - download archive from https://github.com/ojsde/dnb 
+ - unzip the archive to plugins/importexport and rename the main plugin folder to "dnb" if necessary
  - from your application's installation directory, run the upgrade script (it is recommended to back up your database first): 
    php tools/upgrade.php upgrade or php tools/installPluginVersion.php (see https://github.com/pkp/pkp-lib/issues/2503)
 
