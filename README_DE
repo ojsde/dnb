@@ -31,14 +31,13 @@ Installation
 ------------
 
 Installation über die OJS-Benutzeroberfläche:
- - Download  des ZIP-Archivs in der gewünschten Version („Branch“) von https://github.com/ojsde/dnb 
- - Entpacken des ZIP-Archivs, Umbenennen des Hauptverzeichnisses in „dnb“, Erstellen eines Archivs „dnb.tar.gz“
- - Installation des Plugins im Managementbereich von OJS (Verwaltung -> Plug-Ins -> „Ein neues Plug-In installieren“ -> dnb.tar.gz hochladen)
+ - Download  des tar.gz-Archivs (dnb-[Version].tar.gz)von https://github.com/ojsde/dnb 
+ - Installation des Plugins im Managementbereich von OJS (Verwaltung -> Plug-Ins -> „Ein neues Plug-In installieren“ -> dnb-[Version].tar.gz hochladen)
 
 Installation über die Kommandozeile ohne Git:
- - Download des ZIP-Archivs in der gewünschten Version („Branch“) von https://github.com/ojsde/dnb 
+ - Download des Archivs in der gewünschten Version von https://github.com/ojsde/dnb 
  - Entpacken des Plugins in das Verzeichnis plugins/importexport
- - Umbenennen des Hauptverzeichnisses in "dnb"
+ - ggf. Umbenennen des Hauptverzeichnisses in "dnb"
  - Aktualisierung der Datenbank (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen),
    führen Sie dazu aus Ihrem OJS-Verzeichnis aus: php tools/upgrade.php upgrade oder
    php tools/installPluginVersion.php (see https://github.com/pkp/pkp-lib/issues/2503)
