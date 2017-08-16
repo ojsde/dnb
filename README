@@ -41,7 +41,7 @@ Installation via command line without Git:
 
 Installation with Git:
  - cd [my_ojs_installation]/plugins/importexport
- - git clone https://github.com/cedis-epublishing/dnb.git 
+ - git clone https://github.com/ojsde/dnb 
  - cd dnb
  - git checkout [branch]
  - cd [my_ojs_installation]
