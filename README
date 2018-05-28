@@ -2,7 +2,7 @@
 === OJS DNB Export Plugin
 === Version: 1
 === Author: Bozana Bokan <bozana.bokan@posteo.net>
-=== Last update: May 15, 2017
+=== Last update: May 28, 2018
 =============================================================
 
 About
@@ -19,7 +19,7 @@ This plugin is licensed under the GNU General Public License v2. See the file LI
 System Requirements
 -------------------
 This plugin is compatible with...
- - OJS 3.0.2
+ - OJS 3.1.1
  
 TAR executable is required and it has to be configured in config.inc.php.
 
@@ -27,14 +27,23 @@ For the depositing from within OJS, additionally CURL library is needed.
 
 Installation
 ------------
-To install the plugin:
- - Unpack the plugin tar.gz file to your plugins/importexport directory
-	$ tar xvzf dnb-ojs-stable-3_0_2.tar.gz
- - If necessary, rename the plugin folder into 'dnb':
-	$ mv dnb-ojs-stable-3_0_2 dnb
- - From your application's installation directory, run the upgrade script:
-	$ php tools/upgrade.php upgrade
-	(NOTE: It is recommended to back up your database first.)
+Installalion via OJS GUI:
+ - download dnb-[version].tar.gz from https://github.com/ojsde/dnb/releases
+ - install plugin in OJS (Settings -> Website -> plugins -> „Upload a New Plugin“ -> upload dnb-[version].tar.gz)
+
+Installation via command line without Git:
+ - download archive from https://github.com/ojsde/dnb
+ - unzip the archive to plugins/importexport and rename the main plugin folder to "dnb" if necessary
+ - from your application's installation directory, run the upgrade script (it is recommended to back up your database first):
+   php tools/upgrade.php upgrade or php tools/installPluginVersion.php (see https://github.com/pkp/pkp-lib/issues/2503)
+
+Installation with Git:
+ - cd [my_ojs_installation]/plugins/importexport
+ - git clone https://github.com/ojsde/dnb
+ - cd dnb
+ - git checkout [branch]
+ - cd [my_ojs_installation]
+ - php tools/upgrade.php upgrade or php tools/installPluginVersion.php (s. https://github.com/pkp/pkp-lib/issues/2503, it is recommended to back up your database first)
 
 Export
 ------------

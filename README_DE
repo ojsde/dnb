@@ -19,7 +19,7 @@ Das Plug-In ist unter GNU General Public License v2 lizenziert. Sehen Sie die Da
 Systemanforderungen
 -------------------
 Dieses Plug-In ist kompatibel mit...
- - OJS 3.0.2
+ - OJS 3.1.1
 
 TAR-Programm wird benötigt und es muss in der Datei config.inc.php konfiguriert werden.
 
@@ -27,14 +27,25 @@ Für die Ablieferung aus OJS heraus wird zusätzlich die CURL-Bibliothek benöti
 
 Installation
 ------------
-Um das Plug-In zu installieren:
- - entpacken Sie das Plug-In in Ihr Verzeichnis plugins/importexport:
-	$ tar xvzf dnb-ojs-stable-3_0_2.tar.gz
- - wenn nötig, benennen Sie den Plug-In-Ordner in "dnb" um:
-	$ mv dnb-ojs-stable-3_0_2 dnb 
- - aus Ihrem OJS-Verzeichnis führen Sie aus:
-	$ php tools/upgrade.php upgrade
-	(HINWEIS: Es empfiehlt sich zuerst ein Backup Ihrer Datenbank zu erstellen.)
+Installation über die OJS-Benutzeroberfläche:
+ - Download  des tar.gz-Archivs (dnb-[Version].tar.gz)von https://github.com/ojsde/dnb 
+ - Installation des Plugins im Managementbereich von OJS (Einstellungen -> Website -> Plugins -> „Ein neues Plugin hochladen“ -> dnb-[Version].tar.gz hochladen)
+
+Installation über die Kommandozeile ohne Git:
+ - Download des Archivs in der gewünschten Version von https://github.com/ojsde/dnb
+ - Entpacken des Plugins in das Verzeichnis plugins/importexport
+ - ggf. Umbenennen des Hauptverzeichnisses in "dnb"
+ - Aktualisierung der Datenbank (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen),
+   führen Sie dazu aus Ihrem OJS-Verzeichnis aus: php tools/upgrade.php upgrade oder
+   php tools/installPluginVersion.php (see https://github.com/pkp/pkp-lib/issues/2503)
+
+Installation über die Kommandozeile mit Git:
+ - cd [my_ojs_installation]/plugins/importexport
+ - git clone https://github.com/ojsde/dnb
+ - cd dnb
+ - git checkout [branch]
+ - cd [my_ojs_installation]
+ - php tools/upgrade.php upgrade (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen) oder php tools/installPluginVersion.php (s. https://github.com/pkp/pkp-lib/issues/2503)
 
 Export
 ------------
