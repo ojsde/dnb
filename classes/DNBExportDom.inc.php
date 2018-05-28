@@ -72,7 +72,6 @@ class DNBExportDom {
 		$datePublished = $article->getDatePublished();
 		if (!$datePublished) $datePublished = $issue->getDatePublished();
 		assert(!empty($datePublished));
-		$datePublishedShort = date('Y-m-d', strtotime($datePublished));
 		$yearYYYY = date('Y', strtotime($datePublished));
 		$yearYY = date('y', strtotime($datePublished));
 		$month = date('m', strtotime($datePublished));
@@ -103,10 +102,12 @@ class DNBExportDom {
 		// leader
 		XMLCustomWriter::createChildWithText($doc, $recordNode, 'leader', '00000naa a22      u 4500', false);
 
-		// control fields: 007 and 008
-		$controlfield007Node = XMLCustomWriter::createChildWithText($doc, $recordNode, 'controlfield', 'cr|||||');
+		// control fields: 001, 007 and 008
+		$controlfield001Node = XMLCustomWriter::createChildWithText($doc, $recordNode, 'controlfield', $galley->getId());
+		XMLCustomWriter::setAttribute($controlfield001Node, 'tag', '001');
+		$controlfield007Node = XMLCustomWriter::createChildWithText($doc, $recordNode, 'controlfield', ' cr |||||||||||');
 		XMLCustomWriter::setAttribute($controlfield007Node, 'tag', '007');
-		$controlfield008Node = XMLCustomWriter::createChildWithText($doc, $recordNode, 'controlfield', $yearYY.$month.$day.'s'.$yearYYYY.'||||'.$language);
+		$controlfield008Node = XMLCustomWriter::createChildWithText($doc, $recordNode, 'controlfield', $yearYY.$month.$day.'s'.$yearYYYY.'||||xx#|||| ||||| ||||| '.$language.'||');
 		XMLCustomWriter::setAttribute($controlfield008Node, 'tag', '008');
 
 		// data fields:
@@ -147,7 +148,7 @@ class DNBExportDom {
 		$this->createSubfieldNode($doc, $datafield245, 'a', $title);
 		// date published
 		$datafield264 = $this->createDatafieldNode($doc, $recordNode, '264', ' ', ' ');
-		$this->createSubfieldNode($doc, $datafield264, 'c', $datePublishedShort);
+		$this->createSubfieldNode($doc, $datafield264, 'c', $yearYYYY);
 		// article level URN and DOI (only if galley level URN and DOI do not exist)
 		if (empty($urn) && empty($doi)) {
 			$articleURN = $article->getPubId('other::urnDNB');
@@ -159,18 +160,6 @@ class DNBExportDom {
 				if (!empty($articleDoi)) $this->createSubfieldNode($doc, $doiDatafield500, 'a', 'DOI: ' . $articleDoi);
 			}
 		}
-		// copyright notice
-		$copyrightNotice = $journal->getSetting('copyrightNotice', $galley->getLocale());
-		if (empty($copyrightNotice)) $copyrightNotice = $journal->getSetting('copyrightNotice', $journal->getPrimaryLocale());
-		if (!empty($copyrightNotice)) {
-			$copyrightNotice = String::html2text($copyrightNotice);
-			if (strlen($copyrightNotice) > 999)  {
-				$copyrightNotice = substr($copyrightNotice, 0, 996);
-				$copyrightNotice .= '...';
-			}
-			$datafield506 = $this->createDatafieldNode($doc, $recordNode, '506', ' ', ' ');
-			$this->createSubfieldNode($doc, $datafield506, 'a', $copyrightNotice);
-		}
 		// abstract
 		$abstract = $article->getAbstract($galley->getLocale());
 		if (empty($abstract)) $abstract = $article->getAbstract($article->getLocale());
@@ -180,18 +169,22 @@ class DNBExportDom {
 				$abstract = substr($abstract, 0, 996);
 				$abstract .= '...';
 			}
+			$abstractURL = $request->url(null, 'article', 'view', array($article->getId()));
 			$datafield520 = $this->createDatafieldNode($doc, $recordNode, '520', '3', ' ');
 			$this->createSubfieldNode($doc, $datafield520, 'a', $abstract);
+			$this->createSubfieldNode($doc, $datafield520, 'u', $abstractURL);
 		}
 		// license URL
 		$licenseURL = $article->getLicenseURL();
 		if (empty($licenseURL)) {
 			$licenseURL = $journal->getSetting('licenseURL');
 		}
-		if (!empty($licenseURL)) {
-			$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
-			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
+		if (empty($licenseURL)) {
+			// link to the journal about page where the copyright notice can be found
+			$licenseURL = $request->url(null, 'about');
 		}
+		$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
+		$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
 		// keywords
 		$subjects = array();
 		$keywords = $article->getSubject($galley->getLocale());
@@ -209,16 +202,15 @@ class DNBExportDom {
 			$this->createSubfieldNode($doc, $datafield700, '4', 'aut');
 		}
 		// issue data
+		// at least the year has to be provided
 		$volume = $issue->getVolume();
 		$number = $issue->getNumber();
-		// at least the year has to be provided
-		$issueYear = $issue->getYear();
-		if (empty($issueYear)) $issueYear = $yearYYYY;
-		assert($issueYear);
 		$issueDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', ' ');
 		if (!empty($volume)) $this->createSubfieldNode($doc, $issueDatafield773, 'g', 'volume:'.$volume);
 		if (!empty($number)) $this->createSubfieldNode($doc, $issueDatafield773, 'g', 'number:'.$number);
-		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'year:'.$issueYear);
+		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'day:'.$day);
+		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'month:'.$month);
+		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'year:'.$yearYYYY);
 		$this->createSubfieldNode($doc, $issueDatafield773, '7', 'nnas');
 		// journal data
 		// there have to be an ISSN
