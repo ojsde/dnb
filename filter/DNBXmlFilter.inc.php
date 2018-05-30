@@ -202,9 +202,6 @@ class DNBXmlFilter extends NativeExportFilter {
 		// license URL
 		$licenseURL = $article->getLicenseURL();
 		if (empty($licenseURL)) {
-			$licenseURL = $journal->getSetting('licenseURL');
-		}
-		if (empty($licenseURL)) {
 			// copyright notice
 			$copyrightNotice = $journal->getSetting('copyrightNotice', $galley->getLocale());
 			if (empty($copyrightNotice)) $copyrightNotice = $journal->getSetting('copyrightNotice', $journal->getPrimaryLocale());
