@@ -100,7 +100,7 @@ class DNBExportDom {
 		assert($openAccess || $archiveAccess);
 
 		// leader
-		XMLCustomWriter::createChildWithText($doc, $recordNode, 'leader', '00000naa a22      u 4500', false);
+		XMLCustomWriter::createChildWithText($doc, $recordNode, 'leader', '00000naa a2200000 u 4500', false);
 
 		// control fields: 001, 007 and 008
 		$controlfield001Node = XMLCustomWriter::createChildWithText($doc, $recordNode, 'controlfield', $galley->getId());
@@ -180,11 +180,18 @@ class DNBExportDom {
 			$licenseURL = $journal->getSetting('licenseURL');
 		}
 		if (empty($licenseURL)) {
-			// link to the journal about page where the copyright notice can be found
-			$licenseURL = $request->url(null, 'about');
+			// copyright notice
+			$copyrightNotice = $journal->getSetting('copyrightNotice', $galley->getLocale());
+			if (empty($copyrightNotice)) $copyrightNotice = $journal->getSetting('copyrightNotice', $journal->getPrimaryLocale());
+			if (!empty($copyrightNotice)) {
+				// link to the journal about page where the copyright notice can be found
+				$licenseURL = $request->url(null, 'about');
+			}
 		}
-		$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
-		$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
+		if (!empty($licenseURL)) {
+			$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
+			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
+		}
 		// keywords
 		$subjects = array();
 		$keywords = $article->getSubject($galley->getLocale());
