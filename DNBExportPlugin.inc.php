@@ -263,7 +263,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						}
 					}
 				}
-				if ($fullyDeposited) {
+				if ($fullyDeposited && $request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
 					// Update article status
 					$articleDao->updateSetting($articleId, $this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED, 'string');
 				}

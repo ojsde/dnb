@@ -107,6 +107,7 @@ class DNBXmlFilter extends NativeExportFilter {
 				}
 			}
 		}
+		$archiveAccess = $plugin->getSetting($journal->getId(), 'archiveAccess');
 		assert($openAccess || $archiveAccess);
 
 		// Create the root node
@@ -118,7 +119,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$rootNode->appendChild($recordNode);
 
 		// leader
-		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'leader', '00000naa a22      u 4500'));
+		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'leader', '00000naa a2200000 u 4500'));
 
 		// control fields: 001, 007 and 008
 		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', $galley->getId()));
@@ -204,11 +205,18 @@ class DNBXmlFilter extends NativeExportFilter {
 			$licenseURL = $journal->getSetting('licenseURL');
 		}
 		if (empty($licenseURL)) {
-			// link to the article view page where the copyright notice can be found
-			$licenseURL = $request->url(null, 'article', 'view', array($article->getId()));
+			// copyright notice
+			$copyrightNotice = $journal->getSetting('copyrightNotice', $galley->getLocale());
+			if (empty($copyrightNotice)) $copyrightNotice = $journal->getSetting('copyrightNotice', $journal->getPrimaryLocale());
+			if (!empty($copyrightNotice)) {
+				// link to the article view page where the copyright notice can be found
+				$licenseURL = $request->url(null, 'article', 'view', array($article->getId()));
+			}
 		}
-		$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
-		$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
+		if (!empty($licenseURL)) {
+			$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
+			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
+		}
 		// keywords
 		$supportedLocales = array_keys(AppLocale::getSupportedFormLocales());
 		$submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
