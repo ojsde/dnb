@@ -147,7 +147,7 @@ class DNBExportDom {
 		$datafield245 = $this->createDatafieldNode($doc, $recordNode, '245', '0', '0');
 		$this->createSubfieldNode($doc, $datafield245, 'a', $title);
 		// date published
-		$datafield264 = $this->createDatafieldNode($doc, $recordNode, '264', ' ', ' ');
+		$datafield264 = $this->createDatafieldNode($doc, $recordNode, '264', ' ', '1');
 		$this->createSubfieldNode($doc, $datafield264, 'c', $yearYYYY);
 		// article level URN and DOI (only if galley level URN and DOI do not exist)
 		if (empty($urn) && empty($doi)) {
