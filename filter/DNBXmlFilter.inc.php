@@ -15,7 +15,7 @@
  */
 
 import('lib.pkp.plugins.importexport.native.filter.NativeExportFilter');
-
+define('XML_NON_VALID_CHARCTERS', 100);
 
 class DNBXmlFilter extends NativeExportFilter {
 	/**
@@ -144,6 +144,13 @@ class DNBXmlFilter extends NativeExportFilter {
 			$doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
 			$this->createSubfieldNode($doc, $doiDatafield024, 'a', $doi);
 			$this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
+		} else {
+		    $articleDoi = $article->getStoredPubId('doi');
+		    if (!empty($articleDoi)) {
+		        $doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
+		        $this->createSubfieldNode($doc, $doiDatafield024, 'a', $doi);
+		        $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
+		    }
 		}
 		// language
 		$datafield041 = $this->createDatafieldNode($doc, $recordNode, '041', ' ', ' ');
@@ -174,15 +181,13 @@ class DNBXmlFilter extends NativeExportFilter {
 		// date published
 		$datafield264 = $this->createDatafieldNode($doc, $recordNode, '264', ' ', '1');
 		$this->createSubfieldNode($doc, $datafield264, 'c', $yearYYYY);
-		// article level URN and DOI (only if galley level URN and DOI do not exist)
-		if (empty($urn) && empty($doi)) {
+		// article level URN (only if galley level URN does not exist)
+		if (empty($urn)) {
 			$articleURN = $article->getStoredPubId('other::urnDNB');
 			if (empty($articleURN)) $articleURN = $article->getStoredPubId('other::urn');
-			$articleDoi = $article->getStoredPubId('doi');
-			if (!empty($articleURN) || !empty($articleDoi)) {
-				$doiDatafield500 = $this->createDatafieldNode($doc, $recordNode, '500', ' ', ' ');
-				if (!empty($articleURN)) $this->createSubfieldNode($doc, $doiDatafield500, 'a', 'URN: ' . $articleURN);
-				if (!empty($articleDoi)) $this->createSubfieldNode($doc, $doiDatafield500, 'a', 'DOI: ' . $articleDoi);
+			if (!empty($articleURN)) {
+				$urnDatafield500 = $this->createDatafieldNode($doc, $recordNode, '500', ' ', ' ');
+				if (!empty($articleURN)) $this->createSubfieldNode($doc, $urnDatafield500, 'a', 'URN: ' . $articleURN);
 			}
 		}
 		// abstract
@@ -253,10 +258,16 @@ class DNBXmlFilter extends NativeExportFilter {
 		$datafield856 = $this->createDatafieldNode($doc, $recordNode, '856', '4', ' ');
 		$this->createSubfieldNode($doc, $datafield856, 'u', $galleyURL);
 		$this->createSubfieldNode($doc, $datafield856, 'q', $this->_getGalleyFileType($galley));
-		$fileSize = $galleyFile->getFileSize();
+		if (isset($galleyFile)) {
+		    # galley is a local file
+		    $fileSize = $galleyFile->getFileSize();
+		} else {
+		    # galley is a remote URL and we stored the filesize before
+		    $fileSize = $galley->getData('fileSize');
+		}
 		if ($fileSize > 0) $this->createSubfieldNode($doc, $datafield856, 's', $this->_getFileSize($fileSize));
 		if ($openAccess) $this->createSubfieldNode($doc, $datafield856, 'z', 'Open Access');
-
+		
 		return $doc;
 	}
 
@@ -301,7 +312,17 @@ class DNBXmlFilter extends NativeExportFilter {
 	 */
 	function createSubfieldNode($doc, $datafieldNode, $code, $value) {
 		$deployment = $this->getDeployment();
-		$datafieldNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'subfield', $value));
+		$node = $doc->createElementNS($deployment->getNamespace(), 'subfield');
+		//check for characters not allowed according to XML 1.0 specification (https://www.w3.org/TR/2006/REC-xml-20060816/Overview.html#NT-Char)
+		$matches = array();
+		if (preg_match_all('/[^\x09\x0A\x0D\x20-\xFF]/u', $value, $matches) != 0) {
+		    // libxml will strip input at the first occurance of an non-allowed character, subsequent character will be lost
+		    // we don't remove these characters automatically because user has to be aware of the issue
+		    throw new ErrorException($datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS);
+		}
+		
+		$node->appendChild($doc->createTextNode($value));
+		$datafieldNode->appendChild($node);
 		$node->setAttribute('code', $code);
 	}
 

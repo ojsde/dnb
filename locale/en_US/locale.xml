@@ -21,9 +21,10 @@
 	<message key="plugins.importexport.dnb.registrationIntro">In order to deposit the articles directly from within OJS, you will need to enter your DNB Hotfolder username, password and subfolder. If you do not enter these credentials, you can still export the DNB packages.</message>
 	<message key="plugins.importexport.dnb.noISSN"><![CDATA[ISSN (s. <a href="{$journalSettingsUrl}" target="_blank">Journal Settings Page</a>) is required for export and deposit.]]></message>
 	<message key="plugins.importexport.dnb.noTAR">TAR command (s. cli part in the config.inc.php) is required for export and deposit.</message>
+	<message key="plugins.importexport.dnb.noExportFilter">No export filter registered! Did you run the install script?</message>
 
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess">Please define the access to the articles in the DNB archive:</message>
-	<message key="plugins.importexport.dnb.settings.form.archiveAccess.description">For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.description">For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed journals and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles.</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.a">Restricted access (access only on specially configured computers in the DNB reading rooms).</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.b">Unrestricted access for all.</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.d">Access only for users registered with the DNB, also from outside the DNB.</message>
@@ -51,10 +52,15 @@
 	<message key="plugins.importexport.dnb.selectAll">Select All</message>
 	<message key="plugins.importexport.dnb.deselectAll">Deselect All</message>
 
-	<message key="plugins.importexport.dnb.export.error.articleCannotBeExported">The article {$param} cannot be exported because it does not have a PDF or an EPUB galley.</message>
+	<message key="plugins.importexport.dnb.export.error.articleCannotBeExported">The article {$param} cannot be exported because it does not have a local PDF or an EPUB galley.</message>
+	<message key="plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters">Error writing XML file for the article with submission ID {$param} No articles exported!</message>
+	<message key="plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param">{$submissionId}. Datafield "node {$node}" contains characters not allowed in XML 1.0 specification. </message>
 	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">The output file {$param} is not writable.</message>
 	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">The SFTP upload failed for the {$param}</message>
 	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">package file {$package} of the article {$articleId}: {$error}</message>
+	<message key="plugins.importexport.dnb.export.error.curlError">An error occured executing curl: {$param}. Export canceld!</message>
+	<message key="plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid">Remote server reported invalid content type: {$param}. No articles exported!</message>
+	<message key="plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid">Mime type of remote galley file with ID {$param} not valid. No articles exported!</message>
 
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 

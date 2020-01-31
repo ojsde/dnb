@@ -52,6 +52,7 @@
 
 {if !empty($configurationErrors) || 
 	!$checkTar || 
+	!$checkFilter ||
 	!$checkSettings || 
 	(!$currentContext->getSetting('onlineIssn') && !$currentContext->getSetting('printIssn'))}
 	{assign var="allowExport" value=false}
@@ -82,19 +83,22 @@
 				{/foreach}
 		{/if}
 		{if !$currentContext->getSetting('onlineIssn') && !$currentContext->getSetting('printIssn')}
-			{url|assign:journalSettingsUrl router=$smarty.const.ROUTE_PAGE page="management" op="settings" path="context" escape=false}
+			{capture assign="journalSettingsUrl"}{url  router=$smarty.const.ROUTE_PAGE page="management" op="settings" path="context" escape=false}{/capture}
 			{capture assign=missingIssnMessage}{translate key="plugins.importexport.dnb.noISSN" journalSettingsUrl=$journalSettingsUrl}{/capture}
 			{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents=$missingIssnMessage}
 		{/if}
 		{if !$checkTar}
 			{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.noTAR"|translate}
 		{/if}
+		{if !$checkFilter}
+			{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.noExportFilter"|translate}
+		{/if}
 		{if !$checkSettings}
 			{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.archiveAccess.required"|translate}
 		{/if}
 		</div>
-
-		{url|assign:dnbSettingsGridUrl router=$smarty.const.ROUTE_COMPONENT component="grid.settings.plugins.settingsPluginGridHandler" op="manage" plugin="DNBExportPlugin" category="importexport" verb="index" escape=false}
+		{capture assign="dnbSettingsGridUrl"}{url router=$smarty.const.ROUTE_COMPONENT component="grid.settings.plugins.settingsPluginGridHandler" op="manage" plugin="DNBExportPlugin" category="importexport" verb="index" escape=false}{/capture}
+		
 		{load_url_in_div id="dnbSettingsGridContainer" url=$dnbSettingsGridUrl}
 	</div>
 	{if $allowExport}
@@ -111,11 +115,14 @@
 				{csrf}
 				<input type="hidden" name="tab" value="exportSubmissions-tab" />
 				{fbvFormArea id="submissionsXmlForm"}
-					{url|assign:submissionsListGridUrl router=$smarty.const.ROUTE_COMPONENT component="grid.submissions.ExportPublishedSubmissionsListGridHandler" op="fetchGrid" plugin="dnb" category="importexport" escape=false}
+					{capture assign="submissionsListGridUrl"}{url router=$smarty.const.ROUTE_COMPONENT component="grid.submissions.ExportPublishedSubmissionsListGridHandler" op="fetchGrid" plugin="dnb" category="importexport" escape=false}{/capture}
 					{load_url_in_div id="submissionsListGridContainer" url=$submissionsListGridUrl}
+					{**
+					* This checkbox set the PKP NativeExportFilter.inc.php $_noValidation variable which is currently not evaluated in the Plugin
 					{fbvFormSection list="true"}
 						{fbvElement type="checkbox" id="validation" label="plugins.importexport.common.validation" checked=$validation|default:true}
 					{/fbvFormSection}
+					*}
 					{if !empty($actionNames)}
 						{fbvFormSection}
 						<ul class="export_actions">

@@ -41,5 +41,4 @@
 		{/fbvFormSection}
 	{/fbvFormArea}
 	{fbvFormButtons submitText="common.save"}
-	<p><span class="formRequired">{translate key="common.requiredField"}</span></p>
 </form>

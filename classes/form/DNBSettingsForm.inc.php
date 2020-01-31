@@ -56,9 +56,7 @@ class DNBSettingsForm extends Form {
 	function __construct($plugin, $contextId) {
 		$this->_contextId = $contextId;
 		$this->_plugin = $plugin;
-
-		parent::__construct($plugin->getTemplatePath() . 'settingsForm.tpl');
-
+		parent::__construct(method_exists($plugin, 'getTemplateResource') ? $plugin->getTemplateResource('settingsForm.tpl') : $plugin->getTemplatePath() . 'settingsForm.tpl');
 		// Add form validation checks.
 		$this->addCheck(new FormValidatorCustom($this, 'archiveAccess', 'required', 'plugins.importexport.dnb.settings.form.archiveAccessRequired', create_function('$archiveAccess,$oa', 'if (!$oa && empty($archiveAccess)) { return false; } return true;'), array($this->isOAJournal())));
 		$this->addCheck(new FormValidatorPost($this));
