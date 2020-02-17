@@ -173,7 +173,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename));
 		curl_setopt($curlCh, CURLOPT_INFILE, $fh);
 
-		$response = curl_exec($curlCh);
 		$curlError = curl_error($curlCh);
 		if ($curlError) {
 			// error occured
@@ -354,10 +353,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		  // Export the galley metadata XML.
 		  $metadataXML = $this->exportXML($galley, $filter, $journal, $noValidation);
 		} catch (ErrorException $e) {
-		  // we don't remove these automatically because user has to be aware of the issue
-		    if ($e->getCode() == XML_NON_VALID_CHARCTERS) {
-		       $param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $galley->getSubmissionId(), 'node' => $e->getMessage()));		       
-		       return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
+            // we don't remove these automatically because user has to be aware of the issue
+		    switch ($e->getCode()) {
+		        case XML_NON_VALID_CHARCTERS:
+                    $param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $galley->getSubmissionId(), 'node' => $e->getMessage()));		       
+                    return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
+		        case URN_SET:
+		            return array('plugins.importexport.dnb.export.error.urnSet');
 		    }
 		}
 
@@ -475,11 +477,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 *  errors if something went wrong.
 	 */
 	
-	// RS: This function definition cause a 
-	// PHP Warning:  Declaration of DNBExportPlugin::getExportPath($journalId, $currentExportPath, $exportContentDir) 
-	// should be compatible with ImportExportPlugin::getExportPath() in /data/ojs/ojs-rs-312/plugins/importexport/dnb/DNBExportPlugin.inc.php on line 676
-	// changing to getExportPath() will remove the warning but functionaltily of plugin cannot be verified at this stage
-	function getExportPath($journalId, $currentExportPath = null, $exportContentDir = null) {
+	function getExportPath($journalId = null, $currentExportPath = null, $exportContentDir = null) {
 		if (!$currentExportPath) {
 			$exportPath = Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix() . '/' . $journalId . '-' . date('Ymd-His');
 		} else {

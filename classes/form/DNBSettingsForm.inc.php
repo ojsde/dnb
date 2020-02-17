@@ -88,13 +88,12 @@ class DNBSettingsForm extends Form {
 	/**
 	 * @copydoc Form::execute()
 	 */
-	function execute($object = null) {
+	function execute(...$functionArgs) {
 		$plugin = $this->_getPlugin();
 		foreach($this->getFormFields() as $settingName => $settingType) {
 			// do not save the access option for OA journals -- it is always 'b'
 			// but also to be able to check the missing option for closed journals
 			if ($this->isOAJournal() && $settingName == 'archiveAccess') continue;
-			error_log("RS_DEBUG: ".print_r($settingName, TRUE));
 			$plugin->updateSetting($this->_getContextId(), $settingName, $this->getData($settingName), $settingType);
 		}
 	}
@@ -102,7 +101,7 @@ class DNBSettingsForm extends Form {
 	/**
 	 * @copydoc Form::fetch()
 	 */
-	function fetch($request = null, $template = null) {
+	function fetch($request = null, $template = null, $display = false) {
 		$templateMgr = TemplateManager::getManager($request);
 		$templateMgr->assign('oa', $this->isOAJournal());
 		return parent::fetch($request, $template);

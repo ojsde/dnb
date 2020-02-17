@@ -24,7 +24,7 @@
 	<message key="plugins.importexport.dnb.noExportFilter">Exportfilter nicht registriert! Haben Sie das Installationsskript ausgeführt?</message>
 
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess">Bitte definieren Sie den Zugriff auf die Artikel im DNB-Archiv:</message>
-	<message key="plugins.importexport.dnb.settings.form.archiveAccess.description">Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch uneingeschränkt für alle (zweite Option). Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.description">Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch uneingeschränkt für alle (zweite Option). Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen. Bitte beachten Sie, dass auf Ausgaben oder Artikelebene vergebene Zugriffsrechte vorgang von den hier gesetzten Zugriffrechten haben.</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.a">Beschränkter Zugriff, d.h. nur an speziellen Rechnern in den Lesesälen der DNB.</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.b">Uneingeschränkter Zugriff für alle.</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.d">Zugriff für registrierte Nutzer/innen auch von außerhalb der DNB.</message>
@@ -61,7 +61,7 @@
 	<message key="plugins.importexport.dnb.export.error.curlError">Bei der Ausführung von curl ist ein Fehler aufgetreten: {$param}. Export abgebrochen!</message>
 	<message key="plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid">Der entfernte Server meldet den nicht akzeptierten Inhaltstyp: {$param}. Export aller Artikel abgebrochen!</message>	
 	<message key="plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid">Mime type der Galley mit der ID {$param} nicht akzeptiert. Export abgebrochen!</message>
-	
+	<message key="plugins.importexport.dnb.export.error.urnSet">Diese Version des DNB Export Plugins is nicht für den Export von Objekten geeignet die URNs enthalten.</message>	
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 
 </locale>

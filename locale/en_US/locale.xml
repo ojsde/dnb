@@ -24,7 +24,7 @@
 	<message key="plugins.importexport.dnb.noExportFilter">No export filter registered! Did you run the install script?</message>
 
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess">Please define the access to the articles in the DNB archive:</message>
-	<message key="plugins.importexport.dnb.settings.form.archiveAccess.description">For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed journals and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles.</message>
+	<message key="plugins.importexport.dnb.settings.form.archiveAccess.description">For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed journals and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles. Please note that setting access options at the issue or article level will have precedence over the setting selected here.</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.a">Restricted access (access only on specially configured computers in the DNB reading rooms).</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.b">Unrestricted access for all.</message>
 	<message key="plugins.importexport.dnb.settings.form.archiveAccess.d">Access only for users registered with the DNB, also from outside the DNB.</message>
@@ -61,6 +61,7 @@
 	<message key="plugins.importexport.dnb.export.error.curlError">An error occured executing curl: {$param}. Export canceld!</message>
 	<message key="plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid">Remote server reported invalid content type: {$param}. No articles exported!</message>
 	<message key="plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid">Mime type of remote galley file with ID {$param} not valid. No articles exported!</message>
+	<message key="plugins.importexport.dnb.export.error.urnSet">This version of the DNB Export Plugin is not suited for export of objects containing URNs.</message>
 
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 

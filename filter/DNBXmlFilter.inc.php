@@ -16,6 +16,7 @@
 
 import('lib.pkp.plugins.importexport.native.filter.NativeExportFilter');
 define('XML_NON_VALID_CHARCTERS', 100);
+define('URN_SET', 101);
 
 class DNBXmlFilter extends NativeExportFilter {
 	/**
@@ -77,6 +78,13 @@ class DNBXmlFilter extends NativeExportFilter {
 			if ($issue) $cache->add($issue, null);
 		}
 
+		// abort export in case any URN is set, this is a special case that has to be discussed with DNB and implmented differently in each case
+		$articleURN = $article->getStoredPubId('other::urnDNB');
+		if (empty($articleURN)) $articleURN = $article->getStoredPubId('other::urn');
+		if (!empty($articleURN)) {
+		    throw new ErrorException(MESSAGE_URN_SET, URN_SET);
+		};
+		
 		// Data we will need later
 		$language = AppLocale::get3LetterIsoFromLocale($galley->getLocale());
 		$datePublished = $article->getDatePublished();
@@ -88,7 +96,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$day = date('d', strtotime($datePublished));
 		$contributors = $article->getAuthors();
 
-		// extract submission authors only
+		// extract submission authors
 		$authors = array_filter($contributors, array($this, '_filterAuthors'));
 		if (is_array($authors) && !empty($authors)) {
 			// get and remove first author from the array
@@ -97,11 +105,11 @@ class DNBXmlFilter extends NativeExportFilter {
 		}
 		assert($firstAuthor);
 
+		// extract submission translators
+		$translators = array_filter($contributors, array($this, '_filterTranslators'));
+		
 		// is open access
 		$openAccess = false;
-
-		error_log("RS_DEBUG: ".print_r($journal->getSetting('publishingMode'), TRUE));
-
 		if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN) {
 			$openAccess = true;
 		} else if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION) {
@@ -134,12 +142,6 @@ class DNBXmlFilter extends NativeExportFilter {
 		$node->setAttribute('tag', '007');
 		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', $yearYY.$month.$day.'s'.$yearYYYY.'||||xx#|||| ||||| ||||| '.$language.'||'));
 		$node->setAttribute('tag', '008');
-
-		// data fields:
-		// URN
-		$articleURN = $article->getStoredPubId('other::urnDNB');
-		if (empty($articleURN)) $articleURN = $article->getStoredPubId('other::urn');
-		if (!empty($articleURN)) exit; // wie kann man hier noch eine Warnung ausgeben und zurückkommen, oder geht das nicht?
 
 		$urn = $galley->getStoredPubId('other::urnDNB');
 		if (empty($urn)) $urn = $galley->getStoredPubId('other::urn');
@@ -230,7 +232,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
 		}
 		// keywords
-		$supportedLocales = array_keys(AppLocale::getSupportedFormLocales());
+		//$supportedLocales = array_keys(AppLocale::getSupportedFormLocales());
 		$submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
 		$controlledVocabulary = $submissionKeywordDao->getKeywords($article->getId(), array($galley->getLocale()));
 		if (!empty($controlledVocabulary[$galley->getLocale()])) {
@@ -245,6 +247,13 @@ class DNBXmlFilter extends NativeExportFilter {
 			$this->createSubfieldNode($doc, $datafield700, 'a', $author->getFullName(true));
 			$this->createSubfieldNode($doc, $datafield700, '4', 'aut');
 		}
+		// translators
+		foreach ((array) $translators as $translator) {
+		    $datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
+		    $this->createSubfieldNode($doc, $datafield700, 'a', $translator->getFullName(true));
+		    $this->createSubfieldNode($doc, $datafield700, '4', 'trl');
+		}
+		
 		// issue data
 		// at least the year has to be provided
 		$volume = $issue->getVolume();
@@ -291,6 +300,16 @@ class DNBXmlFilter extends NativeExportFilter {
 	    return $userGroup->getData('nameLocaleKey') == 'default.groups.name.author';
 	}
 
+	/**
+	 * Check if the contributor is a translator.
+	 * @param $contributor Author
+	 * @return boolean
+	 */
+	function _filterTranslators($contributor) {
+	    $userGroup = $contributor->getUserGroup();
+	    return $userGroup->getData('nameLocaleKey') == 'default.groups.name.translator';
+	}
+	
 	/**
 	 * Create and return the root node.
 	 * @param $doc DOMDocument
@@ -358,16 +377,6 @@ class DNBXmlFilter extends NativeExportFilter {
 			return 'epub';
 		}
 		assert(false);
-	}
-
-	/**
-	 * Check if the contributor is an author.
-	 * @param $contributor Author
-	 * @return boolean
-	*/
-	function _filterAuthors($contributor) {
-		$userGroup = $contributor->getUserGroup();
-		return $userGroup->getData('nameLocaleKey') == 'default.groups.name.author';
 	}
 
 	/**
