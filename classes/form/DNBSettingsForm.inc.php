@@ -94,6 +94,7 @@ class DNBSettingsForm extends Form {
 			// do not save the access option for OA journals -- it is always 'b'
 			// but also to be able to check the missing option for closed journals
 			if ($this->isOAJournal() && $settingName == 'archiveAccess') continue;
+			error_log("RS_DEBUG: ".print_r($settingName, TRUE));
 			$plugin->updateSetting($this->_getContextId(), $settingName, $this->getData($settingName), $settingType);
 		}
 	}

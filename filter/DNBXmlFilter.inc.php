@@ -86,7 +86,11 @@ class DNBXmlFilter extends NativeExportFilter {
 		$yearYY = date('y', strtotime($datePublished));
 		$month = date('m', strtotime($datePublished));
 		$day = date('d', strtotime($datePublished));
-		$authors = $article->getAuthors();
+		$contributors = $article->getAuthors();
+		
+		// extract submission authors only
+		$authors = array_filter($contributors, array($this, '_filterAuthors'));
+		
 		if (is_array($authors) && !empty($authors)) {
 			// get and remove first author from the array
 			// so the array can be used later in the field 700 1 _
@@ -96,6 +100,9 @@ class DNBXmlFilter extends NativeExportFilter {
 
 		// is open access
 		$openAccess = false;
+		
+		error_log("RS_DEBUG: ".print_r($journal->getSetting('publishingMode'), TRUE));
+		
 		if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN) {
 			$openAccess = true;
 		} else if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION) {
@@ -269,6 +276,16 @@ class DNBXmlFilter extends NativeExportFilter {
 		if ($openAccess) $this->createSubfieldNode($doc, $datafield856, 'z', 'Open Access');
 		
 		return $doc;
+	}
+	
+	/**
+	 * Check if the contributor is an author.
+	 * @param $contributor Author
+	 * @return boolean
+	 */
+	function _filterAuthors($contributor) {
+	    $userGroup = $contributor->getUserGroup();
+	    return $userGroup->getData('nameLocaleKey') == 'default.groups.name.author';
 	}
 
 	/**
