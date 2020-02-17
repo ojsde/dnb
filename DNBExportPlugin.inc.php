@@ -474,6 +474,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @return string|array The export directory name or an array with
 	 *  errors if something went wrong.
 	 */
+	
+	// RS: This function definition cause a 
+	// PHP Warning:  Declaration of DNBExportPlugin::getExportPath($journalId, $currentExportPath, $exportContentDir) 
+	// should be compatible with ImportExportPlugin::getExportPath() in /data/ojs/ojs-rs-312/plugins/importexport/dnb/DNBExportPlugin.inc.php on line 676
+	// changing to getExportPath() will remove the warning but functionaltily of plugin cannot be verified at this stage
 	function getExportPath($journalId, $currentExportPath = null, $exportContentDir = null) {
 		if (!$currentExportPath) {
 			$exportPath = Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix() . '/' . $journalId . '-' . date('Ymd-His');

@@ -87,10 +87,9 @@ class DNBXmlFilter extends NativeExportFilter {
 		$month = date('m', strtotime($datePublished));
 		$day = date('d', strtotime($datePublished));
 		$contributors = $article->getAuthors();
-		
+
 		// extract submission authors only
 		$authors = array_filter($contributors, array($this, '_filterAuthors'));
-		
 		if (is_array($authors) && !empty($authors)) {
 			// get and remove first author from the array
 			// so the array can be used later in the field 700 1 _
@@ -100,9 +99,9 @@ class DNBXmlFilter extends NativeExportFilter {
 
 		// is open access
 		$openAccess = false;
-		
+
 		error_log("RS_DEBUG: ".print_r($journal->getSetting('publishingMode'), TRUE));
-		
+
 		if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN) {
 			$openAccess = true;
 		} else if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION) {
@@ -138,6 +137,10 @@ class DNBXmlFilter extends NativeExportFilter {
 
 		// data fields:
 		// URN
+		$articleURN = $article->getStoredPubId('other::urnDNB');
+		if (empty($articleURN)) $articleURN = $article->getStoredPubId('other::urn');
+		if (!empty($articleURN)) exit; // wie kann man hier noch eine Warnung ausgeben und zurückkommen, oder geht das nicht?
+
 		$urn = $galley->getStoredPubId('other::urnDNB');
 		if (empty($urn)) $urn = $galley->getStoredPubId('other::urn');
 		if (!empty($urn)) {
@@ -155,7 +158,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		    $articleDoi = $article->getStoredPubId('doi');
 		    if (!empty($articleDoi)) {
 		        $doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
-		        $this->createSubfieldNode($doc, $doiDatafield024, 'a', $doi);
+		        $this->createSubfieldNode($doc, $doiDatafield024, 'a', $articleDoi);
 		        $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		    }
 		}
@@ -201,7 +204,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$abstract = $article->getAbstract($galley->getLocale());
 		if (empty($abstract)) $abstract = $article->getAbstract($article->getLocale());
 		if (!empty($abstract)) {
-			$abstract = PKPString::html2text($abstract);
+			$abstract = trim(PKPString::html2text($abstract));
 			if (strlen($abstract) > 999)  {
 				$abstract = substr($abstract, 0, 996);
 				$abstract .= '...';
@@ -254,7 +257,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'year:'.$yearYYYY);
 		$this->createSubfieldNode($doc, $issueDatafield773, '7', 'nnas');
 		// journal data
-		// there have to be an ISSN
+		// there has to be an ISSN
 		$issn = $journal->getSetting('onlineIssn');
 		if (empty($issn)) $issn = $journal->getSetting('printIssn');
 		assert(!empty($issn));
@@ -274,10 +277,10 @@ class DNBXmlFilter extends NativeExportFilter {
 		}
 		if ($fileSize > 0) $this->createSubfieldNode($doc, $datafield856, 's', $this->_getFileSize($fileSize));
 		if ($openAccess) $this->createSubfieldNode($doc, $datafield856, 'z', 'Open Access');
-		
+
 		return $doc;
 	}
-	
+
 	/**
 	 * Check if the contributor is an author.
 	 * @param $contributor Author
@@ -337,7 +340,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		    // we don't remove these characters automatically because user has to be aware of the issue
 		    throw new ErrorException($datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS);
 		}
-		
+
 		$node->appendChild($doc->createTextNode($value));
 		$datafieldNode->appendChild($node);
 		$node->setAttribute('code', $code);
@@ -355,6 +358,16 @@ class DNBXmlFilter extends NativeExportFilter {
 			return 'epub';
 		}
 		assert(false);
+	}
+
+	/**
+	 * Check if the contributor is an author.
+	 * @param $contributor Author
+	 * @return boolean
+	*/
+	function _filterAuthors($contributor) {
+		$userGroup = $contributor->getUserGroup();
+		return $userGroup->getData('nameLocaleKey') == 'default.groups.name.author';
 	}
 
 	/**
