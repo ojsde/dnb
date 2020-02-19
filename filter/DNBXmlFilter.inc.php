@@ -156,14 +156,15 @@ class DNBXmlFilter extends NativeExportFilter {
 			$doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
 			$this->createSubfieldNode($doc, $doiDatafield024, 'a', $doi);
 			$this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
-		} else {
+		}
+		//} else {
 		    $articleDoi = $article->getStoredPubId('doi');
 		    if (!empty($articleDoi)) {
 		        $doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
 		        $this->createSubfieldNode($doc, $doiDatafield024, 'a', $articleDoi);
 		        $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		    }
-		}
+		//}
 		// language
 		$datafield041 = $this->createDatafieldNode($doc, $recordNode, '041', ' ', ' ');
 		$this->createSubfieldNode($doc, $datafield041, 'a', $language);
