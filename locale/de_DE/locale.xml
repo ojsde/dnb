@@ -61,7 +61,7 @@
 	<message key="plugins.importexport.dnb.export.error.curlError">Bei der Ausführung von curl ist ein Fehler aufgetreten: {$param}. Export abgebrochen!</message>
 	<message key="plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid">Der entfernte Server meldet den nicht akzeptierten Inhaltstyp: {$param}. Export aller Artikel abgebrochen!</message>	
 	<message key="plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid">Mime type der Galley mit der ID {$param} nicht akzeptiert. Export abgebrochen!</message>
-	<message key="plugins.importexport.dnb.export.error.urnSet">Diese Version des DNB Export Plugins is nicht für den Export von Objekten geeignet die URNs enthalten.</message>	
+	<message key="plugins.importexport.dnb.export.error.urnSet">Das DNB Export Plugin exportiert keine Artikel mit URNs auf Artikelebene. Bitte wenden Sie sich an die Deutsche Nationalbibliothek für mehr Informaitonen. </message>	
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 
 </locale>
