@@ -151,20 +151,19 @@ class DNBXmlFilter extends NativeExportFilter {
 			$this->createSubfieldNode($doc, $urnDatafield024, '2', 'urn');
 		}
 		// DOI
+		// according the the latest arrangement with DNB both, article and galley DOIs will be submited to the DNB  
 		$doi = $galley->getStoredPubId('doi');
 		if (!empty($doi)) {
 			$doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
 			$this->createSubfieldNode($doc, $doiDatafield024, 'a', $doi);
 			$this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
-		//} else {
-		    $articleDoi = $article->getStoredPubId('doi');
-		    if (!empty($articleDoi)) {
-		        $doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
-		        $this->createSubfieldNode($doc, $doiDatafield024, 'a', $articleDoi);
-		        $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
-		    }
-		//}
+		$articleDoi = $article->getStoredPubId('doi');
+		if (!empty($articleDoi)) {
+		    $doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
+		    $this->createSubfieldNode($doc, $doiDatafield024, 'a', $articleDoi);
+		    $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
+		}
 		// language
 		$datafield041 = $this->createDatafieldNode($doc, $recordNode, '041', ' ', ' ');
 		$this->createSubfieldNode($doc, $datafield041, 'a', $language);
@@ -183,12 +182,16 @@ class DNBXmlFilter extends NativeExportFilter {
 		$title = $article->getTitle($galley->getLocale());
 		if (empty($title)) $title = $article->getTitle($article->getLocale());
 		assert(!empty($title));
+		//remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
+		$title = preg_replace("#[\s\n\r]+#",' ',$title);
 		$datafield245 = $this->createDatafieldNode($doc, $recordNode, '245', '0', '0');
 		$this->createSubfieldNode($doc, $datafield245, 'a', $title);
 		// subtitle
 		$subTitle = $article->getSubtitle($galley->getLocale());
 		if (empty($subTitle)) $subTitle = $article->getSubtitle($article->getLocale());
 		if (!empty($subTitle)) {
+		    //remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
+		    $subTitle = preg_replace("#[\s\n\r]+#",' ',$subTitle); 
 			$this->createSubfieldNode($doc, $datafield245, 'b', $subTitle);
 		}
 		// date published
@@ -208,6 +211,8 @@ class DNBXmlFilter extends NativeExportFilter {
 		if (empty($abstract)) $abstract = $article->getAbstract($article->getLocale());
 		if (!empty($abstract)) {
 			$abstract = trim(PKPString::html2text($abstract));
+			//remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
+			$abstract = preg_replace("#[\s\n\r]+#",' ',$abstract); 
 			if (strlen($abstract) > 999)  {
 				$abstract = substr($abstract, 0, 996);
 				$abstract .= '...';
@@ -355,10 +360,13 @@ class DNBXmlFilter extends NativeExportFilter {
 		$node = $doc->createElementNS($deployment->getNamespace(), 'subfield');
 		//check for characters not allowed according to XML 1.0 specification (https://www.w3.org/TR/2006/REC-xml-20060816/Overview.html#NT-Char)
 		$matches = array();
-		if (preg_match_all('/[^\x09\x0A\x0D\x20-\xFF]/u', $value, $matches) != 0) {
+		//use for debugging:
+		//if ($datafieldNode->getAttribute('tag') == '520') {$value = $value . mb_chr(0,'utf-8').chr(11) . $value;}
+		$res = preg_match_all('/[^\x09\x0A\x0D\x20-\xFF]/', $value, $matches,PREG_OFFSET_CAPTURE);
+    	if ($res != 0) {
 		    // libxml will strip input at the first occurance of an non-allowed character, subsequent character will be lost
 		    // we don't remove these characters automatically because user has to be aware of the issue
-		    throw new ErrorException($datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS);
+    	    throw new ErrorException("Character code ".ord($matches[0][0][0])." found at position ".$matches[0][0][1]." in MARC21 datafield node ".$datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS);
 		}
 
 		$node->appendChild($doc->createTextNode($value));

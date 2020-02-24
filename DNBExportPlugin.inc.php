@@ -356,7 +356,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
             // we don't remove these automatically because user has to be aware of the issue
 		    switch ($e->getCode()) {
 		        case XML_NON_VALID_CHARCTERS:
-                    $param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $galley->getSubmissionId(), 'node' => $e->getMessage()));		       
+		            $param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $galley->getSubmissionId(), 'node' => $e->getMessage()));		       
                     return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
 		        case URN_SET:
 		            return array('plugins.importexport.dnb.export.error.urnSet');
@@ -388,56 +388,62 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function copyGalleyFile($galley, $exportPath) {
 	    $errors = array();
+	    //galley->getFile() can only be null for remote galleys
+	    //Exporting remote galleys is an experimental feature that has to be activated by a define statement at the to of this file
+	    //If not activated (default) the function filterGalleys() will exclude remote galleys before this function is called
+	    //Nevertheless we check "EXPORT_REMOTE_GALLEYS" just in case someone would be calling this function without filtering the galleys
 	    if ($galley->getFile() == null) {
-	        // its a remote URL, curl it
-	        $curlCh = curl_init();
-	        
-	        if ($httpProxyHost = Config::getVar('proxy', 'http_host')) {
-	            curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
-	            curl_setopt($curlCh, CURLOPT_PROXYPORT, Config::getVar('proxy', 'http_port', '80'));
-	            if ($username = Config::getVar('proxy', 'username')) {
-	                curl_setopt($curlCh, CURLOPT_PROXYUSERPWD, $username . ':' . Config::getVar('proxy', 'password'));
-	            }
+	        if (EXPORT_REMOTE_GALLEYS) {
+    	        // its a remote URL and export of remote URLs is enabled, curl it
+    	        $curlCh = curl_init();
+    	        
+    	        if ($httpProxyHost = Config::getVar('proxy', 'http_host')) {
+    	            curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
+    	            curl_setopt($curlCh, CURLOPT_PROXYPORT, Config::getVar('proxy', 'http_port', '80'));
+    	            if ($username = Config::getVar('proxy', 'username')) {
+    	                curl_setopt($curlCh, CURLOPT_PROXYUSERPWD, $username . ':' . Config::getVar('proxy', 'password'));
+    	            }
+    	        }
+    	        
+    	        curl_setopt($curlCh, CURLOPT_URL, $galley->getRemoteURL());
+    	        curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, 1);   
+    	        
+    	        $response = curl_exec($curlCh);
+    	        $curlError = curl_error($curlCh);
+    	        if ($curlError) {
+    	            // error occured
+    	            $errors[] = array('plugins.importexport.dnb.export.error.curlError', $curlError);
+    	        }
+    	        
+    	        //verify content type claimed by host
+    	        $contentType = curl_getinfo($curlCh, CURLINFO_CONTENT_TYPE);
+    	        if (!preg_match('(application/pdf|application/epub+zip)',$contentType)) {
+    	           // error occured
+    	            $errors[] = array('plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid', $contentType);
+    	        }
+    	        
+    	        curl_close($curlCh);
+    	        
+    	        //verify mime-type by magic bytes pdf (%PDF-) or epub (PK..)	        
+    	        if (!preg_match('/^(%PDF-|PK..)/',$response)) {
+    	           // error occured
+    	           $errors[] = array('plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid', $galley->getSubmissionId());
+    	        }
+    	        
+    	        if (!empty($errors)) return $errors;
+    	        
+    	        $temporaryFilename = tempnam(Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix(), 'dnb');
+    	        
+    	        $file = fopen($temporaryFilename, "w+");
+    	        if (!$file) {
+    	        }
+    	        fputs($file, $response);
+    	        fclose($file);
+    	        $galley->setData('fileSize',filesize($temporaryFilename));
+    	        
+    	        $sourceGalleyFilePath = $temporaryFilename;
+    	        $targetGalleyFilePath = $exportPath . 'content/'  . basename($galley->getRemoteURL());
 	        }
-	        
-	        curl_setopt($curlCh, CURLOPT_URL, $galley->getRemoteURL());
-	        curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, 1);   
-	        
-	        $response = curl_exec($curlCh);
-	        $curlError = curl_error($curlCh);
-	        if ($curlError) {
-	            // error occured
-	            $errors[] = array('plugins.importexport.dnb.export.error.curlError', $curlError);
-	        }
-	        
-	        //verify content type claimed by host
-	        $contentType = curl_getinfo($curlCh, CURLINFO_CONTENT_TYPE);
-	        if (!preg_match('(application/pdf|application/epub+zip)',$contentType)) {
-	           // error occured
-	            $errors[] = array('plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid', $contentType);
-	        }
-	        
-	        curl_close($curlCh);
-	        
-	        //verify mime-type by magic bytes pdf (%PDF-) or epub (PK..)	        
-	        if (!preg_match('/^(%PDF-|PK..)/',$response)) {
-	           // error occured
-	           $errors[] = array('plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid', $galley->getSubmissionId());
-	        }
-	        
-	        if (!empty($errors)) return $errors;
-	        
-	        $temporaryFilename = tempnam(Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix(), 'dnb');
-	        
-	        $file = fopen($temporaryFilename, "w+");
-	        if (!$file) {
-	        }
-	        fputs($file, $response);
-	        fclose($file);
-	        $galley->setData('fileSize',filesize($temporaryFilename));
-	        
-	        $sourceGalleyFilePath = $temporaryFilename;
-	        $targetGalleyFilePath = $exportPath . 'content/'  . basename($galley->getRemoteURL());
 	    } else {
 	       $submissionFile = $galley->getFile();
 	       $sourceGalleyFilePath = $submissionFile->getFilePath();

@@ -53,8 +53,8 @@
 	<message key="plugins.importexport.dnb.deselectAll">Alle abwählen</message>
 
 	<message key="plugins.importexport.dnb.export.error.articleCannotBeExported">Der Artikel {$param} kann nicht exportiert werden, weil er keine lokale PDF- oder EPUB-Fahne hat.</message>
-	<message key="plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters">Die XML-Datei mit der Einreichung ID {$param} Es wurden keine Artikel exportiert!</message>
-	<message key="plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param">{$submissionId} konnte nicht erstellt werden. Das Datafeld "node {$node}" enhält Zeichen die in der XML 1.0 Spezifikation nicht erlaubt sind. </message>
+	<message key="plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters">Die XML-Datei mit der Einreichungs-ID {$param} Es wurden keine Artikel exportiert!</message>
+	<message key="plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param">{$submissionId} konnte nicht erstellt werden. Ein Feld enthält enhält Zeichen die in der XML 1.0 Spezifikation nicht erlaubt sind: "{$node}".</message>
 	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">Die Ausgabedatei {$param} ist nicht schreibbar.</message>
 	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">Das Hochladen per SFTP ist fehlgeschlagen: {$param}.</message>
 	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">für die Paketdatei {$package} des Artikels {$articleId}: {$error}</message>
