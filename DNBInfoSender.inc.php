@@ -33,7 +33,7 @@ class DNBInfoSender extends ScheduledTask {
 		if (is_a($plugin, 'DNBExportPlugin')) {
 			$plugin->addLocaleData();
 		}
-
+		
 		parent::__construct($args);
 	}
 
@@ -50,7 +50,7 @@ class DNBInfoSender extends ScheduledTask {
 	function executeActions() {
 		if (!$this->_plugin) return false;
 		$plugin = $this->_plugin;
-
+		
 		// check if TAR command is configured
 		$checkForTarResult = $plugin->checkForTar();
 		if (is_array($checkForTarResult)) {

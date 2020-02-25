@@ -56,7 +56,18 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc ImportExportPlugin::display()
 	 */
 	function display($args, $request) {
+        
+        if (($args[0] == 'exportSubmissions') & empty((array) $request->getUserVar('selectedSubmissions'))) {
+            //show error
+            $this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noObjectsSelected')));
+            // redirect back to exportSubmissions-tab
+            $path = array('plugin', $this->getName());
+            $request->redirect(null, null, null, $path, null, 'exportSubmissions-tab');
+            return;
+        }
+
 		parent::display($args, $request);
+		
 		$context = $request->getContext();
 		switch (array_shift($args)) {
 			case 'index':
@@ -173,6 +184,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename));
 		curl_setopt($curlCh, CURLOPT_INFILE, $fh);
 
+		$response = curl_exec($curlCh);
+		
 		$curlError = curl_error($curlCh);
 		if ($curlError) {
 			// error occured

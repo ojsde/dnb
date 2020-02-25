@@ -56,6 +56,7 @@
 	<message key="plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters">Error writing XML file for the article with submission ID {$param} No articles exported!</message>
 	<message key="plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param">{$submissionId}. A field contains characters not allowed in XML 1.0 specification: "{$node}". </message>
 	<message key="plugins.importexport.dnb.export.error.outputFileNotWritable">The output file {$param} is not writable.</message>
+	<message key="plugins.importexport.dnb.deposit.error.noObjectsSelected">You have to select at least one object for export.</message>
 	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed">The SFTP upload failed for the {$param}</message>
 	<message key="plugins.importexport.dnb.deposit.error.fileUploadFailed.param">package file {$package} of the article {$articleId}: {$error}</message>
 	<message key="plugins.importexport.dnb.export.error.curlError">An error occured executing curl: {$param}. Export canceld!</message>
