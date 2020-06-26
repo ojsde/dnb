@@ -19,7 +19,7 @@ import('lib.pkp.classes.file.FileManager');
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 # determines whether to export remote galleys (experimental feature)
-define('EXPORT_REMOTE_GALLEYS', true);
+define('EXPORT_REMOTE_GALLEYS', false);
 define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//@RS implement IP pattern as setting 
 define('ADDITIONAL_PACKAGE_OPTIONS','');//use --format=gnu with tar to avoid PAX-Headers
 
