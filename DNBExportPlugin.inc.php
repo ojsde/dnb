@@ -19,8 +19,8 @@ import('lib.pkp.classes.file.FileManager');
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 # determines whether to export remote galleys (experimental feature)
-define('EXPORT_REMOTE_GALLEYS', false);
-define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//@RS implement IP pattern as setting
+define('EXPORT_REMOTE_GALLEYS', true);
+define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//@RS implement IP pattern as setting 
 define('ADDITIONAL_PACKAGE_OPTIONS','');//use --format=gnu with tar to avoid PAX-Headers
 
 class DNBExportPlugin extends PubObjectsExportPlugin {
@@ -159,6 +159,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$curlCh = curl_init();
 		if ($httpProxyHost = Config::getVar('proxy', 'http_host')) {
 			curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
+			curl_setopt($curlCh, CURLOPT_HTTPPROXYTUNNEL, 1);
 			curl_setopt($curlCh, CURLOPT_PROXYPORT, Config::getVar('proxy', 'http_port', '80'));
 			if ($username = Config::getVar('proxy', 'username')) {
 				curl_setopt($curlCh, CURLOPT_PROXYUSERPWD, $username . ':' . Config::getVar('proxy', 'password'));
@@ -187,6 +188,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$response = curl_exec($curlCh);
 		
 		$curlError = curl_error($curlCh);
+		
+		error_log("RS_DEBUG:DNB_PLUGIN:deposit: ".print_r($response,true));
+		error_log("RS_DEBUG:DNB_PLUGIN:deposit: ".print_r($curlError,true));
+		
 		if ($curlError) {
 			// error occured
 			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getSubmissionId(), 'error' => $curlError));
@@ -263,10 +268,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						// if it is not a full text, continue
 						if ($genre->getCategory() != 1 || $genre->getSupplementary() || $genre->getDependent()) continue;
 					}
-
+					
 					$exportFile = '';
 					// Get the TAR package for the galley
 					$result = $this->getGalleyPackage($galley, $filter, $noValidation, $journal, $journalExportPath, $exportFile);
+					
 					// If errors occured, remove all created directories and return the errors
 					if (is_array($result)) {
 					    // If error occured add it to the list of errors
@@ -400,13 +406,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 *  errors if something went wrong.
 	 */
 	function copyGalleyFile($galley, $exportPath) {
-	    $errors = array();
 	    //galley->getFile() can only be null for remote galleys
 	    //Exporting remote galleys is an experimental feature that has to be activated by a define statement at the to of this file
 	    //If not activated (default) the function filterGalleys() will exclude remote galleys before this function is called
 	    //Nevertheless we check "EXPORT_REMOTE_GALLEYS" just in case someone would be calling this function without filtering the galleys
 	    if ($galley->getFile() == null) {
 	        if (EXPORT_REMOTE_GALLEYS) {
+	            
     	        // its a remote URL and export of remote URLs is enabled, curl it
     	        $curlCh = curl_init();
     	        
@@ -418,21 +424,25 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	            }
     	        }
     	        
+    	        curl_setopt($curlCh, CURLOPT_FOLLOWLOCATION, true); //follow redirects
     	        curl_setopt($curlCh, CURLOPT_URL, $galley->getRemoteURL());
     	        curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, 1);   
     	        
     	        $response = curl_exec($curlCh);
+    	        
     	        $curlError = curl_error($curlCh);
     	        if ($curlError) {
     	            // error occured
-    	            $errors[] = array('plugins.importexport.dnb.export.error.curlError', $curlError);
+    	            curl_close($curlCh);
+    	            return array('plugins.importexport.dnb.export.error.curlError', $curlError);
     	        }
     	        
     	        //verify content type claimed by host
     	        $contentType = curl_getinfo($curlCh, CURLINFO_CONTENT_TYPE);
     	        if (!preg_match('(application/pdf|application/epub+zip)',$contentType)) {
     	           // error occured
-    	            $errors[] = array('plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid', $contentType);
+    	            curl_close($curlCh);
+    	            return array('plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid', $contentType);
     	        }
     	        
     	        curl_close($curlCh);
@@ -440,10 +450,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	        //verify mime-type by magic bytes pdf (%PDF-) or epub (PK..)	        
     	        if (!preg_match('/^(%PDF-|PK..)/',$response)) {
     	           // error occured
-    	           $errors[] = array('plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid', $galley->getSubmissionId());
+    	           return array('plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid', $galley->getSubmissionId());
     	        }
-    	        
-    	        if (!empty($errors)) return $errors;
     	        
     	        $temporaryFilename = tempnam(Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix(), 'dnb');
     	        
@@ -464,17 +472,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	    }
 	    
 		if (!file_exists($sourceGalleyFilePath)) {
-			$errors = array(
-				array('plugins.importexport.dnb.export.error.galleyFileNotFound', $sourceGalleyFilePath)
-			);
-			return $errors;
+			return array('plugins.importexport.dnb.export.error.galleyFileNotFound', $sourceGalleyFilePath);
 		}
 		$fileManager = new FileManager();
 		if (!$fileManager->copyFile($sourceGalleyFilePath, $targetGalleyFilePath)) {
-			$errors = array(
-				array('plugins.importexport.dnb.export.error.galleyFileNoCopy')
-			);
-			return $errors;
+			return array('plugins.importexport.dnb.export.error.galleyFileNoCopy');
 		}
 		//remove temporary file
 		if (!empty($temporaryFilename))	$fileManager->rmtree($temporaryFilename);
@@ -684,7 +686,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @param $errors array
 	 */
 	function errorNotification($request, $errors) {
-		foreach($errors as $error) {
+		foreach($errors as $error) {		    
 			assert(is_array($error) && count($error) >= 1);
 			$this->_sendNotification(
 				$request->getUser(),
