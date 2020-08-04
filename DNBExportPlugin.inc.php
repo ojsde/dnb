@@ -189,9 +189,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		
 		$curlError = curl_error($curlCh);
 		
-		error_log("RS_DEBUG:DNB_PLUGIN:deposit: ".print_r($response,true));
-		error_log("RS_DEBUG:DNB_PLUGIN:deposit: ".print_r($curlError,true));
-		
 		if ($curlError) {
 			// error occured
 			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getSubmissionId(), 'error' => $curlError));

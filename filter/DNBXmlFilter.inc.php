@@ -214,7 +214,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			//remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
 			$abstract = preg_replace("#[\s\n\r]+#",' ',$abstract); 
 			if (strlen($abstract) > 999)  {
-				$abstract = substr($abstract, 0, 996);
+				$abstract = mb_substr($abstract, 0, 996,"UTF-8");
 				$abstract .= '...';
 			}
 			$abstractURL = $request->url(null, 'article', 'view', array($article->getId()));
