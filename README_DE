@@ -46,7 +46,8 @@ Installation über die Kommandozeile mit Git:
  - git checkout [branch]
  - cd [my_ojs_installation]
  - php tools/upgrade.php upgrade (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen) oder php tools/installPluginVersion.php (s. https://github.com/pkp/pkp-lib/issues/2503)
-
+  - php lib/pkp/tools/installPluginVersion.php plugins/importexport/dnb/version.xml
+  
 Export
 ------------
 Die Plug-In-Einstellungen sind hier zu finden:
