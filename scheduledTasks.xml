@@ -22,5 +22,5 @@
 		<descr>Deposit article packages to DNB Hotfolder.</descr>
 		<frequency minute="0"/>
 	</task>
---!>
+-->
 </scheduled_tasks>
