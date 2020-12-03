@@ -63,7 +63,9 @@
 	<message key="plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid">Remote server reported invalid content type: {$param}. No articles exported!</message>
 	<message key="plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid">Mime type of remote galley file with ID {$param} not valid. No articles exported!</message>
 	<message key="plugins.importexport.dnb.export.error.urnSet">The DNB Export Plugin does not export articles with URNs for article objects. Please contact the Deutsche Nationalbibliothek for more information.</message>
-
+	<message key="plugins.importexport.dnb.export.error.galleyFileNotFound">The galley file {$param} could not be found.</message>
+	<message key="plugins.importexport.dnb.export.error.galleyFileNoCopy">The galley file {$param}.</message>
+	<message key="plugins.importexport.dnb.export.error.galleyFileNoCopy.param">{$sourceGalleyFilePath} could not be copied to {$targetGalleyFilePath}</message>
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 
 </locale>
