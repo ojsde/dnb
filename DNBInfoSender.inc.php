@@ -62,7 +62,8 @@ class DNBInfoSender extends ScheduledTask {
 		}
 
 		$filter = $plugin->getSubmissionFilter();
-		$articleDao = DAORegistry::getDAO('ArticleDAO');//TODO @RS !!! hier weitermachen !!! und automatic deposit testen
+		//$articleDao = DAORegistry::getDAO('ArticleDAO');//TODO @RS !!! hier weitermachen !!! und automatic deposit testen
+		//$submissionDao = DAORegistry::getDAO('SubmissionDAO');
 		$genreDao = DAORegistry::getDAO('GenreDAO');
 		$fileManager = new FileManager();
 
