@@ -17,11 +17,21 @@
 import('classes.plugins.PubObjectsExportPlugin');
 import('lib.pkp.classes.file.FileManager');
 
+define('DEBUG', true);
+
 define('DNB_STATUS_DEPOSITED', 'deposited');
 # determines whether to export remote galleys (experimental feature)
 define('EXPORT_REMOTE_GALLEYS', false);
 define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//@RS implement IP pattern as setting 
 define('ADDITIONAL_PACKAGE_OPTIONS','');//use --format=gnu with tar to avoid PAX-Headers
+
+if (!DEBUG) {
+	define('SFTP_SERVER','sftp://@hotfolder.dnb.de/');
+	define('SFTP_PORT', 22122);
+} else {
+	define('SFTP_SERVER','sftp://ojs@sftp/');
+	define('SFTP_PORT', 22);
+}
 
 class DNBExportPlugin extends PubObjectsExportPlugin {
 	/**
@@ -179,8 +189,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$folderId = ltrim($folderId, '/');
 		$folderId = rtrim($folderId, '/');
 
-		curl_setopt($curlCh, CURLOPT_URL, 'sftp://@hotfolder.dnb.de/'.$folderId.'/'.basename($filename));
-		curl_setopt($curlCh, CURLOPT_PORT, 22122);
+		curl_setopt($curlCh, CURLOPT_URL, SFTP_SERVER.$folderId.'/'.basename($filename));
+		curl_setopt($curlCh, CURLOPT_PORT, SFTP_PORT);
 		curl_setopt($curlCh, CURLOPT_USERPWD, "$username:$password");
 		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename));
 		curl_setopt($curlCh, CURLOPT_INFILE, $fh);
@@ -466,14 +476,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	       $submissionFile = $galley->getFile();
 	       $sourceGalleyFilePath = $submissionFile->getFilePath();
 	       $targetGalleyFilePath = $exportPath . 'content'  . '/' . $submissionFile->getServerFileName();
-	    }
+		}
 	    
 		if (!file_exists($sourceGalleyFilePath)) {
-			return array('plugins.importexport.dnb.export.error.galleyFileNotFound', $sourceGalleyFilePath);
+			return array('plugins.importexport.dnb.export.error.galleyFileNotFound',$sourceGalleyFilePath);
 		}
 		$fileManager = new FileManager();
 		if (!$fileManager->copyFile($sourceGalleyFilePath, $targetGalleyFilePath)) {
-			return array('plugins.importexport.dnb.export.error.galleyFileNoCopy');
+			$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
+			return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
 		}
 		//remove temporary file
 		if (!empty($temporaryFilename))	$fileManager->rmtree($temporaryFilename);
