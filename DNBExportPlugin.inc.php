@@ -17,7 +17,7 @@
 import('classes.plugins.PubObjectsExportPlugin');
 import('lib.pkp.classes.file.FileManager');
 
-define('DEBUG', true);
+define('DEBUG', false);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 # determines whether to export remote galleys (experimental feature)
