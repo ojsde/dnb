@@ -62,7 +62,7 @@ class DNBInfoSender extends ScheduledTask {
 		}
 
 		$filter = $plugin->getSubmissionFilter();
-		$articleDao = DAORegistry::getDAO('ArticleDAO');
+		$articleDao = DAORegistry::getDAO('ArticleDAO');//TODO @RS !!! hier weitermachen !!! und automatic deposit testen
 		$genreDao = DAORegistry::getDAO('GenreDAO');
 		$fileManager = new FileManager();
 
@@ -128,7 +128,10 @@ class DNBInfoSender extends ScheduledTask {
 						}
 						if ($fullyDeposited) {
 							// Update article status
-							$articleDao->updateSetting($articleId, $plugin->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED, 'string');
+							//TODO @RS cleanup
+							//$articleDao->updateSetting($articleId, $plugin->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED, 'string');
+							$object->setData($plugin->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
++							$this->updateObject($object);
 						}
 					}
 				}

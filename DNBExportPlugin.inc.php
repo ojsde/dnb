@@ -17,12 +17,12 @@
 import('classes.plugins.PubObjectsExportPlugin');
 import('lib.pkp.classes.file.FileManager');
 
-define('DEBUG', false);
+define('DEBUG', true);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 # determines whether to export remote galleys (experimental feature)
 define('EXPORT_REMOTE_GALLEYS', false);
-define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//@RS implement IP pattern as setting 
+define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//TODO @RS implement IP pattern as setting 
 define('ADDITIONAL_PACKAGE_OPTIONS','');//use --format=gnu with tar to avoid PAX-Headers
 
 if (!DEBUG) {
@@ -66,15 +66,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc ImportExportPlugin::display()
 	 */
 	function display($args, $request) {
-        
-        if (($args[0] == 'exportSubmissions') & empty((array) $request->getUserVar('selectedSubmissions'))) {
-            //show error
-            $this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noObjectsSelected')));
-            // redirect back to exportSubmissions-tab
-            $path = array('plugin', $this->getName());
-            $request->redirect(null, null, null, $path, null, 'exportSubmissions-tab');
-            return;
-        }
+		
+		if (isset($args[0])) {
+			if (($args[0] == 'exportSubmissions') & empty((array) $request->getUserVar('selectedSubmissions'))) {
+				//show error
+				$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noObjectsSelected')));
+				// redirect back to exportSubmissions-tab
+				$path = array('plugin', $this->getName());
+				$request->redirect(null, null, null, $path, null, 'exportSubmissions-tab');
+				return;
+			}
+		}
 
 		parent::display($args, $request);
 		
@@ -201,7 +203,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		
 		if ($curlError) {
 			// error occured
-			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getSubmissionId(), 'error' => $curlError));
+			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getFile()->getData('submissionId'), 'error' => $curlError));
 			$errors = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 		}
 		curl_close($curlCh);
@@ -214,7 +216,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	/**
 	 * @copydoc PubObjectsExportPlugin::executeExportAction()
 	 */
-	function executeExportAction($request, $objects, $filter, $tab, $objectsFileNamePart, $noValidation = null) {
+	function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null) {
 		$journal = $request->getContext();
 		$path = array('plugin', $this->getName());
 		
@@ -244,23 +246,25 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$journalExportPath = $result;
 
 			$errors = $exportFilesNames = array();
-			$articleDao = DAORegistry::getDAO('ArticleDAO');
+			//TODO @RS
+			//$articleDao = DAORegistry::getDAO('ArticleDAO');
+			$submissionDao = DAORegistry::getDAO('SubmissionDAO');
 			$genreDao = DAORegistry::getDAO('GenreDAO');
 			$fileManager = new FileManager();
 
 			// For each selected article
-			foreach ($objects as $object) {
+			foreach ($submissions as $submission) {
 				$issue = null;
 				$galleys = array();
 				// Get issue and galleys, and check if the article can be exported
-				if (!$this->canBeExported($object, $issue, $galleys)) {
-				    $errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $object->getId());
+				if (!$this->canBeExported($submission, $issue, $galleys)) {
+				    $errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
 					// continue with other articles
 					continue;
 				}
 				
 				$fullyDeposited = true;
-				$articleId = $object->getId();
+				//TDO @RS delete???? $articleId = $submission->getId();
 				foreach ($galleys as $galley) {
 					// check if it is a full text
 					$galleyFile = $galley->getFile();
@@ -302,7 +306,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				
 				if ($fullyDeposited && $request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
 					// Update article status
-					$articleDao->updateSetting($articleId, $this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED, 'string');
+					//TODO @RS
+					// this marks the complete submission as deposited -> what about galleys and versions?
+					//$articleDao->updateSetting($articleId, $this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED, 'string');
+
+					$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
+					$submissionDao->updateObject($submission);
+					
 				}
 			}
 			
@@ -327,7 +337,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			    // Remove the generated directories
 			    $fileManager->rmtree($journalExportPath);
 			    // redirect back to the right tab
-			    $request->redirect(null, null, null, $path, null, $tab);
+				// TODO @RS this causes an error in the log and doesn't change UI tab
+				//$request->redirect(null, null, null, $path, null, $tab);
 			} elseif ($request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
 				if (!empty($errors)) {
 					// If there were some deposit errors, display them to the user
@@ -346,7 +357,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$request->redirect(null, null, null, $path, null, $tab);
 			}
 		} else {
-			return parent::executeExportAction($request, $objects, $filter, $tab, $objectsFileNamePart, $noValidation);
+			return parent::executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation);
 		}
 	}
 
@@ -366,7 +377,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// Get the final target export directory.
 		// The data will be exported in this structure:
 		// dnb/<journalId>-<dateTime>/<journalId>-<articleId>-<galleyId>/
-		$exportContentDir = $journal->getId() . '-' . $galley->getSubmissionId() . '-' . $galley->getId();
+
+		//TODO @RS
+		// $exportContentDir = $journal->getId() . '-' . $galley->getSubmissionId() . '-' . $galley->getId();
+		$submissionId = $galley->getFile()->getSubmissionId();
+		$exportContentDir = $journal->getId() . '-' . $submissionId . '-' . $galley->getFileId();
 		$result = $this->getExportPath($journal->getId(), $journalExportPath, $exportContentDir);
 		if (is_array($result)) return $result;
 		$exportPath = $result;
@@ -382,7 +397,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
             // we don't remove these automatically because user has to be aware of the issue
 		    switch ($e->getCode()) {
 		        case XML_NON_VALID_CHARCTERS:
-		            $param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $galley->getSubmissionId(), 'node' => $e->getMessage()));		       
+		            $param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $submissionId, 'node' => $e->getMessage()));		       
                     return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
 		        case URN_SET:
 		            return array('plugins.importexport.dnb.export.error.urnSet');
@@ -527,30 +542,34 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	}
 
 	/**
-	 * The selected article can be exported if the issue is published and
-	 * article contains either a PDF or an EPUB full text galley.
-	 * @param $article PublishedArticle
+	 * The selected submission can be exported if the issue is published and
+	 * submission contains either a PDF or an EPUB full text galley.
+	 * @param $submission Submission
 	 * @param $issue Issue Just to return the issue
-	 * @param $galleys array Filtered (i.e. PDF and EPUB) article full text galleys
+	 * @param $galleys array Filtered (i.e. PDF and EPUB) submission full text galleys
 	 * @return boolean
 	 */
-	function canBeExported($article, &$issue = null, &$galleys = array()) {
+	function canBeExported($submission, &$issue = null, &$galleys = array()) {
 		$cache = $this->getCache();
-		if (!$cache->isCached('articles', $article->getId())) {
-			$cache->add($article, null);
+		if (!$cache->isCached('articles', $submission->getId())) {
+			$cache->add($submission, null);
 		}
-		$issueId = $article->getIssueId();
+		//TODO @RS
+		//$issueId = $article->getIssueId();
+		$issueDao = DAORegistry::getDAO('IssueDAO');
+		$issueId = $issueDao->getBySubmissionId($submission->getId())->getId();
+
 		if ($cache->isCached('issues', $issueId)) {
 			$issue = $cache->get('issues', $issueId);
 		} else {
 			$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
-			$issue = $issueDao->getById($issueId, $article->getContextId());
+			$issue = $issueDao->getById($issueId, $submission->getContextId());
 			if ($issue) $cache->add($issue, null);
 		}
 		assert(is_a($issue, 'Issue'));
 		if (!$issue->getPublished()) return false;
 		// get all galleys
-		$galleys = $article->getGalleys();
+		$galleys = $submission->getGalleys();
 		// filter PDF and EPUB full text galleys -- DNB concerns only PDF and EPUB formats
 		$filteredGalleys = array_filter($galleys, array($this, 'filterGalleys'));
 		$galleys = $filteredGalleys;
