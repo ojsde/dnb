@@ -66,6 +66,9 @@
 	<message key="plugins.importexport.dnb.export.error.galleyFileNotFound">Die Fahnendatei {$param} konnte nicht gefunden werden.</message>
 	<message key="plugins.importexport.dnb.export.error.galleyFileNoCopy">Die Fahnendatei {$param} kopiert werden.</message>
 	<message key="plugins.importexport.dnb.export.error.galleyFileNoCopy.param">{$sourceGalleyFilePath} konnte nicht nach {$targetGalleyFilePath}</message>
+	<message key="plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param">Fehler beim Export der Fahne {$submissionId}. {$msg}</message>		       
+    <message key="plugins.importexport.dnb.export.error.firestAuthorNotRegistred">{$param} Der Erstautor der Fahe muss bei dieser Zeitschrift als Autor registriert sein.</message>
+
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 
 </locale>
