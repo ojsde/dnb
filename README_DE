@@ -21,7 +21,7 @@ Das Plug-In ist unter GNU General Public License v2 lizenziert. Sehen Sie die Da
 Systemanforderungen
 -------------------
 Dieses Plug-In Verison ist kompatibel mit...
- - OJS 3.2
+ - OJS 3.2.1
 
 TAR-Programm wird benötigt und es muss in der Datei config.inc.php konfiguriert werden.
 

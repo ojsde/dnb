@@ -19,7 +19,7 @@ This plugin is licensed under the GNU General Public License v2. See the file LI
 System Requirements
 -------------------
 This plugin version is compatible with...
- - OJS 3.2
+ - OJS 3.2.1
  
 TAR executable is required and it has to be configured in config.inc.php.
 
