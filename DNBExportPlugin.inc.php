@@ -5,8 +5,7 @@
  *
  * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
  * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
- * Author: Bozana Bokan
- * Last update: Mary 15, 2017
+ * Author: Bozana Bokan, Ronald Steffen
  *
  * @class DNBExportPlugin
  * @ingroup plugins_importexport_dnb
@@ -17,7 +16,7 @@
 import('classes.plugins.PubObjectsExportPlugin');
 import('lib.pkp.classes.file.FileManager');
 
-define('DEBUG', true);
+define('DEBUG', false);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 # determines whether to export remote galleys (experimental feature)
@@ -67,7 +66,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function display($args, $request) {
 		
-		if (isset($args[0])) {
+		if (!empty($args)) {
 			if (($args[0] == 'exportSubmissions') & empty((array) $request->getUserVar('selectedSubmissions'))) {
 				//show error
 				$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noObjectsSelected')));
