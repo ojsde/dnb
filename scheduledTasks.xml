@@ -17,10 +17,8 @@
 <!DOCTYPE scheduled_tasks SYSTEM "../../../lib/pkp/dtd/scheduledTasks.dtd">
 
 <scheduled_tasks>
-<!-- automatic deposit is currently not working correctly, please DO NOT enable
 	<task class="plugins.importexport.dnb.DNBInfoSender">
 		<descr>Deposit article packages to DNB Hotfolder.</descr>
-		<frequency minute="0"/>
+ 		<frequency minute="0"/>
 	</task>
--->
 </scheduled_tasks>

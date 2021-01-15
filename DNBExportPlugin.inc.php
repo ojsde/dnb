@@ -22,7 +22,7 @@ define('DEBUG', false);
 define('DNB_STATUS_DEPOSITED', 'deposited');
 # determines whether to export remote galleys (experimental feature)
 define('EXPORT_REMOTE_GALLEYS', false);
-define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//@RS implement IP pattern as setting 
+define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//TODO @RS implement IP pattern as setting 
 define('ADDITIONAL_PACKAGE_OPTIONS','');//use --format=gnu with tar to avoid PAX-Headers
 
 if (!DEBUG) {
@@ -66,15 +66,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc ImportExportPlugin::display()
 	 */
 	function display($args, $request) {
-        
-        if (($args[0] == 'exportSubmissions') & empty((array) $request->getUserVar('selectedSubmissions'))) {
-            //show error
-            $this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noObjectsSelected')));
-            // redirect back to exportSubmissions-tab
-            $path = array('plugin', $this->getName());
-            $request->redirect(null, null, null, $path, null, 'exportSubmissions-tab');
-            return;
-        }
+		
+		if (!empty($args)) {
+			if (($args[0] == 'exportSubmissions') & empty((array) $request->getUserVar('selectedSubmissions'))) {
+				//show error
+				$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noObjectsSelected')));
+				// redirect back to exportSubmissions-tab
+				$path = array('plugin', $this->getName());
+				$request->redirect(null, null, null, $path, null, 'exportSubmissions-tab');
+				return;
+			}
+		}
 
 		parent::display($args, $request);
 		

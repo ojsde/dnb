@@ -1,13 +1,11 @@
 =============================================================
 === OJS DNB-Export-Plug-In
-=== Version: 1.3.1.1
+=== Version: 1.3.2
 === Autor: Bozana Bokan, Ronald Steffen
-=== Letzte Ãnderung: 14. September 2020
+=== Letzte Ã„nderung: 15. Januar 2021
 =============================================================
 
-Achtung: Bitte benutzen Sie bis zur Veröffentlichung einer neuen Plugin-Version nicht die automatische Ablieferung an die DNB.
-
-Über
+Ãœber
 -----
 Dieses Plug-In ermÃ¶glicht den Export von Artikel-Metadaten und -Volltexten (im PDF- und EPUB-Format) zwecks ihrer Pflichtablieferung an die Deutsche Nationalbibliothek (DNB)
 mittels DNB-Hotfolder-Verfahren. Das Plug-In bietet auch die Option, das Transferpaket direkt in den DNB-Hotfolder abzuliefern.
@@ -21,7 +19,7 @@ Das Plug-In ist unter GNU General Public License v2 lizenziert. Sehen Sie die Da
 Systemanforderungen
 -------------------
 Dieses Plug-In ist kompatibel mit...
- - OJS 3.1.1
+ - OJS 3.1.1, 3.1.2
 
 TAR-Programm wird benÃ¶tigt und es muss in der Datei config.inc.php konfiguriert werden.
 
