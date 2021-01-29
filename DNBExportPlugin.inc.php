@@ -245,8 +245,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$journalExportPath = $result;
 
 			$errors = $exportFilesNames = array();
-			//TODO @RS
-			//$articleDao = DAORegistry::getDAO('ArticleDAO');
 			$submissionDao = DAORegistry::getDAO('SubmissionDAO');
 			$genreDao = DAORegistry::getDAO('GenreDAO');
 			$fileManager = new FileManager();
@@ -305,13 +303,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				
 				if ($fullyDeposited && $request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
 					// Update article status
-					//TODO @RS
-					// this marks the complete submission as deposited -> what about galleys and versions?
-					//$articleDao->updateSetting($articleId, $this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED, 'string');
-
 					$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
 					$submissionDao->updateObject($submission);
-					
 				}
 			}
 			
@@ -376,9 +369,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// Get the final target export directory.
 		// The data will be exported in this structure:
 		// dnb/<journalId>-<dateTime>/<journalId>-<articleId>-<galleyId>/
-
-		//TODO @RS
-		// $exportContentDir = $journal->getId() . '-' . $galley->getSubmissionId() . '-' . $galley->getId();
 		$submissionId = $galley->getFile()->getSubmissionId();
 		$exportContentDir = $journal->getId() . '-' . $submissionId . '-' . $galley->getFileId();
 		$result = $this->getExportPath($journal->getId(), $journalExportPath, $exportContentDir);
@@ -556,8 +546,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		if (!$cache->isCached('articles', $submission->getId())) {
 			$cache->add($submission, null);
 		}
-		//TODO @RS
-		//$issueId = $article->getIssueId();
 		$issueDao = DAORegistry::getDAO('IssueDAO');
 		$issueId = $issueDao->getBySubmissionId($submission->getId())->getId();
 
