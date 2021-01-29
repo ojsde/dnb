@@ -36,7 +36,7 @@
 			{fbvElement type="text" id="folderId" value=$folderId label="plugins.importexport.dnb.settings.form.folderId" maxlength="50" size=$fbvStyles.size.MEDIUM}
 			<span class="instruct">{translate key="plugins.importexport.dnb.settings.form.folderId.description"}</span><br/>
 		{/fbvFormSection}
-			{fbvFormSection list="true"}
+		{fbvFormSection list="true"}
 			{fbvElement type="checkbox" id="automaticDeposit" label="plugins.importexport.dnb.settings.form.automaticDeposit.description" checked=$automaticDeposit|compare:true}
 		{/fbvFormSection}
 	

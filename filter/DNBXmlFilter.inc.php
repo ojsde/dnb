@@ -16,6 +16,7 @@
 
 import('lib.pkp.plugins.importexport.native.filter.NativeExportFilter');
 define('XML_NON_VALID_CHARCTERS', 100);
+define('FIRST_AUTHOR_NOT_REGISTERED', 102);
 define('URN_SET', 101);
 define('MESSAGE_URN_SET','An URN has been set.'); // @RS refine
 
@@ -59,18 +60,21 @@ class DNBXmlFilter extends NativeExportFilter {
 		$request = Application::getRequest();
 
 		// Get all objects
-		$issue = $article = $galley = $galleyFile = null;
+		$issue = $submission = $galley = $galleyFile = null;
 		$galley = $pubObject;
 		$galleyFile = $galley->getFile();
-		$articleId = $galley->getSubmissionId();
-		if ($cache->isCached('articles', $articleId)) {
-			$article = $cache->get('articles', $articleId);
+		$submissionId = $galleyFile->getSubmissionId();
+		if ($cache->isCached('articles', $submissionId)) {
+			$submission = $cache->get('articles', $submissionId);
 		} else {
-			$articleDao = DAORegistry::getDAO('PublishedArticleDAO'); /* @var $articleDao PublishedArticleDAO */
-			$article = $articleDao->getByArticleId($pubObject->getSubmissionId(), $journal->getId());
-			if ($article) $cache->add($article, null);
+			$submissionDao = DAORegistry::getDAO('SubmissionDAO'); /* @var $submissionDao SubmissionDAO */
+			$submission = $submissionDao->getById($submissionId);
+			
+			if ($submission) $cache->add($submission, null);
 		}
-		$issueId = $article->getIssueId();
+		$issueDao = DAORegistry::getDAO('IssueDAO');
+		$issueId = $issueDao->getBySubmissionId($submission->getId())->getId();	
+
 		if ($cache->isCached('issues', $issueId)) {
 			$issue = $cache->get('issues', $issueId);
 		} else {
@@ -80,22 +84,22 @@ class DNBXmlFilter extends NativeExportFilter {
 		}
 
 		// abort export in case any URN is set, this is a special case that has to be discussed with DNB and implmented differently in each case
-		$articleURN = $article->getStoredPubId('other::urnDNB');		
-		if (empty($articleURN)) $articleURN = $article->getStoredPubId('other::urn');
-		if (!empty($articleURN)) {
+		$submissionURN = $submission->getStoredPubId('other::urnDNB');
+		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
+		if (!empty($submissionURN)) {
 		    throw new ErrorException(MESSAGE_URN_SET, URN_SET);
 		};
 		
 		// Data we will need later
 		$language = AppLocale::get3LetterIsoFromLocale($galley->getLocale());
-		$datePublished = $article->getDatePublished();
+		$datePublished = $submission->getDatePublished();
 		if (!$datePublished) $datePublished = $issue->getDatePublished();
 		assert(!empty($datePublished));
 		$yearYYYY = date('Y', strtotime($datePublished));
 		$yearYY = date('y', strtotime($datePublished));
 		$month = date('m', strtotime($datePublished));
 		$day = date('d', strtotime($datePublished));
-		$contributors = $article->getAuthors();
+		$contributors = $submission->getAuthors();
 
 		// extract submission authors
 		$authors = array_filter($contributors, array($this, '_filterAuthors'));
@@ -104,7 +108,9 @@ class DNBXmlFilter extends NativeExportFilter {
 			// so the array can be used later in the field 700 1 _
 			$firstAuthor = array_shift($authors);
 		}
-		assert($firstAuthor);
+		if (!$firstAuthor) {
+			throw new ErrorException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED);
+		}
 
 		// extract submission translators
 		$translators = array_filter($contributors, array($this, '_filterTranslators'));
@@ -117,7 +123,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			if ($issue->getAccessStatus() == 0 || $issue->getAccessStatus() == ISSUE_ACCESS_OPEN) {
 				$openAccess = true;
 			} else if ($issue->getAccessStatus() == ISSUE_ACCESS_SUBSCRIPTION) {
-				if ($article->getAccessStatus() == ARTICLE_ACCESS_OPEN) {
+				if ($submission->getAccessStatus() == ARTICLE_ACCESS_OPEN) {
 					$openAccess = true;
 				}
 			}
@@ -159,10 +165,10 @@ class DNBXmlFilter extends NativeExportFilter {
 			$this->createSubfieldNode($doc, $doiDatafield024, 'a', $doi);
 			$this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
-		$articleDoi = $article->getStoredPubId('doi');
-		if (!empty($articleDoi)) {
+		$submissionDoi = $submission->getStoredPubId('doi');
+		if (!empty($submissionDoi)) {
 		    $doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
-		    $this->createSubfieldNode($doc, $doiDatafield024, 'a', $articleDoi);
+		    $this->createSubfieldNode($doc, $doiDatafield024, 'a', $submissionDoi);
 		    $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
 		// language
@@ -177,19 +183,19 @@ class DNBXmlFilter extends NativeExportFilter {
 		}
 		// first author
 		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
-		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(true));
+		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false,true));
 		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
 		// title
-		$title = $article->getTitle($galley->getLocale());
-		if (empty($title)) $title = $article->getTitle($article->getLocale());
+		$title = $submission->getTitle($galley->getLocale());
+		if (empty($title)) $title = $submission->getTitle($submission->getLocale());
 		assert(!empty($title));
 		//remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
 		$title = preg_replace("#[\s\n\r]+#",' ',$title);
 		$datafield245 = $this->createDatafieldNode($doc, $recordNode, '245', '0', '0');
 		$this->createSubfieldNode($doc, $datafield245, 'a', $title);
 		// subtitle
-		$subTitle = $article->getSubtitle($galley->getLocale());
-		if (empty($subTitle)) $subTitle = $article->getSubtitle($article->getLocale());
+		$subTitle = $submission->getSubtitle($galley->getLocale());
+		if (empty($subTitle)) $subTitle = $submission->getSubtitle($submission->getLocale());
 		if (!empty($subTitle)) {
 		    //remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
 		    $subTitle = preg_replace("#[\s\n\r]+#",' ',$subTitle); 
@@ -200,16 +206,16 @@ class DNBXmlFilter extends NativeExportFilter {
 		$this->createSubfieldNode($doc, $datafield264, 'c', $yearYYYY);
 		// article level URN (only if galley level URN does not exist)
 		if (empty($urn)) {
-			$articleURN = $article->getStoredPubId('other::urnDNB');
-			if (empty($articleURN)) $articleURN = $article->getStoredPubId('other::urn');
-			if (!empty($articleURN)) {
+			$submissionURN = $submission->getStoredPubId('other::urnDNB');
+			if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
+			if (!empty($submissionURN)) {
 				$urnDatafield500 = $this->createDatafieldNode($doc, $recordNode, '500', ' ', ' ');
-				if (!empty($articleURN)) $this->createSubfieldNode($doc, $urnDatafield500, 'a', 'URN: ' . $articleURN);
+				if (!empty($submissionURN)) $this->createSubfieldNode($doc, $urnDatafield500, 'a', 'URN: ' . $submissionURN);
 			}
 		}
 		// abstract
-		$abstract = $article->getAbstract($galley->getLocale());
-		if (empty($abstract)) $abstract = $article->getAbstract($article->getLocale());
+		$abstract = $submission->getAbstract($galley->getLocale());
+		if (empty($abstract)) $abstract = $submission->getAbstract($submission->getLocale());
 		if (!empty($abstract)) {
 			$abstract = trim(PKPString::html2text($abstract));
 			//remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
@@ -218,13 +224,13 @@ class DNBXmlFilter extends NativeExportFilter {
 				$abstract = mb_substr($abstract, 0, 996,"UTF-8");
 				$abstract .= '...';
 			}
-			$abstractURL = $request->url($journal->getPath(), 'article', 'view', array($article->getId()));
+			$abstractURL = $request->url($journal->getPath(), 'article', 'view', array($submissionId));
 			$datafield520 = $this->createDatafieldNode($doc, $recordNode, '520', '3', ' ');
 			$this->createSubfieldNode($doc, $datafield520, 'a', $abstract);
 			$this->createSubfieldNode($doc, $datafield520, 'u', $abstractURL);
 		}
 		// license URL
-		$licenseURL = $article->getLicenseURL();
+		$licenseURL = $submission->getLicenseURL();
 		if (empty($licenseURL)) {
 			// copyright notice
 			$copyrightNotice = $journal->getSetting('copyrightNotice', $galley->getLocale());
@@ -239,9 +245,8 @@ class DNBXmlFilter extends NativeExportFilter {
 			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
 		}
 		// keywords
-		//$supportedLocales = array_keys(AppLocale::getSupportedFormLocales());
 		$submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
-		$controlledVocabulary = $submissionKeywordDao->getKeywords($article->getId(), array($galley->getLocale()));
+		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getId(), array($galley->getLocale()));
 		if (!empty($controlledVocabulary[$galley->getLocale()])) {
 			$datafield653 = $this->createDatafieldNode($doc, $recordNode, '653', ' ', ' ');
 			foreach ($controlledVocabulary[$galley->getLocale()] as $controlledVocabularyItem) {
@@ -251,13 +256,13 @@ class DNBXmlFilter extends NativeExportFilter {
 		// other authors
 		foreach ((array) $authors as $author) {
 			$datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-			$this->createSubfieldNode($doc, $datafield700, 'a', $author->getFullName(true));
+			$this->createSubfieldNode($doc, $datafield700, 'a', $author->getFullName(false,true));
 			$this->createSubfieldNode($doc, $datafield700, '4', 'aut');
 		}
 		// translators
 		foreach ((array) $translators as $translator) {
 		    $datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-		    $this->createSubfieldNode($doc, $datafield700, 'a', $translator->getFullName(true));
+		    $this->createSubfieldNode($doc, $datafield700, 'a', $translator->getFullName(false,true));
 		    $this->createSubfieldNode($doc, $datafield700, '4', 'trl');
 		}
 		
@@ -280,7 +285,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$journalDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', '8');
 		$this->createSubfieldNode($doc, $journalDatafield773, 'x', $issn);
 		// file data
-		$galleyURL = $request->url($journal->getPath(), 'article', 'view', array($article->getId(), $galley->getId()));
+		$galleyURL = $request->url($journal->getPath(), 'article', 'view', array($submissionId, $galley->getId()));
 		$datafield856 = $this->createDatafieldNode($doc, $recordNode, '856', '4', ' ');
 		$this->createSubfieldNode($doc, $datafield856, 'u', $galleyURL);
 		$this->createSubfieldNode($doc, $datafield856, 'q', $this->_getGalleyFileType($galley));
@@ -298,7 +303,7 @@ class DNBXmlFilter extends NativeExportFilter {
 	}
 
 	/**
-	 * Check if the contributor is an author.
+	 * Check if the contributor is an author resistered with the journal.
 	 * @param $contributor Author
 	 * @return boolean
 	 */
@@ -308,7 +313,7 @@ class DNBXmlFilter extends NativeExportFilter {
 	}
 
 	/**
-	 * Check if the contributor is a translator.
+	 * Check if the contributor is a translator resistered with the journal.
 	 * @param $contributor Author
 	 * @return boolean
 	 */

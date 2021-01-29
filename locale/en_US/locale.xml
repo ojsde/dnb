@@ -66,6 +66,8 @@
 	<message key="plugins.importexport.dnb.export.error.galleyFileNotFound">The galley file {$param} could not be found.</message>
 	<message key="plugins.importexport.dnb.export.error.galleyFileNoCopy">The galley file {$param}.</message>
 	<message key="plugins.importexport.dnb.export.error.galleyFileNoCopy.param">{$sourceGalleyFilePath} could not be copied to {$targetGalleyFilePath}</message>
+	<message key="plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param">Error exporting submission {$submissionId}. {$msg}</message>		       
+    <message key="plugins.importexport.dnb.export.error.firestAuthorNotRegistred">{$param} The primary auther of the submission is required to be a registered author with this journal.</message>
 	<message key="plugins.importexport.dnb.senderTask.name">DNB automatic deposit task</message>
 
 </locale>

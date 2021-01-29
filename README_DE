@@ -1,13 +1,11 @@
 =============================================================
 === OJS DNB-Export-Plug-In
-=== Version: 1.3.2
+=== Version: 1.4
 === Autor: Bozana Bokan, Ronald Steffen
-=== Letzte Änderung: 15. Januar 2021
+=== Letzte Änderung: 29. Januar 2021
 =============================================================
 
-Achtung: Bitte benutzen Sie bis zur Ver�ffentlichung einer neuen Plugin-Version nicht die automatische Ablieferung an die DNB.
-
-�ber
+Über
 -----
 Dieses Plug-In ermöglicht den Export von Artikel-Metadaten und -Volltexten (im PDF- und EPUB-Format) zwecks ihrer Pflichtablieferung an die Deutsche Nationalbibliothek (DNB)
 mittels DNB-Hotfolder-Verfahren. Das Plug-In bietet auch die Option, das Transferpaket direkt in den DNB-Hotfolder abzuliefern.
@@ -20,8 +18,8 @@ Das Plug-In ist unter GNU General Public License v2 lizenziert. Sehen Sie die Da
 
 Systemanforderungen
 -------------------
-Dieses Plug-In ist kompatibel mit...
- - OJS 3.1.1, 3.1.2
+Dieses Plug-In Verison ist kompatibel mit...
+ - OJS 3.2.1
 
 TAR-Programm wird benötigt und es muss in der Datei config.inc.php konfiguriert werden.
 
@@ -39,7 +37,7 @@ Installation über die Kommandozeile ohne Git:
  - ggf. Umbenennen des Hauptverzeichnisses in "dnb"
  - Aktualisierung der Datenbank (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen),
    führen Sie dazu aus Ihrem OJS-Verzeichnis aus: php tools/upgrade.php upgrade oder
-   php tools/installPluginVersion.php (see https://github.com/pkp/pkp-lib/issues/2503)
+   php tools/upgrade.php upgrade or php tools/installPluginVersion.php
 
 Installation über die Kommandozeile mit Git:
  - cd [my_ojs_installation]/plugins/importexport
@@ -47,9 +45,8 @@ Installation über die Kommandozeile mit Git:
  - cd dnb
  - git checkout [branch]
  - cd [my_ojs_installation]
- - php tools/upgrade.php upgrade (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen) oder php tools/installPluginVersion.php (s. https://github.com/pkp/pkp-lib/issues/2503)
-  - php lib/pkp/tools/installPluginVersion.php plugins/importexport/dnb/version.xml
-  
+ - php tools/upgrade.php upgrade or php tools/installPluginVersion.php
+
 Export
 ------------
 Die Plug-In-Einstellungen sind hier zu finden:
@@ -66,4 +63,7 @@ Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Kl
 
 Kontakt/Support
 ---------------
+
+Bitte beachten Sie auch die Dokumentation im Ordner `docs` oder unter https://ojs-de.net/support/anleitungen/dnb-plugin.
+
 Dokumentation, Fehlerauflistung und Updates können auf dieser Plug-Ins-Startseite gefunden werden <http://github.com/ojsde/dnb>.
