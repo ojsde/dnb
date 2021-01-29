@@ -2,7 +2,7 @@
 === OJS DNB Export Plugin
 === Version: 1.4
 === Author: Bozana Bokan, Ronald Steffen
-=== Last update: January 15, 2021
+=== Last update: January 29, 2021
 =============================================================
 
 About
@@ -35,7 +35,7 @@ Installation via command line without Git:
  - download archive from https://github.com/ojsde/dnb
  - unzip the archive to plugins/importexport and rename the main plugin folder to "dnb" if necessary
  - from your application's installation directory, run the upgrade script (it is recommended to back up your database first):
-   php tools/upgrade.php upgrade or php tools/installPluginVersion.php (see https://github.com/pkp/pkp-lib/issues/2503)
+   php tools/upgrade.php upgrade or php tools/installPluginVersion.php
 
 Installation with Git:
  - cd [my_ojs_installation]/plugins/importexport
@@ -43,7 +43,7 @@ Installation with Git:
  - cd dnb
  - git checkout [branch]
  - cd [my_ojs_installation]
- - php tools/upgrade.php upgrade or php tools/installPluginVersion.php (s. https://github.com/pkp/pkp-lib/issues/2503, it is recommended to back up your database first)
+ - php tools/upgrade.php upgrade or php tools/installPluginVersion.php
 
 Export
 ------------
