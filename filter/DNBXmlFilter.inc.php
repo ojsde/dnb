@@ -177,7 +177,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		}
 		// first author
 		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
-		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(true));
+		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false, true));
 		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
 		// title
 		$title = $article->getTitle($galley->getLocale());
@@ -251,13 +251,13 @@ class DNBXmlFilter extends NativeExportFilter {
 		// other authors
 		foreach ((array) $authors as $author) {
 			$datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-			$this->createSubfieldNode($doc, $datafield700, 'a', $author->getFullName(true));
+			$this->createSubfieldNode($doc, $datafield700, 'a', $author->getFullName(false, true));
 			$this->createSubfieldNode($doc, $datafield700, '4', 'aut');
 		}
 		// translators
 		foreach ((array) $translators as $translator) {
 		    $datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-		    $this->createSubfieldNode($doc, $datafield700, 'a', $translator->getFullName(true));
+		    $this->createSubfieldNode($doc, $datafield700, 'a', $translator->getFullName(false, true));
 		    $this->createSubfieldNode($doc, $datafield700, '4', 'trl');
 		}
 		
