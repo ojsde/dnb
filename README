@@ -61,5 +61,8 @@ Please note, that the password will be saved as plain text, i.e. not encrypted, 
 
 Contact/Support
 ---------------
+
+Please see the documentation (in German) in the `docs` folder or at https://ojs-de.net/support/anleitungen/dnb-plugin. 
+
 Documentation, bug listings, and updates can be found on this plugin's homepage
 at <http://github.com/ojsde/dnb>.
