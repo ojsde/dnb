@@ -16,6 +16,7 @@
 
 import('lib.pkp.plugins.importexport.native.filter.NativeExportFilter');
 define('XML_NON_VALID_CHARCTERS', 100);
+define('FIRST_AUTHOR_NOT_REGISTERED', 102);
 define('URN_SET', 101);
 define('MESSAGE_URN_SET','An URN has been set.'); // @RS refine
 
@@ -104,7 +105,9 @@ class DNBXmlFilter extends NativeExportFilter {
 			// so the array can be used later in the field 700 1 _
 			$firstAuthor = array_shift($authors);
 		}
-		assert($firstAuthor);
+		if (!$firstAuthor) {
+			throw new ErrorException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED);
+		}
 
 		// extract submission translators
 		$translators = array_filter($contributors, array($this, '_filterTranslators'));

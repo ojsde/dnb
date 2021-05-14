@@ -388,6 +388,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
                     return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
 		        case URN_SET:
 		            return array('plugins.importexport.dnb.export.error.urnSet');
+				case FIRST_AUTHOR_NOT_REGISTERED:
+					$param = __('plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));		       
+					return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
 		    }
 		}
 
