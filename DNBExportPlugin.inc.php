@@ -33,12 +33,6 @@ if (!DEBUG) {
 }
 
 class DNBExportPlugin extends PubObjectsExportPlugin {
-	/**
-	 * Constructor
-	 */
-	function __construct() {
-		parent::__construct();
-	}
 
 	/**
 	 * @copydoc Plugin::getName()
@@ -88,7 +82,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$templateMgr->assign('checkFilter', !is_array($this->checkForExportFilter()));
 				$templateMgr->assign('checkTar', !is_array($checkForTarResult));
 				$templateMgr->assign('checkSettings', $this->checkPluginSettings($context));
-				$templateMgr->display(method_exists($this,'getTemplateResource')?$this->getTemplateResource('index.tpl'):$this->getTemplatePath() . 'index.tpl');
+				$templateMgr->display($this->getTemplateResource('index.tpl'));
 				break;
 		}
 	}
@@ -322,15 +316,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     					$finalExportFileName = reset($exportFilesNames);
     				}
        				// Stream the results to the browser
+					Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
        				// downloadFile used with OJS 3.1.1
        				// downloadByPath used with OJS 3.1.2
-    				method_exists($fileManager, 'downloadByPath')?$fileManager->downloadByPath($finalExportFileName):$fileManager->downloadFile($finalExportFileName);
+    				//method_exists($fileManager, 'downloadByPath')?$fileManager->downloadByPath($finalExportFileName):$fileManager->downloadFile($finalExportFileName);
 			    }
 			    // Remove the generated directories
 			    $fileManager->rmtree($journalExportPath);
 			    // redirect back to the right tab
-				// TODO @RS this causes an error in the log and doesn't change UI tab
-				//$request->redirect(null, null, null, $path, null, $tab);
+				$request->redirect(null, null, null, $path, null, $tab);
 			} elseif ($request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
 				if (!empty($errors)) {
 					// If there were some deposit errors, display them to the user
@@ -369,7 +363,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// Get the final target export directory.
 		// The data will be exported in this structure:
 		// dnb/<journalId>-<dateTime>/<journalId>-<articleId>-<galleyId>/
-		$submissionId = $galley->getFile()->getSubmissionId();
+		$submissionId = $galley->getFile()->getData('submissionId');
 		$exportContentDir = $journal->getId() . '-' . $submissionId . '-' . $galley->getFileId();
 		$result = $this->getExportPath($journal->getId(), $journalExportPath, $exportContentDir);
 		if (is_array($result)) return $result;
@@ -397,7 +391,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 
 		// Write the metadata XML to the file.
-		$metadataFile = $exportPath . 'catalogue_md.xml';
+		$metadataFile = Config::getVar('files', 'files_dir') . '/' . $exportPath . 'catalogue_md.xml';
 		$fileManager = new FileManager();
 		$fileManager->writeFile($metadataFile, $metadataXML);
 		$fileManager->setMode($metadataFile, FILE_MODE_MASK);
@@ -480,20 +474,22 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	        $targetGalleyFilePath = $exportPath . 'content/'  . basename($galley->getRemoteURL());
 	        }
 	    } else {
-	       $submissionFile = $galley->getFile();
-	       $sourceGalleyFilePath = $submissionFile->getFilePath();
-	       $targetGalleyFilePath = $exportPath . 'content'  . '/' . $submissionFile->getServerFileName();
+	       $submissionFile = Services::get('file')->get($galley->getData('id')); //$galley->getFile();
+	       $sourceGalleyFilePath = $submissionFile->path;
+	       $targetGalleyFilePath = $exportPath . 'content'  . '/' . basename($sourceGalleyFilePath);//$submissionFile->getServerFileName(); TODO @RS
 		}
 	    
-		if (!file_exists($sourceGalleyFilePath)) {
+		if (!Services::get('file')->fs->has($sourceGalleyFilePath)) {
 			return array('plugins.importexport.dnb.export.error.galleyFileNotFound',$sourceGalleyFilePath);
 		}
-		$fileManager = new FileManager();
-		if (!$fileManager->copyFile($sourceGalleyFilePath, $targetGalleyFilePath)) {
-			$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
+		Services::get('file')->fs->createDir($exportPath . 'content');
+
+		if (!Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath)) {
+			$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy.param', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
 			return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
 		}
 		//remove temporary file
+		$fileManager = new FileManager();
 		if (!empty($temporaryFilename))	$fileManager->rmtree($temporaryFilename);
 		return realpath($targetGalleyFilePath);
 	}
@@ -515,22 +511,21 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	
 	function getExportPath($journalId = null, $currentExportPath = null, $exportContentDir = null) {
 		if (!$currentExportPath) {
-			$exportPath = Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix() . '/' . $journalId . '-' . date('Ymd-His');
+			$exportPath = $this->getPluginSettingsPrefix() . '/' . $journalId . '-' . date('Ymd-His');
 		} else {
 			$exportPath = $currentExportPath;
 		}
-		if ($exportContentDir) $exportPath .= '/' .$exportContentDir;
-		if (!file_exists($exportPath)) {
-			$fileManager = new FileManager();
-			$fileManager->mkdirtree($exportPath);
+		if ($exportContentDir) $exportPath .= $exportContentDir;
+		if (!Services::get('file')->fs->has($exportPath)) {
+			Services::get('file')->fs->createDir($exportPath);
 		}
-		if (!is_writable($exportPath)) {
+		if (!Services::get('file')->fs->has($exportPath)) {
 			$errors = array(
 				array('plugins.importexport.dnb.export.error.outputFileNotWritable', $exportPath)
 			);
 			return $errors;
 		}
-		return realpath($exportPath) . '/';
+		return $exportPath . '/';
 	}
 
 	/**
@@ -645,6 +640,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function tarFiles($targetPath, $targetFile, $sourceFiles = null, $gzip = false) {
 		assert($this->_checkedForTar);
+
+		$targetPath = Config::getVar('files', 'files_dir') . '/' . $targetPath;
+		$targetFile = Config::getVar('files', 'files_dir') . '/' . $targetFile;
 
 		$tarCommand = '';
 		// Change directory to the target path, to be able to use

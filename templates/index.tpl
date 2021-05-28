@@ -8,9 +8,13 @@
  *
  * List of operations this plugin can perform
  *}
-{strip}
-{include file="common/header.tpl" pageTitle="plugins.importexport.dnb.displayName"}
-{/strip}
+
+ {extends file="layouts/backend.tpl"}
+
+{block name="page"}
+	<h1 class="app__pageHeading">
+		{{translate key="plugins.importexport.dnb.displayName"}|escape}
+	</h1>
 
 <script type="text/javascript">{literal}
 	function articleSselectAll() {
@@ -152,4 +156,4 @@
 	{/if}
 </div>
 
-{include file="common/footer.tpl"}
+{/block}
