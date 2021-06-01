@@ -57,7 +57,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$journal = $deployment->getContext();
 		$plugin = $deployment->getPlugin();
 		$cache = $plugin->getCache();
-		$request = Application::getRequest();
+		$request = Application::get()->getRequest();
 
 		// Get all objects
 		$issue = $submission = $galley = $galleyFile = null;

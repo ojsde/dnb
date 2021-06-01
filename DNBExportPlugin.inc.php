@@ -14,9 +14,8 @@
  */
 
 import('classes.plugins.PubObjectsExportPlugin');
-import('lib.pkp.classes.file.FileManager');
 
-define('DEBUG', false);
+define('DEBUG', true);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 # determines whether to export remote galleys (experimental feature)
@@ -175,8 +174,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($curlCh, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
 
-		assert(is_readable($filename));
-		$fh = fopen($filename, 'rb');
+		$fh = Services::get('file')->fs->readStream($filename); // TODO @RS verify exist
 
 		$username = $this->getSetting($context->getId(), 'username');
 		$password = $this->getSetting($context->getId(), 'password');
@@ -187,7 +185,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_URL, SFTP_SERVER.$folderId.'/'.basename($filename));
 		curl_setopt($curlCh, CURLOPT_PORT, SFTP_PORT);
 		curl_setopt($curlCh, CURLOPT_USERPWD, "$username:$password");
-		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename));
+		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize(Config::getVar('files', 'files_dir') . '/' .$filename));
 		curl_setopt($curlCh, CURLOPT_INFILE, $fh);
 
 		$response = curl_exec($curlCh);
@@ -200,7 +198,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$errors = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 		}
 		curl_close($curlCh);
-		fclose($fh);
 
 		if (!empty($errors)) return $errors;
 		return true;
@@ -241,7 +238,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$errors = $exportFilesNames = array();
 			$submissionDao = DAORegistry::getDAO('SubmissionDAO');
 			$genreDao = DAORegistry::getDAO('GenreDAO');
-			$fileManager = new FileManager();
 
 			// For each selected article
 			foreach ($submissions as $submission) {
@@ -316,13 +312,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     					$finalExportFileName = reset($exportFilesNames);
     				}
        				// Stream the results to the browser
-					Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
-       				// downloadFile used with OJS 3.1.1
-       				// downloadByPath used with OJS 3.1.2
-    				//method_exists($fileManager, 'downloadByPath')?$fileManager->downloadByPath($finalExportFileName):$fileManager->downloadFile($finalExportFileName);
-			    }
+					// Starting from OJS 3.3 this would be the prefered way to stream a file for download
+					//Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
+					// However, this function exits execution after dowload not allowing for clean up of zip file
+					// We therfore copied the appropriate functions from OJS 3.2 FileManager
+					$finalExportFileName = Config::getVar('files', 'files_dir') . '/' . $finalExportFileName;
+					$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
+				}
 			    // Remove the generated directories
-			    $fileManager->rmtree($journalExportPath);
+				Services::get('file')->fs->deleteDir($journalExportPath);
 			    // redirect back to the right tab
 				$request->redirect(null, null, null, $path, null, $tab);
 			} elseif ($request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
@@ -338,7 +336,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					);
 				}
 				// Remove the generated directories
-				$fileManager->rmtree($journalExportPath);
+				Services::get('file')->fs->deleteDir($journalExportPath);
 				// redirect back to the right tab
 				$request->redirect(null, null, null, $path, null, $tab);
 			}
@@ -391,7 +389,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 
 		// Write the metadata XML to the file.
+		// PKP encourages use of the Filesystem API like:
+		// $res = Services::get('file')->fs->write($metadataFile, $metadataXML);
+		// However, its not working yet writing files, probably a $config has to be passed but documenation not found on that
+		// For now we continue to use the FileManager	
 		$metadataFile = Config::getVar('files', 'files_dir') . '/' . $exportPath . 'catalogue_md.xml';
+		import('lib.pkp.classes.file.FileManager');
 		$fileManager = new FileManager();
 		$fileManager->writeFile($metadataFile, $metadataXML);
 		$fileManager->setMode($metadataFile, FILE_MODE_MASK);
@@ -474,9 +477,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	        $targetGalleyFilePath = $exportPath . 'content/'  . basename($galley->getRemoteURL());
 	        }
 	    } else {
-	       $submissionFile = Services::get('file')->get($galley->getData('id')); //$galley->getFile();
+	       $submissionFile = Services::get('file')->get($galley->getData('id'));
 	       $sourceGalleyFilePath = $submissionFile->path;
-	       $targetGalleyFilePath = $exportPath . 'content'  . '/' . basename($sourceGalleyFilePath);//$submissionFile->getServerFileName(); TODO @RS
+	       $targetGalleyFilePath = $exportPath . 'content'  . '/' . basename($sourceGalleyFilePath);
 		}
 	    
 		if (!Services::get('file')->fs->has($sourceGalleyFilePath)) {
@@ -489,8 +492,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
 		}
 		//remove temporary file
-		$fileManager = new FileManager();
-		if (!empty($temporaryFilename))	$fileManager->rmtree($temporaryFilename);
+		if (!empty($temporaryFilename))	Services::get('file')->fs->deleteDir($temporaryFilename);
 		return realpath($targetGalleyFilePath);
 	}
 
@@ -710,6 +712,70 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				(isset($error[1]) ? $error[1] : null)
 			);
 		}
+	}
+
+	
+	/**
+	 * Read a file's contents.
+	 * @param $filePath string the location of the file to be read
+	 * @param $output boolean output the file's contents instead of returning a string
+	 * @return string|boolean
+	 */
+	function readFileFromPath($filePath, $output = false) {
+		if (is_readable($filePath)) {
+			$f = fopen($filePath, 'rb');
+			if (!$f) return false;
+			$data = '';
+			while (!feof($f)) {
+				$data .= fread($f, 4096);
+				if ($output) {
+					echo $data;
+					$data = '';
+				}
+			}
+			fclose($f);
+
+			if ($output) return true;
+			return $data;
+		}
+		return false;
+	}
+
+	/**
+	 * Download a file.
+	 * Outputs HTTP headers and file content for download
+	 * @param $filePath string the location of the file to be sent
+	 * @param $mediaType string the MIME type of the file, optional
+	 * @param $inline boolean print file as inline instead of attachment, optional
+	 * @param $fileName string Optional filename to use on the client side
+	 * @return boolean
+	 */
+	function downloadByPath($filePath, $mediaType = null, $inline = false, $fileName = null) {
+		$result = null;
+		if (is_readable($filePath)) {
+			if ($mediaType === null) {
+				// If the media type wasn't specified, try to detect.
+				$mediaType = PKPString::mime_content_type($filePath);
+				if (empty($mediaType)) $mediaType = 'application/octet-stream';
+			}
+			if ($fileName === null) {
+				// If the filename wasn't specified, use the server-side.
+				$fileName = basename($filePath);
+			}
+
+			// Stream the file to the end user.
+			header("Content-Type: $mediaType");
+			header('Content-Length: ' . filesize($filePath));
+			header('Accept-Ranges: none');
+			header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . "; filename=\"$fileName\"");
+			header('Cache-Control: private'); // Workarounds for IE weirdness
+			header('Pragma: public');
+			$this->readFileFromPath($filePath, true);
+			$returner = true;
+		} else {
+			$returner = false;
+		}
+		return $returner;
 	}
 
 }
