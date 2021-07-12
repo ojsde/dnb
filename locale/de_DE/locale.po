@@ -152,3 +152,6 @@ msgstr "{$param} Der Erstautor der Fahe muss bei dieser Zeitschrift als Autor re
 
 msgid "plugins.importexport.dnb.senderTask.name"
 msgstr "DNB automatic deposit task"
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param"
+msgstr "Die Paketdatei {$package} des Artikels {$articleId} konnte nicht hochgeladen werden. Fehler: Paketdatei nicht gefunden!"

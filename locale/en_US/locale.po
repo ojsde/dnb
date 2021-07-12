@@ -152,3 +152,6 @@ msgstr "{$param} The primary auther of the submission is required to be a regist
 
 msgid "plugins.importexport.dnb.senderTask.name"
 msgstr "DNB automatic deposit task"
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param"
+msgstr "package file {$package} of the article {$articleId}: package file not found!"

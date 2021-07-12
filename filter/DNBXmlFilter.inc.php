@@ -62,8 +62,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		// Get all objects
 		$issue = $submission = $galley = $galleyFile = null;
 		$galley = $pubObject;
-		//$galleyFile = $galley->getFile();
-		$submissionId = $galley->getData('id');//$galleyFile->getSubmissionId();
+		$submissionId = $galley->getFile()->getData('submissionId');
 		if ($cache->isCached('articles', $submissionId)) {
 			$submission = $cache->get('articles', $submissionId);
 		} else {
@@ -184,6 +183,9 @@ class DNBXmlFilter extends NativeExportFilter {
 		// first author
 		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
 		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false,true));
+		if (!empty($firstAuthor->getData('orcidAccessToken'))) {
+            $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename($firstAuthor->getOrcid()));
+        }
 		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
 		// title
 		$title = $submission->getTitle($galley->getLocale());
@@ -258,12 +260,18 @@ class DNBXmlFilter extends NativeExportFilter {
 		foreach ((array) $authors as $author) {
 			$datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
 			$this->createSubfieldNode($doc, $datafield700, 'a', $author->getFullName(false,true));
+			if (!empty($author->getData('orcidAccessToken'))) {
+				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename($author->getOrcid()));
+			}
 			$this->createSubfieldNode($doc, $datafield700, '4', 'aut');
 		}
 		// translators
 		foreach ((array) $translators as $translator) {
 		    $datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
 		    $this->createSubfieldNode($doc, $datafield700, 'a', $translator->getFullName(false,true));
+			if (!empty($translator->getData('orcidAccessToken'))) {
+				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename($translator->getOrcid()));
+			}
 		    $this->createSubfieldNode($doc, $datafield700, '4', 'trl');
 		}
 		
@@ -280,8 +288,8 @@ class DNBXmlFilter extends NativeExportFilter {
 		$this->createSubfieldNode($doc, $issueDatafield773, '7', 'nnas');
 		// journal data
 		// there has to be an ISSN
-		$issn = $journal->getSetting('onlineIssn');
-		if (empty($issn)) $issn = $journal->getSetting('printIssn');
+		$issn = $journal->getData('onlineIssn');
+		if (empty($issn)) $issn = $journal->getData('printIssn');
 		assert(!empty($issn));
 		$journalDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', '8');
 		$this->createSubfieldNode($doc, $journalDatafield773, 'x', $issn);

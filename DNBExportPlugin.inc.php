@@ -160,6 +160,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function depositXML($object, $context, $filename) {   
 		$errors = array();
+
+		$fh = Services::get('file')->fs->readStream($filename); // TODO @RS verify exist
+		if (!$fh) {
+			// error occured
+			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param', array('package' => basename($filename), 'articleId' => $object->getFile()->getData('submissionId')));
+			$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
+			return $errors;
+		}
+
 		$curlCh = curl_init();
 		if ($httpProxyHost = Config::getVar('proxy', 'http_host')) {
 			curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
@@ -173,8 +182,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_HEADER, true);
 		curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($curlCh, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
-
-		$fh = Services::get('file')->fs->readStream($filename); // TODO @RS verify exist
 
 		$username = $this->getSetting($context->getId(), 'username');
 		$password = $this->getSetting($context->getId(), 'password');
@@ -195,7 +202,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		if ($curlError) {
 			// error occured
 			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getFile()->getData('submissionId'), 'error' => $curlError));
-			$errors = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
+			$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 		}
 		curl_close($curlCh);
 
