@@ -1,0 +1,160 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2021-05-28T09:34:17+00:00\n"
+"PO-Revision-Date: 2021-05-28T09:34:17+00:00\n"
+"importexport-dnb/en/>\n"
+"Language: en_US\n"
+
+msgid "plugins.importexport.dnb.displayName"
+msgstr "DNB Export Plugin"
+
+msgid "plugins.importexport.dnb.description"
+msgstr "Export or deposit articles in DNB format."
+
+msgid "plugins.importexport.dnb.archiveAccess.required"
+msgstr "<strong>Note:</strong> This journal is not open access, thus you have to first chose one of the possible access options for the archived articles at DNB in the plugin settings before you can proceed with the export."
+
+msgid "plugins.importexport.dnb.registrationIntro"
+msgstr "In order to deposit the articles directly from within OJS, you will need to enter your DNB Hotfolder username, password and subfolder. If you do not enter these credentials, you can still export the DNB packages."
+
+msgid "plugins.importexport.dnb.noISSN"
+msgstr "ISSN (s. <a href=\"{$journalSettingsUrl}\" target=\"_blank\">Journal Settings Page</a>) is required for export and deposit."
+
+msgid "plugins.importexport.dnb.noTAR"
+msgstr "TAR command (s. cli part in the config.inc.php) is required for export and deposit."
+
+msgid "plugins.importexport.dnb.noExportFilter"
+msgstr "No export filter registered! Did you run the install script?"
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess"
+msgstr "Please define the access to the articles in the DNB archive:"
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.description"
+msgstr "For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed journals and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles. Please note that setting access options at the issue or article level will have precedence over the setting selected here."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.a"
+msgstr "Restricted access (access only on specially configured computers in the DNB reading rooms)."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.b"
+msgstr "Unrestricted access for all."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.d"
+msgstr "Access only for users registered with the DNB, also from outside the DNB."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccessRequired"
+msgstr "Please define the access permissions for the archived articles."
+
+msgid "plugins.importexport.dnb.settings.form.folderId"
+msgstr "Subfolder ID"
+
+msgid "plugins.importexport.dnb.settings.form.folderId.description"
+msgstr "This is the subfolder in your DNB Hotfolder, where the exported packages should be uploaded."
+
+msgid "plugins.importexport.dnb.settings.form.username"
+msgstr "Username"
+
+msgid "plugins.importexport.dnb.settings.form.password.description"
+msgstr "Please note that the password will be saved as plain text, i.e. not encrypted."
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit"
+msgstr "Deposit articles to DNB automatically"
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit.description"
+msgstr "OJS regularly checks if there are articles not yet deposited (that is, articles that are not deposited from within OJS and not marked as registered) and automatically deposits them to the DNB Hotfolder. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the articles listing."
+
+msgid "plugins.importexport.dnb.status.non"
+msgstr "Not deposited"
+
+msgid "plugins.importexport.dnb.status.deposited"
+msgstr "Deposited"
+
+msgid "plugins.importexport.dnb.status.legend"
+msgstr ""
+"\n"
+"\t\t<p>An article can have one of the following status:<br/>\n"
+"\t\t<strong>Not deposited</strong>: The article has not been delivered to the DNB yet (it was not deposited to the DNB Hotfolder from within OJS and not marked registered).<br/>\n"
+"\t\t<strong>Deposited</strong>: The article has been deposited to the DNB Hotfolder from within OJS.<br/>\n"
+"\t\t<strong>Marked registered</strong>: The article was manually marked as registered. You may mark articles as registered (see button \"Mark Registered\") to indicate that the article was delivered to the DNB outside of OJS, e.g. via the DNB web form.\n"
+"\t\t</p>"
+
+msgid "plugins.importexport.dnb.deposited.success"
+msgstr "The selected articles were deposited!"
+
+msgid "plugins.importexport.dnb.deposit"
+msgstr "Deposit"
+
+msgid "plugins.importexport.dnb.deposit.confirm"
+msgstr "You have selected already deposited articles. Are you sure you want to proceed with the deposit?"
+
+msgid "plugins.importexport.dnb.deposit.notice"
+msgstr "<strong>Note:</strong> The deposit can take a long time. So please choose only a few articles each time and be patient after clicking the \"Deposit\" button. You'll be notified when the process is completed."
+
+msgid "plugins.importexport.dnb.selectAll"
+msgstr "Select All"
+
+msgid "plugins.importexport.dnb.deselectAll"
+msgstr "Deselect All"
+
+msgid "plugins.importexport.dnb.export.error.articleCannotBeExported"
+msgstr "The article {$param} cannot be exported because it does not have a local PDF or an EPUB galley."
+
+msgid "plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters"
+msgstr "Error writing XML file for the article with submission ID {$param} No articles exported!"
+
+msgid "plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param"
+msgstr "{$submissionId}. A field contains characters not allowed in XML 1.0 specification: \"{$node}\". "
+
+msgid "plugins.importexport.dnb.export.error.outputFileNotWritable"
+msgstr "The output file {$param} is not writable."
+
+msgid "plugins.importexport.dnb.deposit.error.noObjectsSelected"
+msgstr "You have to select at least one object for export."
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed"
+msgstr "The SFTP upload failed for the {$param}"
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.param"
+msgstr "package file {$package} of the article {$articleId}: {$error}"
+
+msgid "plugins.importexport.dnb.export.error.curlError"
+msgstr "An error occured executing curl: {$param}. Export canceld!"
+
+msgid "plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid"
+msgstr "Remote server reported invalid content type: {$param}. No articles exported!"
+
+msgid "plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid"
+msgstr "Mime type of remote galley file with ID {$param} not valid. No articles exported!"
+
+msgid "plugins.importexport.dnb.export.error.urnSet"
+msgstr "The DNB Export Plugin does not export articles with URNs for article objects. Please contact the Deutsche Nationalbibliothek for more information."
+
+msgid "plugins.importexport.dnb.export.error.galleyFileNotFound"
+msgstr "The galley file {$param} could not be found."
+
+msgid "plugins.importexport.dnb.export.error.galleyFileNoCopy"
+msgstr "The galley file {$param}."
+
+msgid "plugins.importexport.dnb.export.error.galleyFileNoCopy.param"
+msgstr "{$sourceGalleyFilePath} could not be copied to {$targetGalleyFilePath}"
+
+msgid "plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param"
+msgstr "Error exporting submission {$submissionId}. {$msg}"
+
+msgid "plugins.importexport.dnb.export.error.firestAuthorNotRegistred"
+msgstr "{$param} The primary auther of the submission is required to be a registered author with this journal."
+
+msgid "plugins.importexport.dnb.senderTask.name"
+msgstr "DNB automatic deposit task"
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param"
+msgstr "package file {$package} of the article {$articleId}: package file not found!"
+
+msgid "plugins.importexport.dnb.deposit.error.hotfolderCredentialsMissing"
+msgstr "Please provide all login credentials on the pluin settings page before depositing articles."
