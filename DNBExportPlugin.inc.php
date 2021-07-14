@@ -125,13 +125,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc PubObjectsExportPlugin::getExportActions()
 	 */
 	function getExportActions($context) {
-		$actions = array(EXPORT_ACTION_EXPORT, EXPORT_ACTION_MARKREGISTERED);
-		if ($this->getSetting($context->getId(), 'username') &&
-			$this->getSetting($context->getId(), 'password') &&
-			$this->getSetting($context->getId(), 'folderId')) {
-			array_unshift($actions, EXPORT_ACTION_DEPOSIT);
-		}
-		return $actions;
+		return array(EXPORT_ACTION_DEPOSIT, EXPORT_ACTION_EXPORT, EXPORT_ACTION_MARKREGISTERED);
 	}
 
 	/**
@@ -161,9 +155,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function depositXML($object, $context, $filename) {   
 		$errors = array();
 
-		$fh = Services::get('file')->fs->readStream($filename); // TODO @RS verify exist
+		if (!($this->getSetting($context->getId(), 'username') &&
+			$this->getSetting($context->getId(), 'password') &&
+			$this->getSetting($context->getId(), 'folderId'))) {
+			$errors[] = array('plugins.importexport.dnb.deposit.error.hotfolderCredentialsMissing');
+				return $errors;
+		}
+
+		$fh = Services::get('file')->fs->readStream($filename);
 		if (!$fh) {
-			// error occured
 			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param', array('package' => basename($filename), 'articleId' => $object->getFile()->getData('submissionId')));
 			$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 			return $errors;
@@ -292,7 +292,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						$result = $this->depositXML($galley, $journal, $exportFile);
 						if (is_array($result)) {
 							// If error occured add it to the list of errors
-							$errors[] = $result;
+							$errors = array_merge($errors, $result);
 							$fullyDeposited = false;
 						}
 					}

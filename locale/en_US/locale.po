@@ -155,3 +155,6 @@ msgstr "DNB automatic deposit task"
 
 msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param"
 msgstr "package file {$package} of the article {$articleId}: package file not found!"
+
+msgid "plugins.importexport.dnb.deposit.error.hotfolderCredentialsMissing"
+msgstr "Please provide all login credentials on the pluin settings page before depositing articles."
