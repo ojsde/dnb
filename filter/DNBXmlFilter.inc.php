@@ -63,25 +63,17 @@ class DNBXmlFilter extends NativeExportFilter {
 		$issue = $submission = $galley = $galleyFile = null;
 		$galley = $pubObject;
 		$galleyFile = $galley->getFile();
-		$submissionId = $galleyFile->getSubmissionId();//TODO @RS
+		$submissionId = $galleyFile->getSubmissionId();
 		if ($cache->isCached('articles', $submissionId)) {
 			$submission = $cache->get('articles', $submissionId);
 		} else {
-			//TODO @RS 
-			//$submissionDao = DAORegistry::getDAO('PublishedArticleDAO'); /* @var $submissionDao PublishedArticleDAO */
-			//$submission = $submissionDao->getByArticleId($pubObject->getSubmissionId(), $journal->getId());
-
 			$submissionDao = DAORegistry::getDAO('SubmissionDAO'); /* @var $submissionDao SubmissionDAO */
 			$submission = $submissionDao->getById($submissionId);
 			
 			if ($submission) $cache->add($submission, null);
 		}
-		//TODO @RS
-		//$issueId = $submission->getIssueId();
 		$issueDao = DAORegistry::getDAO('IssueDAO');
-		$issueId = $issueDao->getBySubmissionId($submission->getId())->getId();
-
-		//$issueId = $issueDao;//->getBySubmissionId($submission->getId())->getId();		
+		$issueId = $issueDao->getBySubmissionId($submission->getId())->getId();	
 
 		if ($cache->isCached('issues', $issueId)) {
 			$issue = $cache->get('issues', $issueId);
@@ -179,6 +171,11 @@ class DNBXmlFilter extends NativeExportFilter {
 		    $this->createSubfieldNode($doc, $doiDatafield024, 'a', $submissionDoi);
 		    $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
+		// plugin version
+		$datafield040 = $this->createDatafieldNode($doc, $recordNode, '040', ' ', ' ');
+		$versionDao = DAORegistry::getDAO('VersionDAO'); /* @var $versionDao VersionDAO */
+		$version = $versionDao->getCurrentVersion('plugins.importexport', $plugin->getPluginSettingsPrefix(), true);
+		$this->createSubfieldNode($doc, $datafield040, 'a', "OJS DNB-Export-Plugin Version ".$version->getVersionString());
 		// language
 		$datafield041 = $this->createDatafieldNode($doc, $recordNode, '041', ' ', ' ');
 		$this->createSubfieldNode($doc, $datafield041, 'a', $language);
@@ -232,7 +229,6 @@ class DNBXmlFilter extends NativeExportFilter {
 				$abstract = mb_substr($abstract, 0, 996,"UTF-8");
 				$abstract .= '...';
 			}
-			//$abstractURL = $request->url($journal->getPath(), 'article', 'view', array($article->getId())); //TODO @RS
 			$abstractURL = $request->url($journal->getPath(), 'article', 'view', array($submissionId));
 			$datafield520 = $this->createDatafieldNode($doc, $recordNode, '520', '3', ' ');
 			$this->createSubfieldNode($doc, $datafield520, 'a', $abstract);
@@ -254,9 +250,8 @@ class DNBXmlFilter extends NativeExportFilter {
 			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
 		}
 		// keywords
-		//$supportedLocales = array_keys(AppLocale::getSupportedFormLocales());
 		$submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
-		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getId(), array($galley->getLocale()));
+		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getCurrentPublication()->getId(), array($galley->getLocale()));
 		if (!empty($controlledVocabulary[$galley->getLocale()])) {
 			$datafield653 = $this->createDatafieldNode($doc, $recordNode, '653', ' ', ' ');
 			foreach ($controlledVocabulary[$galley->getLocale()] as $controlledVocabularyItem) {
@@ -295,7 +290,6 @@ class DNBXmlFilter extends NativeExportFilter {
 		$journalDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', '8');
 		$this->createSubfieldNode($doc, $journalDatafield773, 'x', $issn);
 		// file data
-		//$galleyURL = $request->url($journal->getPath(), 'article', 'view', array($article->getId(), $galley->getId())); //TODO @RS
 		$galleyURL = $request->url($journal->getPath(), 'article', 'view', array($submissionId, $galley->getId()));
 		$datafield856 = $this->createDatafieldNode($doc, $recordNode, '856', '4', ' ');
 		$this->createSubfieldNode($doc, $datafield856, 'u', $galleyURL);
