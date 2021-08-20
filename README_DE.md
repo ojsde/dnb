@@ -1,8 +1,8 @@
 =============================================================
 === OJS DNB-Export-Plug-In
-=== Version: 1.4
+=== Version: 1.4.1
 === Autor: Bozana Bokan, Ronald Steffen
-=== Letzte Änderung: 29. Januar 2021
+=== Letzte Änderung: 16. August 2021
 =============================================================
 
 Über
@@ -32,7 +32,12 @@ Installation über die OJS-Benutzeroberfläche:
  - Installation des Plugins im Managementbereich von OJS (Einstellungen -> Website -> Plugins -> „Ein neues Plugin hochladen“ -> dnb-[Version].tar.gz hochladen)
 
 Installation über die Kommandozeile ohne Git:
- - Download des Archivs in der gewünschten Version von https://github.com/ojsde/dnb
+ - Download des Archivs in der gewünschten Version von https://github.com/ojsde/dnb. 
+   Bitte immer die neuste Revisionsnummer (.x) des Plugins für die installierten OJS Version benutzen:
+   | OJS version | plugin version    |
+   | ----------- | ----------------- |
+   | 3.2         | 1.4.x             |
+   | 3.3         | not yet published |
  - Entpacken des Plugins in das Verzeichnis plugins/importexport
  - ggf. Umbenennen des Hauptverzeichnisses in "dnb"
  - Aktualisierung der Datenbank (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen),

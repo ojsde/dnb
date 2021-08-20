@@ -1,10 +1,9 @@
-=============================================================
-=== OJS DNB Export Plugin
-=== Version: 1.4
-=== Author: Bozana Bokan, Ronald Steffen
-=== Last update: January 29, 2021
-=============================================================
-
+****
+    OJS DNB Export Plugin
+    Version: 1.4.1
+    Author: Bozana Bokan, Ronald Steffen
+    Last update: August 16, 2021
+***
 About
 -----
 This plugin provides the export of article metadata and full texts (in PDF and EPUB format) for their transfer to the German National Library (DNB)
@@ -28,7 +27,11 @@ For the depositing from within OJS, additionally CURL library is needed.
 Installation
 ------------
 Installalion via OJS GUI:
- - download dnb-[version].tar.gz from https://github.com/ojsde/dnb/releases
+ - download dnb-[version].tar.gz from https://github.com/ojsde/dnb/releases. Please alwasy use the latest revision number (.x) of the plugin version corrsponding to your OJS version
+   | OJS version | plugin version    |
+   | ----------- | ----------------- |
+   | 3.2         | 1.4.x             |
+   | 3.3         | not yet published |
  - install plugin in OJS (Settings -> Website -> plugins -> „Upload a New Plugin“ -> upload dnb-[version].tar.gz)
 
 Installation via command line without Git:

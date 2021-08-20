@@ -169,8 +169,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				return $errors;
 		}
 
-		$fh = Services::get('file')->fs->readStream($filename);
-		if (!$fh) {
+		if (!file_exists($filename)) {
 			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param', array('package' => basename($filename), 'articleId' => $object->getFile()->getData('submissionId')));
 			$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 			return $errors;
@@ -212,7 +211,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		if ($curlError) {
 			// error occured
 			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getFile()->getData('submissionId'), 'error' => $curlError));
-			$errors = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
+			$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 		}
 		curl_close($curlCh);
 		fclose($fh);
@@ -337,9 +336,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			    }
 			    // Remove the generated directories
 			    $fileManager->rmtree($journalExportPath);
-			    // redirect back to the right tab
-				// TODO @RS this causes an error in the log and doesn't change UI tab
-				//$request->redirect(null, null, null, $path, null, $tab);
 			} elseif ($request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
 				if (!empty($errors)) {
 					// If there were some deposit errors, display them to the user
