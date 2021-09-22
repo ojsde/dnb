@@ -269,7 +269,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				}
 				
 				$fullyDeposited = true;
-				//TDO @RS delete???? $articleId = $submission->getId();
 				foreach ($galleys as $galley) {
 					// check if it is a full text
 					$galleyFile = $galley->getFile();
@@ -319,7 +318,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			if ($request->getUserVar(EXPORT_ACTION_EXPORT)) {
 			    if (!empty($errors)) {
 			        // If there were some deposit errors, display them to the user
-			        $this->errorNotification($request, $errors);	
+			        $this->errorNotification($request, $errors);
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
 			    } else {
     				// If there is more than one export package, package them all in a single .tar.gz
     			    assert(count($exportFilesNames) >= 1);
@@ -330,9 +331,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     					$finalExportFileName = reset($exportFilesNames);
     				}
        				// Stream the results to the browser
-       				// downloadFile used with OJS 3.1.1
-       				// downloadByPath used with OJS 3.1.2
-    				method_exists($fileManager, 'downloadByPath')?$fileManager->downloadByPath($finalExportFileName):$fileManager->downloadFile($finalExportFileName);
+    				$fileManager->downloadByPath($finalExportFileName);
 			    }
 			    // Remove the generated directories
 			    $fileManager->rmtree($journalExportPath);
