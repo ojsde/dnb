@@ -170,6 +170,11 @@ class DNBXmlFilter extends NativeExportFilter {
 		    $this->createSubfieldNode($doc, $doiDatafield024, 'a', $submissionDoi);
 		    $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
+		// plugin version
+		$datafield040 = $this->createDatafieldNode($doc, $recordNode, '040', ' ', ' ');
+		$versionDao = DAORegistry::getDAO('VersionDAO'); /* @var $versionDao VersionDAO */
+		$version = $versionDao->getCurrentVersion('plugins.importexport', $plugin->getPluginSettingsPrefix(), true);
+		$this->createSubfieldNode($doc, $datafield040, 'a', "OJS DNB-Export-Plugin Version ".$version->getVersionString());
 		// language
 		$datafield041 = $this->createDatafieldNode($doc, $recordNode, '041', ' ', ' ');
 		$this->createSubfieldNode($doc, $datafield041, 'a', $language);
@@ -249,7 +254,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		// keywords
 		//$supportedLocales = array_keys(AppLocale::getSupportedFormLocales());
 		$submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
-		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getId(), array($galley->getLocale()));
+		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getCurrentPublication()->getId(), array($galley->getLocale()));
 		if (!empty($controlledVocabulary[$galley->getLocale()])) {
 			$datafield653 = $this->createDatafieldNode($doc, $recordNode, '653', ' ', ' ');
 			foreach ($controlledVocabulary[$galley->getLocale()] as $controlledVocabularyItem) {
