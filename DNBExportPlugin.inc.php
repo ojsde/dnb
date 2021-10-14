@@ -162,8 +162,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				return $errors;
 		}
 
-		$fh = Services::get('file')->fs->readStream($filename);
-		if (!$fh) {
+		if (!file_exists($filename)) {
 			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param', array('package' => basename($filename), 'articleId' => $object->getFile()->getData('submissionId')));
 			$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 			return $errors;
@@ -320,7 +319,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     				}
        				// Stream the results to the browser
 					// Starting from OJS 3.3 this would be the prefered way to stream a file for download
-					//Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
+					// Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
 					// However, this function exits execution after dowload not allowing for clean up of zip file
 					// We therfore copied the appropriate functions from OJS 3.2 FileManager
 					$finalExportFileName = Config::getVar('files', 'files_dir') . '/' . $finalExportFileName;

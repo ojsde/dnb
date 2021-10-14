@@ -28,6 +28,7 @@ class DNBInfoSender extends ScheduledTask {
 	function __construct($args) {
 		PluginRegistry::loadCategory('importexport');
 		$plugin = PluginRegistry::getPlugin('importexport', 'DNBExportPlugin'); /* @var $plugin DNBExportPlugin */
+		
 		$this->_plugin = $plugin;
 
 		if (is_a($plugin, 'DNBExportPlugin')) {
@@ -69,6 +70,8 @@ class DNBInfoSender extends ScheduledTask {
 		$journals = $this->_getJournals();
 		$errors = array();
 		foreach ($journals as $journal) {
+			// load pubIds for this journal (they are currently not loaded in the base class)
+			PluginRegistry::loadCategory('pubIds', true, $journal->getId());
 			// Get not deposited articles
 			$notDepositedArticles = $plugin->getUnregisteredArticles($journal);
 			if (!empty($notDepositedArticles)) {
