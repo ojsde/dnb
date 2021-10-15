@@ -154,6 +154,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function depositXML($object, $context, $filename) {   
 		$errors = array();
+		$filename = Config::getVar('files', 'files_dir') . '/' .  $filename;
 
 		if (!($this->getSetting($context->getId(), 'username') &&
 			$this->getSetting($context->getId(), 'password') &&
@@ -318,10 +319,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     					$finalExportFileName = reset($exportFilesNames);
     				}
        				// Stream the results to the browser
-					// Starting from OJS 3.3 this would be the prefered way to stream a file for download
-					// Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
-					// However, this function exits execution after dowload not allowing for clean up of zip file
+					// Starting from OJS 3.3 this would be the prefered way to stream a file for download:
+					// 	Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
+					// However, this function exits execution after dowload not allowing for clean up of the intermediate zip file
 					// We therfore copied the appropriate functions from OJS 3.2 FileManager
+					// It was suggested (Alec) to use OJS-queues for clean up which are supposed to come with OJS 3.4 
 					$finalExportFileName = Config::getVar('files', 'files_dir') . '/' . $finalExportFileName;
 					$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
 				}
@@ -395,15 +397,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 
 		// Write the metadata XML to the file.
-		// PKP encourages use of the Filesystem API like:
-		// $res = Services::get('file')->fs->write($metadataFile, $metadataXML);
-		// However, its not working yet writing files, probably a $config has to be passed but documenation not found on that
-		// For now we continue to use the FileManager	
-		$metadataFile = Config::getVar('files', 'files_dir') . '/' . $exportPath . 'catalogue_md.xml';
-		import('lib.pkp.classes.file.FileManager');
-		$fileManager = new FileManager();
-		$fileManager->writeFile($metadataFile, $metadataXML);
-		$fileManager->setMode($metadataFile, FILE_MODE_MASK);
+		$metadataFile = $exportPath . 'catalogue_md.xml';
+		$res = Services::get('file')->fs->write($metadataFile, $metadataXML);
 		
 		// TAR the metadata and file.
 		// The package file name will be then <journalId>-<articleId>-<galleyId>.tar
@@ -499,7 +494,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 		//remove temporary file
 		if (!empty($temporaryFilename))	Services::get('file')->fs->deleteDir($temporaryFilename);
-		return realpath($targetGalleyFilePath);
+		return realpath(Config::getVar('files', 'files_dir') . '/' . $targetGalleyFilePath);
 	}
 
 	/**
@@ -663,7 +658,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$tarCommand .= Config::getVar('cli', 'tar'). ADDITIONAL_PACKAGE_OPTIONS . $tarOptions . escapeshellarg($targetFile);
 
 		// Do not reveal our webserver user by forcing root as owner.
-		$tarCommand .= ' --owner 0 --group 0 --';
+		$tarCommand .= ' --owner 0 --group 0 --';  // TODO @RS sort out path issuse between FileManager and FileService
 
 		if (!$sourceFiles) {
 			// Add everything
