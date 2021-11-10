@@ -34,7 +34,7 @@ msgid "plugins.importexport.dnb.noExportFilter"
 msgstr "Exportfilter nicht registriert! Haben Sie das Installationsskript ausgeführt?"
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess"
-msgstr "Bitte definieren Sie den Zugriff auf die Artikel im DNB-Archiv:"
+msgstr "Arts des Zugriffs auf die Artikel im DNB-Archiv"
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.description"
 msgstr "Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch uneingeschränkt für alle (zweite Option). Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen. Bitte beachten Sie, dass auf Ausgaben oder Artikelebene vergebene Zugriffsrechte vorgang von den hier gesetzten Zugriffrechten haben."
@@ -51,6 +51,9 @@ msgstr "Zugriff für registrierte Nutzer/innen auch von außerhalb der DNB."
 msgid "plugins.importexport.dnb.settings.form.archiveAccessRequired"
 msgstr "Bitte definieren Sie die Zugriffsberechtigungen auf die archivierten Artikel."
 
+msgid "plugins.importexport.dnb.settings.form.hotfolderAccess"
+msgstr "Zugangsdaten DNB Hotfolder"
+
 msgid "plugins.importexport.dnb.settings.form.folderId"
 msgstr "Unterordner-ID"
 
@@ -62,6 +65,9 @@ msgstr "Benutzername"
 
 msgid "plugins.importexport.dnb.settings.form.password.description"
 msgstr "Bitte beachten Sie, dass das Passwort im Klartext, d.h. unverschlüsselt, gespeichert wird."
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit.title"
+msgstr "Automatische Ablieferung"
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit"
 msgstr "Automatische Ablieferung der Artikel zur DNB"
@@ -158,3 +164,30 @@ msgstr "Die Paketdatei {$package} des Artikels {$articleId} konnte nicht hochgel
 
 msgid "plugins.importexport.dnb.deposit.error.hotfolderCredentialsMissing"
 msgstr "Bitte geben Sie Ihre Login-Daten in den Plugin-Einstellungen an bevor Sie Artikel abliefern."
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.title"
+msgstr "Ablieferung von Zusatzmaterial"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.none"
+msgstr "Zusatzmaterial nicht abliefern<sup><strong>*</strong></sup>"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.all"
+msgstr "Mit jeder Dokumentfahne das gesamte Zusatzmaterial des Artikels abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.Info"
+msgstr "Die Ablieferung von Zusatzmaterial beschränkt sich auf nicht-ausführbare Dateien. Ausführebare Dateien werden nicht an die DNB übertragen."
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.warning"
+msgstr "<sup><strong>*</strong></sup>Achtung: Es besteht eine Ablieferungspflich für Zusatzmaterial. Bitte deaktivieren Sie diese Funktion nur, wenn technische Probleme die Ablieferung des Zusatzmaterials verhindern."
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.title"
+msgstr "Fahnen die an einem externen Ort bereitgestellt werden exportieren"
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.description"
+msgstr "Es werden nur PDF- und EPUB-Fahnen exportiert."
+
+msgid "plugins.importexport.dnb.settings.form.allowedReomoteIPs"
+msgstr "Liste von IP-Adressen oder IP-Adressräumen von denen das runterladen von Fahnen erlaubt werden soll. Mehrere Werte müssen durch \"|\" getrennt werden. Beispiel: \"160.45.|160.70.\""
+
+msgid "plugins.importexport.dnb.settings.form.allowedReomoteIPs.error"
+msgstr "Diese Feld darf nur die Ziffern, Punkte oder \"|\" enthalten."

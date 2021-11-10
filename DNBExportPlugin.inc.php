@@ -18,10 +18,7 @@ import('classes.plugins.PubObjectsExportPlugin');
 define('DEBUG', true);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
-# determines whether to export remote galleys (experimental feature)
-define('EXPORT_REMOTE_GALLEYS', false);
-define('ALLOWED_REMOTE_IP_PATTERN','/160.45./');//TODO @RS implement IP pattern as setting 
-define('ADDITIONAL_PACKAGE_OPTIONS','');//use --format=gnu with tar to avoid PAX-Headers
+define('ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
 
 if (!DEBUG) {
 	define('SFTP_SERVER','sftp://@hotfolder.dnb.de/');
@@ -32,6 +29,8 @@ if (!DEBUG) {
 }
 
 class DNBExportPlugin extends PubObjectsExportPlugin {
+
+	private $currentDocumentExportPath;
 
 	/**
 	 * @copydoc Plugin::getName()
@@ -250,18 +249,20 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			foreach ($submissions as $submission) {
 				$issue = null;
 				$galleys = array();
+				$supplementaryGalleys = array();
 				// Get issue and galleys, and check if the article can be exported
-				if (!$this->canBeExported($submission, $issue, $galleys)) {
+				if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
 				    $errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
 					// continue with other articles
 					continue;
 				}
 				
 				$fullyDeposited = true;
-				//TDO @RS delete???? $articleId = $submission->getId();
+
 				foreach ($galleys as $galley) {
 					// check if it is a full text
 					$galleyFile = $galley->getFile();
+
 					//if $galleyFile is not set it might be a remote URL
 					//we already verified before that its pdf or epub 
 					if (!isset($galleyFile)) {
@@ -269,14 +270,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						//verify remote URL is a pdf or epub
 						if (!preg_match('/\.(epub|pdf)$/i',$galley->getRemoteURL())) continue;
 					} else {
-						$genre = $genreDao->getById($galleyFile->getGenreId());
-						// if it is not a full text, continue
-						if ($genre->getCategory() != 1 || $genre->getSupplementary() || $genre->getDependent()) continue;
+						$exportPath = $journalExportPath;
 					}
 					
 					$exportFile = '';
 					// Get the TAR package for the galley
-					$result = $this->getGalleyPackage($galley, $filter, $noValidation, $journal, $journalExportPath, $exportFile);
+					$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile);
 					
 					// If errors occured, remove all created directories and return the errors
 					if (is_array($result)) {
@@ -330,6 +329,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			    // Remove the generated directories
 				Services::get('file')->fs->deleteDir($journalExportPath);
 			    // redirect back to the right tab
+				// redirect causes a PHP Warning because headers were already sent by above downloadByPath call
+				// we disable warning before redirect not to spam error log
+				error_reporting(~E_WARNING);
 				$request->redirect(null, null, null, $path, null, $tab);
 			} elseif ($request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
 				if (!empty($errors)) {
@@ -365,19 +367,34 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 *
 	 * @return boolean|array True for success or an array of error messages.
 	 */
-	function getGalleyPackage($galley, $filter, $noValidation, $journal, $journalExportPath, &$exportPackageName) {
+	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $journalExportPath, &$exportPackageName) {
 		// Get the final target export directory.
 		// The data will be exported in this structure:
 		// dnb/<journalId>-<dateTime>/<journalId>-<articleId>-<galleyId>/
 		$submissionId = $galley->getFile()->getData('submissionId');
 		$exportContentDir = $journal->getId() . '-' . $submissionId . '-' . $galley->getFileId();
+	
 		$result = $this->getExportPath($journal->getId(), $journalExportPath, $exportContentDir);
 		if (is_array($result)) return $result;
 		$exportPath = $result;
 		
-		// Copy galley file.
+		// Copy galley files
 		$result = $this->copyGalleyFile($galley, $exportPath);
 		if (is_array($result)) return $result;
+
+		// add supplementary files
+		foreach ($supplementaryGalleys as $supplementaryGalley) {
+	       	$sourceGalleyFilePath = $supplementaryGalley->getFile()->getData('path');
+			$targetGalleyFilePath = $exportPath . 'content'  . '/supplementary/' . basename($sourceGalleyFilePath);
+			if (!Services::get('file')->fs->has($sourceGalleyFilePath)) {
+				return array('plugins.importexport.dnb.export.error.galleyFileNotFound',$sourceGalleyFilePath);
+			}
+			// copy supplementary galley files
+			if (!Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath)) {
+				$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy.param', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
+				return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
+			}
+		}
 		
 		try {
 		  // Export the galley metadata XML.
@@ -400,7 +417,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$metadataFile = $exportPath . 'catalogue_md.xml';
 		$res = Services::get('file')->fs->write($metadataFile, $metadataXML);
 		
-		// TAR the metadata and file.
+		// TAR the metadata and files.
+		// tar supplementary files
+		if (Services::get('file')->fs->has($exportPath . 'content/supplementary')) {
+			$this->tarFiles($exportPath . '/content/supplementary', $exportPath . '/content/supplementary.tar');
+			Services::get('file')->fs->deleteDir($exportPath . 'content/supplementary');
+		}
 		// The package file name will be then <journalId>-<articleId>-<galleyId>.tar
 		$exportPackageName = $journalExportPath . $exportContentDir . '.tar';
 		$this->tarFiles($exportPath, $exportPackageName);
@@ -419,11 +441,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function copyGalleyFile($galley, $exportPath) {
 	    //galley->getFile() can only be null for remote galleys
-	    //Exporting remote galleys is an experimental feature that has to be activated by a define statement at the to of this file
-	    //If not activated (default) the function filterGalleys() will exclude remote galleys before this function is called
-	    //Nevertheless we check "EXPORT_REMOTE_GALLEYS" just in case someone would be calling this function without filtering the galleys
-	    if ($galley->getFile() == null) {
-	        if (EXPORT_REMOTE_GALLEYS) {
+		$galleyFile = $galley->getFile();
+	    if ($galleyFile == null) {
+	        if ($this->exportRemote()) {
 	            
     	        // its a remote URL and export of remote URLs is enabled, curl it
     	        $curlCh = curl_init();
@@ -465,6 +485,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	           return array('plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid', $galley->getSubmissionId());
     	        }
     	        
+				// temporarily store downloaded file
     	        $temporaryFilename = tempnam(Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix(), 'dnb');
     	        
     	        $file = fopen($temporaryFilename, "w+");
@@ -478,21 +499,26 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	        $targetGalleyFilePath = $exportPath . 'content/'  . basename($galley->getRemoteURL());
 	        }
 	    } else {
-	       $submissionFile = Services::get('file')->get($galley->getData('id'));
-	       $sourceGalleyFilePath = $submissionFile->path;
-	       $targetGalleyFilePath = $exportPath . 'content'  . '/' . basename($sourceGalleyFilePath);
+	       	$submissionFile = Services::get('file')->get($galley->getData('id'));
+	       	$sourceGalleyFilePath = $submissionFile->path;
+
+			$targetGalleyFilePath = $exportPath . 'content'  . '/' . basename($sourceGalleyFilePath);
 		}
 	    
 		if (!Services::get('file')->fs->has($sourceGalleyFilePath)) {
 			return array('plugins.importexport.dnb.export.error.galleyFileNotFound',$sourceGalleyFilePath);
 		}
+
+		// create export dir
 		Services::get('file')->fs->createDir($exportPath . 'content');
 
+		// copy galley files
 		if (!Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath)) {
 			$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy.param', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
 			return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
 		}
-		//remove temporary file
+
+		// remove temporary file
 		if (!empty($temporaryFilename))	Services::get('file')->fs->deleteDir($temporaryFilename);
 		return realpath(Config::getVar('files', 'files_dir') . '/' . $targetGalleyFilePath);
 	}
@@ -539,7 +565,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @param $galleys array Filtered (i.e. PDF and EPUB) submission full text galleys
 	 * @return boolean
 	 */
-	function canBeExported($submission, &$issue = null, &$galleys = array()) {
+	function canBeExported($submission, &$issue = null, &$galleys = array(), &$supplementaryGalleys = array()) {
 		$cache = $this->getCache();
 		if (!$cache->isCached('articles', $submission->getId())) {
 			$cache->add($submission, null);
@@ -558,10 +584,16 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		if (!$issue->getPublished()) return false;
 		// get all galleys
 		$galleys = $submission->getGalleys();
+		// filter supplementary files
+		if ($this->getSetting($submission->getData('contextId'), 'submitSupplementaryMode') == 'all') {
+			$filteredSupplementaryGalleys = array_filter($galleys, array($this, 'filterSupplementaryGalleys'));
+			$supplementaryGalleys = $filteredSupplementaryGalleys;
+		}
 		// filter PDF and EPUB full text galleys -- DNB concerns only PDF and EPUB formats
-		$filteredGalleys = array_filter($galleys, array($this, 'filterGalleys'));
-		$galleys = $filteredGalleys;
-		return (count($filteredGalleys) > 0);
+		$filteredDocumentGalleys = array_filter($galleys, array($this, 'filterGalleys'));
+		$galleys = $filteredDocumentGalleys;
+
+		return (count($galleys) > 0);
 	}
 
 	/**
@@ -573,27 +605,56 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// check if it is a full text
 		$genreDao = DAORegistry::getDAO('GenreDAO');
 		$galleyFile = $galley->getFile();
+		$genre = $genreDao->getById($galleyFile->getGenreId());
+		// if it is not a document galley, continue
+		if ($genre->getCategory() != GENRE_CATEGORY_DOCUMENT) {
+			return false;
+		}
 		//if $galleyFile is not set it might be a remote URL
 		if (!isset($galleyFile)) {
-		    if (EXPORT_REMOTE_GALLEYS) {
+		    if ($this->exportRemote()) {
     			$galleyFile = $galley->getRemoteURL();
     			
     			if (isset($galleyFile)) {
     			    //verify remote URL is a pdf or epub
     			    $isValidFileType = preg_match('/\.(epub|pdf)$/i',$galleyFile);
     			    //varify allowed domain
-    			    $domain = parse_url($galleyFile, PHP_URL_HOST);
-    			    $isAllowedIP = gethostbyname($domain);
-    			    $isAllowedIP = preg_match(ALLOWED_REMOTE_IP_PATTERN,gethostbyname($domain));
-    			    return $isValidFileType && $isAllowedIP;
+    			    return $isValidFileType &&  $this->isAllowedRemoteIP($galleyFile);
     			} else return false;
 		    }
 		} else {
-			$genre = $genreDao->getById($galleyFile->getGenreId());
-			// if it is not a full text, continue
-			if ($genre->getCategory() != 1 || $genre->getSupplementary() || $genre->getDependent()) {
-				return false;
-			}
+			return $galley->isPdfGalley() ||  $galley->getFileType() == 'application/epub+zip';
+		}
+		return false;
+	}
+
+	/**
+	 * Check if a galley is a supplementary file.
+	 * @param $galley ArticleGalley
+	 * @return boolean
+	 */
+	function filterSupplementaryGalleys($galley) {
+		// check if it is supplementary file
+		$genreDao = DAORegistry::getDAO('GenreDAO');
+		$galleyFile = $galley->getFile();
+		$genre = $genreDao->getById($galleyFile->getGenreId());
+		// if it is not a supplementary galley, continue
+		if ($genre->getCategory() != GENRE_CATEGORY_SUPPLEMENTARY) {
+			return false;
+		}
+		//if $galleyFile is not set it might be a remote URL
+		if (!isset($galleyFile)) {
+		    if ($this->exportRemote()) {
+    			$galleyFile = $galley->getRemoteURL();
+    			
+    			if (isset($galleyFile)) {
+    			    //verify remote URL is not executable file
+    			    $isValidFileType = preg_match('/\.(exe|bat|sh)$/i',$galleyFile);
+    			    //varify allowed domain
+    			    return $isValidFileType && $this->isAllowedRemoteIP($galleyFile);
+    			} else return false;
+		    }
+		} else {
 			return $galley->isPdfGalley() ||  $galley->getFileType() == 'application/epub+zip';
 		}
 		return false;
@@ -644,8 +705,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function tarFiles($targetPath, $targetFile, $sourceFiles = null, $gzip = false) {
 		assert($this->_checkedForTar);
 
-		$targetPath = Config::getVar('files', 'files_dir') . '/' . $targetPath;
-		$targetFile = Config::getVar('files', 'files_dir') . '/' . $targetFile;
+		$basedir = Config::getVar('files', 'files_dir') . '/';
+
+		$targetPath = $basedir . $targetPath;
+		$targetFile = $basedir . $targetFile;
 
 		$tarCommand = '';
 		// Change directory to the target path, to be able to use
@@ -655,10 +718,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// Should the result file be GZip compressed.
 		$tarOptions = $gzip ? ' -czf ' : ' -cf ';
 		// Construct the tar command: path to tar, options, target archive file name
-		$tarCommand .= Config::getVar('cli', 'tar'). ADDITIONAL_PACKAGE_OPTIONS . $tarOptions . escapeshellarg($targetFile);
+		$tarCommand .= Config::getVar('cli', 'tar'). " " . ADDITIONAL_PACKAGE_OPTIONS . $tarOptions . escapeshellarg($targetFile);
 
 		// Do not reveal our webserver user by forcing root as owner.
-		$tarCommand .= ' --owner 0 --group 0 --';  // TODO @RS sort out path issuse between FileManager and FileService
+		$tarCommand .= ' --owner 0 --group 0 --';
 
 		if (!$sourceFiles) {
 			// Add everything
@@ -667,8 +730,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			// Add each file individually so that other files in the directory
 			// will not be included.
 			foreach($sourceFiles as $sourceFile) {
-				assert(dirname($sourceFile) . '/' === $targetPath);
-				if (dirname($sourceFile) . '/' !== $targetPath) continue;
+				assert($basedir . dirname($sourceFile) . '/' === $targetPath);
+				if ($basedir . dirname($sourceFile) . '/' !== $targetPath) continue;
 				$tarCommand .= ' ' . escapeshellarg(basename($sourceFile));
 			}
 		}
@@ -777,6 +840,21 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$returner = false;
 		}
 		return $returner;
+	}
+
+	function getFileGenre($galleyFile) {
+		$genreDao = DAORegistry::getDAO('GenreDAO');
+	    return $genreDao->getById($galleyFile->getGenreId())->getCategory();
+	}
+
+	function exportRemote() {
+		return $this->getSetting(Application::get()->getRequest()->getContext()->getId(), 'exportRemoteGalleys') == "on";
+	}
+
+	function isAllowedRemoteIP($url) {
+		$domain = parse_url($url, PHP_URL_HOST);
+		$pattern = $this->getSetting(Application::get()->getRequest()->getContext()->getId(), 'allowedReomoteIPs');
+    	return preg_match("/".$pattern()."/", gethostbyname($domain));;
 	}
 
 }

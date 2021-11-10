@@ -34,7 +34,7 @@ msgid "plugins.importexport.dnb.noExportFilter"
 msgstr "No export filter registered! Did you run the install script?"
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess"
-msgstr "Please define the access to the articles in the DNB archive:"
+msgstr "Type of access to the articles in the DNB archive"
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.description"
 msgstr "For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed journals and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles. Please note that setting access options at the issue or article level will have precedence over the setting selected here."
@@ -51,6 +51,9 @@ msgstr "Access only for users registered with the DNB, also from outside the DNB
 msgid "plugins.importexport.dnb.settings.form.archiveAccessRequired"
 msgstr "Please define the access permissions for the archived articles."
 
+msgid "plugins.importexport.dnb.settings.form.hotfolderAccess"
+msgstr "DNB Hotfolder Credentials"
+
 msgid "plugins.importexport.dnb.settings.form.folderId"
 msgstr "Subfolder ID"
 
@@ -62,6 +65,9 @@ msgstr "Username"
 
 msgid "plugins.importexport.dnb.settings.form.password.description"
 msgstr "Please note that the password will be saved as plain text, i.e. not encrypted."
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit.title"
+msgstr "Automatic deposit"
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit"
 msgstr "Deposit articles to DNB automatically"
@@ -158,3 +164,31 @@ msgstr "package file {$package} of the article {$articleId}: package file not fo
 
 msgid "plugins.importexport.dnb.deposit.error.hotfolderCredentialsMissing"
 msgstr "Please provide all login credentials on the pluin settings page before depositing articles."
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.title"
+msgstr "Depositition of supplementary material"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.none"
+msgstr "Do not deposit supplementary material<sup><strong>*</strong></sup>"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.all"
+msgstr "Deposit the complete set of supplementary material with each document galley"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.Info"
+msgstr "The deposition of supplementary material is limited to non-executable files. Executable files will not be transfered."
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.warning"
+msgstr "<sup><strong>*</strong></sup>Attention: Deposition of supplementary material is compulsory. Please only disable this feature in case technical problems prevent the deposition of supplementary material."
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.title"
+msgstr "Export remote galley files"
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.description"
+msgstr "This will only export PDF and EPUB galleys."
+
+
+msgid "plugins.importexport.dnb.settings.form.allowedReomoteIPs"
+msgstr "Lis of IP-addresses or IP-address ranges from which to allow the download of galley files. Multiple values have to be separated by \"|\". Example: \"160.45.|160.70.\""
+
+msgid "plugins.importexport.dnb.settings.form.allowedReomoteIPs.error"
+msgstr "This field should only contain numbers, dots or \"|\""

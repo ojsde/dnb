@@ -190,7 +190,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false,true));
 		if (!empty($firstAuthor->getData('orcidAccessToken'))) {
             $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename($firstAuthor->getOrcid()));
-        }
+    	}
 		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
 		// title
 		$title = $submission->getTitle($galley->getLocale());

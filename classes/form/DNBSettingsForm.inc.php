@@ -61,6 +61,7 @@ class DNBSettingsForm extends Form {
 		$this->addCheck(new FormValidatorCustom($this, 'archiveAccess', 'required', 'plugins.importexport.dnb.settings.form.archiveAccessRequired', create_function('$archiveAccess,$oa', 'if (!$oa && empty($archiveAccess)) { return false; } return true;'), array($this->isOAJournal())));
 		$this->addCheck(new FormValidatorPost($this));
 		$this->addCheck(new FormValidatorCSRF($this));
+		$this->addCheck(new FormValidatorRegExp($this, 'allowedReomoteIPs', 'optional', 'plugins.importexport.dnb.settings.form.allowedReomoteIPs.error','/^[0-9\.\|]+$/'));
 	}
 
 
@@ -76,6 +77,9 @@ class DNBSettingsForm extends Form {
 		}
 		// the access option for OA journals is always 'b'
 		if ($this->isOAJournal()) $this->setData('archiveAccess', 'b');
+		if (!$this->getSetting('submitSupplementaryMode')) $this->setData('submitSupplementaryMode',"all");
+		if (!$this->getSetting('exportRemoteGalleys')) $this->setData('exportRemoteGalleys', false);
+		if (!$this->getSetting('allowedReomoteIPs')) $this->setData('allowedReomoteIPs', "");
 	}
 
 	/**
@@ -132,6 +136,9 @@ class DNBSettingsForm extends Form {
 			'password' => 'string',
 			'folderId' => 'string',
 			'automaticDeposit' => 'bool',
+			'submitSupplementaryMode' => 'string',
+			'exportRemoteGalleys' => 'string',
+			'allowedReomoteIPs' => 'string'
 		);
 	}
 
@@ -141,7 +148,7 @@ class DNBSettingsForm extends Form {
 	 * @return boolean
 	 */
 	function isOptional($settingName) {
-		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit'));
+		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit','submitSupplementaryMode','exportRemoteGalleys','allowedReomoteIPs'));
 	}
 
 	/**

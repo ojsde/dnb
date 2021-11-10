@@ -21,8 +21,10 @@ DEBUG=""
 while getopts "d" opt; do
 	case "$opt" in
 		d)	DEBUG="--debug"
+			export XDEBUG_SESSION=1
 			;;
 	esac
 done
-phpunit='php lib/pkp/lib/vendor/phpunit/phpunit/phpunit'
+
+phpunit='php -d xdebug.mode=debug lib/pkp/lib/vendor/phpunit/phpunit/phpunit'
 find "plugins/importexport/dnb" -maxdepth 3 -name tests -type d -exec $phpunit $DEBUG $TEST_CONF1 --testdox -v "{}" ";"
