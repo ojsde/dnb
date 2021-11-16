@@ -30,8 +30,6 @@ if (!DEBUG) {
 
 class DNBExportPlugin extends PubObjectsExportPlugin {
 
-	private $currentDocumentExportPath;
-
 	/**
 	 * @copydoc Plugin::getName()
 	 */
@@ -91,7 +89,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function getStatusNames() {
 		return array(
 			EXPORT_STATUS_ANY => __('plugins.importexport.common.status.any'),
-			EXPORT_STATUS_NOT_DEPOSITED => __('plugins.importexport.dnb.status.non'),
+			EXPORT_STATUS_NOT_DEPOSITED => __('plugins.importexport.dnb.status.notDeposited'),
 			DNB_STATUS_DEPOSITED => __('plugins.importexport.dnb.status.deposited'),
 			EXPORT_STATUS_MARKEDREGISTERED => __('plugins.importexport.common.status.markedRegistered'),
 		);
@@ -853,7 +851,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 	function isAllowedRemoteIP($url) {
 		$domain = parse_url($url, PHP_URL_HOST);
-		$pattern = $this->getSetting(Application::get()->getRequest()->getContext()->getId(), 'allowedReomoteIPs');
+		$pattern = $this->getSetting(Application::get()->getRequest()->getContext()->getId(), 'allowedRemoteIPs');
     	return preg_match("/".$pattern()."/", gethostbyname($domain));;
 	}
 
