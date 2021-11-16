@@ -75,7 +75,7 @@ msgstr "Automatische Ablieferung der Artikel zur DNB"
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.description"
 msgstr "OJS prüft regelmäßig, ob es Artikel gibt, die noch nicht an die DNB abgeliefert wurden (d.h. Artikel, die noch nicht über OJS in den DNB Hotfolder abgeliefert und nicht als registriert markiert wurden) und liefert diese automatisch in den DNB Hotfolder ab. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der Artikelauflistung überprüfen."
 
-msgid "plugins.importexport.dnb.status.non"
+msgid "plugins.importexport.dnb.status.notDeposited"
 msgstr "Nicht abgeliefert"
 
 msgid "plugins.importexport.dnb.status.deposited"
@@ -186,8 +186,8 @@ msgstr "Fahnen die an einem externen Ort bereitgestellt werden exportieren"
 msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.description"
 msgstr "Es werden nur PDF- und EPUB-Fahnen exportiert."
 
-msgid "plugins.importexport.dnb.settings.form.allowedReomoteIPs"
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs"
 msgstr "Liste von IP-Adressen oder IP-Adressräumen von denen das runterladen von Fahnen erlaubt werden soll. Mehrere Werte müssen durch \"|\" getrennt werden. Beispiel: \"160.45.|160.70.\""
 
-msgid "plugins.importexport.dnb.settings.form.allowedReomoteIPs.error"
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.error"
 msgstr "Diese Feld darf nur die Ziffern, Punkte oder \"|\" enthalten."

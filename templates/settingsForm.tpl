@@ -40,7 +40,7 @@
 		{/fbvFormSection}
 		{fbvFormSection title="plugins.importexport.dnb.settings.form.exportRemoteGalleys.title" list="true"}
 			{fbvElement type="checkbox" id="exportRemoteGalleys" label="plugins.importexport.dnb.settings.form.exportRemoteGalleys.description" checked=$exportRemoteGalleys|compare:true}
-			{fbvElement type="text" id="allowedReomoteIPs" value=$allowedReomoteIPs label="plugins.importexport.dnb.settings.form.allowedReomoteIPs" size=$fbvStyles.size.MEDIUM}
+			{fbvElement type="text" id="allowedRemoteIPs" value=$allowedRemoteIPs label="plugins.importexport.dnb.settings.form.allowedRemoteIPs" size=$fbvStyles.size.MEDIUM}
 		{/fbvFormSection}
 		{fbvFormSection title="plugins.importexport.dnb.settings.form.submitSupplementary.title" list="true"}
 			<p class="pkp_help">{translate key="plugins.importexport.dnb.settings.form.submitSupplementary.Info"}</p>	

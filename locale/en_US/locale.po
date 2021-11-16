@@ -75,7 +75,7 @@ msgstr "Deposit articles to DNB automatically"
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.description"
 msgstr "OJS regularly checks if there are articles not yet deposited (that is, articles that are not deposited from within OJS and not marked as registered) and automatically deposits them to the DNB Hotfolder. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the articles listing."
 
-msgid "plugins.importexport.dnb.status.non"
+msgid "plugins.importexport.dnb.status.notDeposited"
 msgstr "Not deposited"
 
 msgid "plugins.importexport.dnb.status.deposited"
@@ -187,8 +187,8 @@ msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.description"
 msgstr "This will only export PDF and EPUB galleys."
 
 
-msgid "plugins.importexport.dnb.settings.form.allowedReomoteIPs"
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs"
 msgstr "Lis of IP-addresses or IP-address ranges from which to allow the download of galley files. Multiple values have to be separated by \"|\". Example: \"160.45.|160.70.\""
 
-msgid "plugins.importexport.dnb.settings.form.allowedReomoteIPs.error"
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.error"
 msgstr "This field should only contain numbers, dots or \"|\""
