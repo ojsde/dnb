@@ -30,6 +30,16 @@ if (!DEBUG) {
 
 class DNBExportPlugin extends PubObjectsExportPlugin {
 
+	private $_settingsFormURL;
+
+	/**
+	 * @copydoc Plugin::getName()
+	 */
+	function getSettingsFormActionURL() {
+		return $this->_settingsFormURL;
+	}
+
+
 	/**
 	 * @copydoc Plugin::getName()
 	 */
@@ -72,13 +82,80 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$context = $request->getContext();
 		switch (array_shift($args)) {
 			case 'index':
-			case '':
-				$checkForTarResult = $this->checkForTar();
+			case '':			
+				// settings form
+				$this->import("classes.form.DNBSettingsForm");
+				$this->_settingsFormURL = $request->getDispatcher()->url(
+					$request,
+					ROUTE_COMPONENT,
+					null,
+					'grid.settings.plugins.settingsPluginGridHandler',
+					'manage',
+					null,
+					array(
+						'plugin' => 'DNBExportPlugin',
+						'category' => 'importexport',
+						'verb' => 'save')
+				);
+				$settingsForm = new DNBSettingsForm($this, $context->getId());
+
+				$settingsFormConfig = $settingsForm->getConfig();
+				$settingsFormConfig['fields'][1]['inputType'] = "password";
+
+				// export tab submission list 
+				$apiUrl = $request->getDispatcher()->url($request, ROUTE_API, $context->getPath(), 'submissions');
+				$submissionsListPanel = new \APP\components\listPanels\SubmissionsListPanel(
+					'submissions',
+					__('common.publications'),
+					[
+						'apiUrl' => $apiUrl,
+						'count' => 100,
+						'getParams' => new stdClass(),
+						'lazyLoad' => true,
+					]
+				);
+				$submissionsConfig = $submissionsListPanel->getConfig();
+				$submissionsConfig['addUrl'] = '';
+				$submissionsConfig['filters'] = array_slice($submissionsConfig['filters'], 1);
+
+				// set properties
 				$templateMgr = TemplateManager::getManager($request);
+
+				$checkForTarResult = $this->checkForTar();
 				$templateMgr->assign('checkFilter', !is_array($this->checkForExportFilter()));
 				$templateMgr->assign('checkTar', !is_array($checkForTarResult));
 				$templateMgr->assign('checkSettings', $this->checkPluginSettings($context));
-				$templateMgr->display($this->getTemplateResource('index.tpl'));
+				$templateMgr->assign([
+					'pageComponent' => 'ImportExportPage',
+					'baseurl' => $request->getBaseUrl(),
+					'status' => $this->getStatusNames()
+				]);
+
+				$templateMgr->setConstants([
+					'FORM_DNB_SETTINGS',
+					'EXPORT_STATUS_ANY',
+					'EXPORT_STATUS_NOT_DEPOSITED',
+					'DNB_STATUS_DEPOSITED',
+					'EXPORT_STATUS_MARKEDREGISTERED' 
+				]);
+
+				$state = [
+					'components' => [
+						FORM_DNB_SETTINGS => $settingsFormConfig,
+						'submissions' => $submissionsConfig,
+					],
+				];		
+				$templateMgr->setState($state);
+
+				$templateMgr->addStyleSheet(
+					'dnbplugin',
+					$request->getBaseUrl() . '/' . $this->getStyleSheet(),
+					array(
+						'contexts' => array('backend')
+					)
+				);
+
+				$templateMgr->display($this->getTemplateResource('index_new.tpl'));
 				break;
 		}
 	}
@@ -116,6 +193,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function getSubmissionFilter() {
 		return 'galley=>dnb-xml';
+	}
+
+	/**
+	 * Return the location of the plugin's CSS file
+	 *
+	 * @return string
+	 */
+	function getStyleSheet() {
+		return $this->getPluginPath() . '/css/dnbplugin.css';
 	}
 
 	/**
