@@ -5,3 +5,19 @@
 .fa-question-circle {
     color: blue;
 }
+
+.submissionsListPanel {
+    margin-top: 15px;
+}
+
+.dnb_legend_tooltip {
+    display:none;
+}
+
+.dnb_align_right {
+    margin-left: auto;
+}
+
+.dnb_authors {
+    font-weight: bold;
+}

@@ -32,6 +32,41 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 	private $_settingsFormURL;
 
+	private $_exportAction;
+
+	/**
+	 * @copydoc Plugin::register()
+	 */
+	function register($category, $path, $mainContextId = null) {
+		if (!parent::register($category, $path, $mainContextId)) return false;
+
+		HookRegistry::register('Submission::getBackendListProperties::properties', array($this, 'callbackSetSubmissionProperties'));
+		HookRegistry::register('Submission::getProperties::values', array($this, 'callbackSetSubmissionValues'));
+
+		return true;
+	}
+// Todo @RS CONTINUE HERE: How to submit request vars ???
+	function callbackSetSubmissionProperties($hoohname, $args) { //&$props, $submission, $args
+		$props = &$args[0];
+		$submission = $args[1];
+		$request = $args[2]['request'];
+
+		$props[] = 'dnbStatus';
+		//$submission->setData('dnbStatus', $this->getStatusNames()[$submission->getData('dnb::status')]);
+		$submission->setData('dnbStatus', $submission->getData('dnb::status'));
+	}
+
+	function callbackSetSubmissionValues($hoohname, $args) { // &$values, $props, $submission, $args
+		$values = &$args[0];
+		$props = &$args[2];
+		$submission = $args[1];
+		$request = $args[3]['request'];
+
+		//$props[] = 'dnbStatus';
+		//$submission->setData('dnbStatus', $this->getStatusNames()[$submission->getData('dnb::status')]);
+		//$submission->setData('dnbStatus', $submission->getData('dnb::status'));
+	}
+
 	/**
 	 * @copydoc Plugin::getName()
 	 */
@@ -67,7 +102,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function display($args, $request) {
 		
 		if (!empty($args)) {
-			if (($args[0] == 'exportSubmissions') & empty((array) $request->getUserVar('selectedSubmissions'))) {
+			if (($args[0] == 'exportSubmissions') || 
+				($args[0] == 'export') || 
+				($args[0] == 'deposit') || 
+				($args[0] == 'markregistered')
+				& empty((array) $request->getUserVar('selectedSubmissions'))) {
+				
 				//show error
 				$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noObjectsSelected')));
 				// redirect back to exportSubmissions-tab
@@ -75,8 +115,26 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$request->redirect(null, null, null, $path, null, 'exportSubmissions-tab');
 				return;
 			}
-		}
 
+
+			// redirect export actions
+			// this is a work around due to combining old PubObjectsExportPlugin with the new form components
+			// the for submit action doesn't take parameters and PubObjectsExportPlugin cannot handle our buttons
+			switch ($args[0]) {
+				case 'export':
+					$this->_exportAction = EXPORT_ACTION_EXPORT;
+					$args[0] = 'exportSubmissions';
+					break;
+				case 'deposit':
+					$this->_exportAction = EXPORT_ACTION_DEPOSIT;
+					$args[0] = 'exportSubmissions';
+					break;
+				case 'markregistered':
+					$request->getUserVar('selectedSubmissions'); // Todo @RS handle button
+					$args[0] = '';
+					break;
+			}
+		}
 		parent::display($args, $request);
 		
 		$context = $request->getContext();
@@ -110,13 +168,31 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					[
 						'apiUrl' => $apiUrl,
 						'count' => 100,
-						'getParams' => new stdClass(),
+						'getParams' => [
+							'contextId' => $context->getId(),
+							'status' => STATUS_PUBLISHED
+						],
 						'lazyLoad' => true,
 					]
 				);
+				$submissionsListPanel->set([
+					'items' => $submissionsListPanel->getItems($request),
+					'itemsMax' => $submissionsListPanel->getItemsMax()
+				]);
 				$submissionsConfig = $submissionsListPanel->getConfig();
 				$submissionsConfig['addUrl'] = '';
 				$submissionsConfig['filters'] = array_slice($submissionsConfig['filters'], 1);
+				$statusFilter = [
+					'heading' => 'Status',
+					'filters' => [
+						[
+							'param' => 'dnbStatus',
+							'value' => EXPORT_STATUS_NOT_DEPOSITED,
+							'title' => __('plugins.importexport.dnb.status.notDeposited')
+						]
+					]
+				];
+				$submissionsConfig['filters'][0] = $statusFilter;
 
 				// set properties
 				$templateMgr = TemplateManager::getManager($request);
@@ -128,7 +204,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$templateMgr->assign([
 					'pageComponent' => 'ImportExportPage',
 					'baseurl' => $request->getBaseUrl(),
-					'status' => $this->getStatusNames()
+					'status' => $this->getStatusNames(),
 				]);
 
 				$templateMgr->setConstants([
@@ -136,7 +212,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					'EXPORT_STATUS_ANY',
 					'EXPORT_STATUS_NOT_DEPOSITED',
 					'DNB_STATUS_DEPOSITED',
-					'EXPORT_STATUS_MARKEDREGISTERED' 
+					'EXPORT_STATUS_MARKEDREGISTERED'
 				]);
 
 				$state = [
@@ -148,11 +224,20 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$templateMgr->setState($state);
 
 				$templateMgr->addStyleSheet(
-					'dnbplugin',
+					'dnb-plugin',
 					$request->getBaseUrl() . '/' . $this->getStyleSheet(),
 					array(
 						'contexts' => array('backend')
 					)
+				);
+
+				$templateMgr->addJavaScript(
+					'dnb-plugin',
+					$request->getBaseUrl() . '/' . $this->getPluginPath() . '/js/DNBSettingsFormHandler.js',
+					[
+						'contexts' => 'backend',
+						'priority' => STYLE_SEQUENCE_LAST,
+					]
 				);
 
 				$templateMgr->display($this->getTemplateResource('index_new.tpl'));
@@ -297,11 +382,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc PubObjectsExportPlugin::executeExportAction()
 	 */
 	function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null) {
+
 		$journal = $request->getContext();
 		$path = array('plugin', $this->getName());
 		
-		if ($request->getUserVar(EXPORT_ACTION_EXPORT) ||
-			$request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
+		if ($this->_exportAction == EXPORT_ACTION_EXPORT ||
+			$this->_exportAction == EXPORT_ACTION_DEPOSIT) {
 
 			assert($filter != null);
 
@@ -367,10 +453,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					    $errors[] = $result;
 					    $fullyDeposited = false;
 					}
-					if ($request->getUserVar(EXPORT_ACTION_EXPORT)) {
+					if ($this->_exportAction == EXPORT_ACTION_EXPORT) {
 						// Add the galley package to the list of all exported files
 						$exportFilesNames[] = $exportFile;
-					} elseif ($request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
+					} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
 						// Deposit the galley
 						$result = $this->depositXML($galley, $journal, $exportFile);
 						if (is_array($result)) {
@@ -381,14 +467,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					}
 				}
 				
-				if ($fullyDeposited && $request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
+				if ($fullyDeposited && $this->_exportAction == EXPORT_ACTION_DEPOSIT) {
 					// Update article status
 					$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
 					$submissionDao->updateObject($submission);
 				}
 			}
 			
-			if ($request->getUserVar(EXPORT_ACTION_EXPORT)) {
+			if ( $this->_exportAction == EXPORT_ACTION_EXPORT) {
 			    if (!empty($errors)) {
 			        // If there were some deposit errors, display them to the user
 			        $this->errorNotification($request, $errors);	
@@ -417,7 +503,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// we disable warning before redirect not to spam error log
 				error_reporting(~E_WARNING);
 				$request->redirect(null, null, null, $path, null, $tab);
-			} elseif ($request->getUserVar(EXPORT_ACTION_DEPOSIT)) {
+			} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
 				if (!empty($errors)) {
 					// If there were some deposit errors, display them to the user
 					$this->errorNotification($request, $errors);

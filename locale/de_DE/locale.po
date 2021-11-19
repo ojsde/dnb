@@ -114,6 +114,9 @@ msgstr "Die ausgewählten Artikel wurden abgeliefert!"
 msgid "plugins.importexport.dnb.deposit"
 msgstr "Abliefern"
 
+msgid "plugins.importexport.dnb.export"
+msgstr "Exportieren"
+
 msgid "plugins.importexport.dnb.deposit.confirm"
 msgstr "Sie haben schon abgelieferte Artikel ausgewählt. Sind Sie sicher, dass Sie mit der Ablieferung fortfahren möchten?"
 

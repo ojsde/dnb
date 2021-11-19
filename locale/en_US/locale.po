@@ -114,6 +114,9 @@ msgstr "The selected articles were deposited!"
 msgid "plugins.importexport.dnb.deposit"
 msgstr "Deposit"
 
+msgid "plugins.importexport.dnb.export"
+msgstr "Export"
+
 msgid "plugins.importexport.dnb.deposit.confirm"
 msgstr "You have selected already deposited articles. Are you sure you want to proceed with the deposit?"
 
