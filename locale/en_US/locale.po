@@ -221,3 +221,12 @@ msgstr "List of IP-addresses or IP-address ranges from which to allow the downlo
 
 msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.error"
 msgstr "This field should only contain numbers, dots or \"|\""
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired"
+msgstr "This field must be filled in if export of remote galleys is enabled."
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.title"
+msgstr "The plugin is set to debug mode!"
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.contents"
+msgstr "SFTP server is configured as: {$server} port {$port}"

@@ -34,10 +34,12 @@ class DNBSettingsForm extends FormComponent {
 	 * @param $action string URL to submit the form to
 	 * @param $publication Publication The publication to change settings for
 	 */
-	public function __construct($plugin, $context) {
+	public function __construct($plugin, $contextId) {
 		$this->action = $plugin->getSettingsFormActionUrl();
 		$this->_plugin = $plugin;
-		$this->_contextId = $context;
+		$this->_contextId = $contextId;
+
+		$plugin->setSettingsForm($this);
 
 		// hotfolder credentials
 		$this->addGroup([
@@ -47,20 +49,20 @@ class DNBSettingsForm extends FormComponent {
 			'label' => __('plugins.importexport.dnb.settings.form.username'),
 			'tooltip' => __('plugins.importexport.dnb.registrationIntro'),
 			'groupId' => 'hotfolderAccess',
-			'value' => $plugin->getSetting($context, 'username'),
+			'value' => $plugin->getSetting($contextId, 'username'),
 		]))->addField(new FieldText('password', [
 			'label' => __('plugins.importexport.common.settings.form.password'),
 			'tooltip' => __('plugins.importexport.common.settings.form.password.description'),
 			'groupId' => 'hotfolderAccess',
-			'value' => $plugin->getSetting($context, 'password'),
+			'value' => $plugin->getSetting($contextId, 'password'),
 		]))->addField(new FieldText('folderId', [
 			'label' => __('plugins.importexport.dnb.settings.form.folderId'),
 			'tooltip' => __('plugins.importexport.dnb.settings.form.folderId.description'),
 			'groupId' => 'hotfolderAccess',
-			'value' => $plugin->getSetting($context, 'folderId'),
+			'value' => $plugin->getSetting($contextId, 'folderId'),
 		]));
 
-		// automatic deposit
+		//automatic deposit
 		$this->addGroup([
 			'id' => 'automaticDeposit',
 			'label' => __('plugins.importexport.dnb.settings.form.automaticDeposit.title'),
@@ -69,9 +71,10 @@ class DNBSettingsForm extends FormComponent {
 			'tooltip' => __('plugins.importexport.dnb.settings.form.automaticDeposit.description'),
 			'groupId' => 'automaticDeposit',
 			'options' => [
-				['value' => 'false', 'label' => __('plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel')],
+				['value' => false, 'label' => __('plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel')],
 			],
-			'value' => $plugin->getSetting($context, 'automaticDeposit'),
+			'default' => false,
+			'value' => $plugin->getSetting($contextId, 'automaticDeposit'),
 		]));
 
 		// deposit supplementary material
@@ -88,11 +91,11 @@ class DNBSettingsForm extends FormComponent {
 				['value' => "all", 'label' => __('plugins.importexport.dnb.settings.form.submitSupplementary.all')],
 				['value' => "none", 'label' => __('plugins.importexport.dnb.settings.form.submitSupplementary.none')],
 			],
-			'value' => $plugin->getSetting($context, 'submitSupplementaryMode') ? $plugin->getSetting($context, 'submitSupplementaryMode') : 'all',
+			'value' => $plugin->getSetting($contextId, 'submitSupplementaryMode') ? $plugin->getSetting($contextId, 'submitSupplementaryMode') : 'all',
 		]));
 
 		// group remote galleys
-        $allowedRemoteIPs = $plugin->getSetting($context, 'allowedRemoteIPs');
+        $allowedRemoteIPs = $plugin->getSetting($contextId, 'allowedRemoteIPs');
 
 		$this->addGroup([
 			'id' => 'remoteGalleys',
@@ -102,20 +105,21 @@ class DNBSettingsForm extends FormComponent {
 				'description' => __('plugins.importexport.dnb.settings.form.exportRemoteGalleys.description'),
 				'groupId' => 'remoteGalleys',
 				'options' => [
-					['value' => 'true', 'label' => __('plugins.importexport.dnb.settings.form.exportRemoteGalleys.checkboxLabel')],
+					['value' => true, 'label' => __('plugins.importexport.dnb.settings.form.exportRemoteGalleys.checkboxLabel')],
 				],
-				'value' => $plugin->getSetting($context, 'exportRemoteGalleys'),
+				'default' => false,
+				'value' => (bool)$plugin->getSetting($contextId, 'exportRemoteGalleys'),
 		]))->addField(new FieldText('allowedRemoteIPs', [
 				'label' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.label'),
 				'description' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.description'),
 				'groupId' => 'remoteGalleys',
 				'value' => $allowedRemoteIPs ? $allowedRemoteIPs : "",
 				'showWhen' => 'exportRemoteGalleys',
-				'isRequired' => true
+				'isRequired' => false // this should actually be set to true but will also be evaluated if parent field is disabled => prevents saving the form, we have to handle this via form execute
 			]));
 
 		// group archive access
-		if ($this->isOAJournal()) {
+		if ($plugin->isOAJournal()) {
 			$this->addGroup([
 				'id' => 'archiveAccess',
 				'label' => __('plugins.importexport.dnb.archiveAccess'),
@@ -138,7 +142,7 @@ class DNBSettingsForm extends FormComponent {
 					['value' => "b", 'label' => __('plugins.importexport.dnb.settings.form.archiveAccess.b')],
 					['value' => "d", 'label' => __('plugins.importexport.dnb.settings.form.archiveAccess.d')],
 				],
-				'value' => $this->isOAJournal() ? "b" : $plugin->getSetting($context, 'archiveAccess'),
+				'value' => $plugin->isOAJournal() ? "b" : $plugin->getSetting($contextId, 'archiveAccess'),
 				'tooltip' => __('plugins.importexport.dnb.settings.form.archiveAccess.description'),
 			]));
 		}
@@ -156,8 +160,11 @@ class DNBSettingsForm extends FormComponent {
 
 		if ($request->getUserVar('exportRemoteGalleys') == "true") {
 			$props = ['allowedRemoteIPs' => $request->getUserVar('allowedRemoteIPs')];
-			$rules = ['allowedRemoteIPs' => ['regex:/^[0-9\.\|]+$/']];
-			$messages = ['regex' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.error')];
+			$rules = ['allowedRemoteIPs' => ['regex:/^[0-9\.\|]+$/', 'required_unless:exportRemoteGalleys,false']];
+			$messages = [
+				'regex' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.error'),
+				'required_unless' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired')
+			];
 			$validator = ValidatorFactory::make($props, $rules, $messages);
 
 			if ($validator->fails()) {
@@ -187,7 +194,9 @@ class DNBSettingsForm extends FormComponent {
 		foreach($this->getFormFields() as $settingName => $settingType) {
 			// do not save the access option for OA journals -- it is always 'b'
 			// but also to be able to check the missing option for closed journals
-			if ($this->isOAJournal() && $settingName == 'archiveAccess') continue;
+			if ($this->_plugin->isOAJournal() && $settingName == 'archiveAccess') continue;
+			if ($settingName == 'allowedRemoteIPs' &&
+				$request->getUserVar('exportRemoteGalleys') == "false") continue; // handle remote galleys disabled
 			$this->_plugin->updateSetting($this->_contextId, $settingName, $request->getUserVar($settingName), $settingType);
 		}
 	}
@@ -204,7 +213,7 @@ class DNBSettingsForm extends FormComponent {
 			'folderId' => 'string',
 			'automaticDeposit' => 'bool',
 			'submitSupplementaryMode' => 'string',
-			'exportRemoteGalleys' => 'string',
+			'exportRemoteGalleys' => 'bool',
 			'allowedRemoteIPs' => 'string'
 		);
 	}
@@ -216,18 +225,6 @@ class DNBSettingsForm extends FormComponent {
 	 */
 	function isOptional($settingName) {
 		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit','submitSupplementaryMode','exportRemoteGalleys','allowedRemoteIPs'));
-	}
-
-	/**
-	 * Check whether this journal is OA.
-	 * @return boolean
-	 */
-	function isOAJournal() {
-		$journalDao = DAORegistry::getDAO('JournalDAO'); /* @var $journalDao JournalDAO */
-		$journal = $journalDao->getById($this->_contextId);
-		return  $journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN &&
-		$journal->getSetting('restrictSiteAccess') != 1 &&
-		$journal->getSetting('restrictArticleAccess') != 1;
 	}
 
 	/**

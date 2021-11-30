@@ -14,8 +14,7 @@
  *
  * @brief Handle the DNB Settings form.
  */
-(function($) {
 
-	$("#dnb_legend").tooltip("Dasdas");
-
-}(jQuery));
+jQuery(function() {
+	//$('[data-toggle="tooltip"]').tooltip('data-html="true"');
+})

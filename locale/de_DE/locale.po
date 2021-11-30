@@ -221,3 +221,12 @@ msgstr "Liste von IP-Adressen oder IP-Adressräumen von denen das runterladen vo
 
 msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.error"
 msgstr "Diese Feld darf nur die Ziffern, Punkte oder \"|\" enthalten."
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired"
+msgstr "Dies ist ein Pflichtfeld wenn die Ablieferung von extern gehosteten Fahnen aktiviert ist."
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.title"
+msgstr "The plugin is set to debug mode!"
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.contents"
+msgstr "SFTP server is configured as: {$server} port {$port}"
