@@ -111,7 +111,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$context = $request->getContext();
 		
 		if (!empty($args)) {
-			if ((($args[0] == 'exportSubmissions') || 
+			if ((($args[0] == 'exportSubmissions') ||
 				($args[0] == EXPORT_ACTION_EXPORT) || 
 				($args[0] == EXPORT_ACTION_DEPOSIT) || 
 				($args[0] == EXPORT_ACTION_MARKREGISTERED)) &&
@@ -154,7 +154,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			'manage',
 			null,
 			array(
-				'plugin' => 'DNBExportPlugin',
+				'plugin' => $this->getName(),
 				'category' => 'importexport',
 				'verb' => 'save')
 		);
@@ -167,12 +167,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// settings form
 				$settingsFormConfig = $this->_settingsForm->getConfig();
 				$settingsFormConfig['fields'][1]['inputType'] = "password";
-
-				// export tab submission list 
-				// These settings will be overwritten by ListPanel API call => pass parameters as state (see below)
-				$apiUrl = $request->getDispatcher()->url($request, ROUTE_API, $context->getPath(), 'submissions');
 				
-				// rediret to our handler
+				// rediret API url to our handler
 				$apiUrl = $request->getDispatcher()->url(
 					$request,
 					ROUTE_COMPONENT,
@@ -181,7 +177,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					'manage',
 					null,
 					array(
-						'plugin' => 'DNBExportPlugin',
+						'plugin' => $this->getName(),
 						'category' => 'importexport',
 						'verb' => 'get')
 				);
@@ -210,7 +206,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$dnbStatus = [];
 				$nNotRegistered = 0;
 				foreach ($publishedSubmissions as $submission) {
-					$status = $submission->getData('dnb::status');
+					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
 					$issue = Services::get('issue')->get($submission->getCurrentPublication()->getData('issueId'));
 					$dnbStatus[(int)$submission->getId()] = [
 						'status' => $this->getStatusNames()[$status],
@@ -251,17 +247,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						'heading' => 'Status',
 						'filters' => [
 							[
-								'param' => 'dnb::status',
+								'param' => $this->getPluginSettingsPrefix().'::status',
 								'value' => EXPORT_STATUS_NOT_DEPOSITED,
 								'title' => __('plugins.importexport.dnb.status.notDeposited')
 							],
 							[
-								'param' => 'dnb::status',
+								'param' => $this->getPluginSettingsPrefix().'::status',
 								'value' => DNB_STATUS_DEPOSITED,
 								'title' => __('plugins.importexport.dnb.status.deposited')
 							],
 							[
-								'param' => 'dnb::status',
+								'param' => $this->getPluginSettingsPrefix().'::status',
 								'value' => EXPORT_STATUS_MARKEDREGISTERED,
 								'title' => __('plugins.importexport.common.status.markedRegistered')
 							],
@@ -299,7 +295,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$templateMgr->setState($state);
 
 				$templateMgr->addStyleSheet(
-					'dnb-plugin',
+					'dnbexportplugin',
 					$request->getBaseUrl() . '/' . $this->getStyleSheet(),
 					array(
 						'contexts' =>  ['backend']
@@ -307,11 +303,39 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				);
 
 				$templateMgr->addJavaScript(
-					'dnb-plugin',
-					$request->getBaseUrl() . '/' . $this->getPluginPath() . '/js/DNBSettingsFormHandler.js',
-					[
+					'dnbexportplugin',
+					$request->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'DNBSettingsFormHandler.js',
+					array(
+						'inline' => false,
 						'contexts' => ['backend'],
-						'priority' => STYLE_SEQUENCE_LAST,
+					)
+				);
+
+				$helpUrl = $request->getDispatcher()->url(
+					$request,
+					ROUTE_COMPONENT,
+					null,
+					'grid.settings.plugins.settingsPluginGridHandler',
+					'manage',
+					null,
+					array(
+						'plugin' => $this->getName(),
+						'category' => 'importexport',
+						'verb' => 'help')
+				);
+
+				$script_data = [
+					'helpUrl' => $helpUrl
+				];
+
+				// proivde url for help pages
+				$templateMgr->addJavaScript(
+					'dnbexportpluginData',
+					'$.pkp.plugins.importexport = $.pkp.plugins.importexport || {};' .
+						'$.pkp.plugins.importexport.' . strtolower(get_class($this)) . ' = ' . json_encode($script_data) . ';',
+					[
+						'inline' => true,
+						'contexts' => 'backend',
 					]
 				);
 
@@ -321,8 +345,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	}
 
 	function manage($args, $request) {
-
-		switch ($args['verb']) {
+		$verbs = explode('/', $args['verb']);
+		switch (array_shift($verbs)) {
+			case 'help':
+				array_shift($verbs);
+				$this->fetchHelpMessage($verbs, $request);
+				break;
 			case 'get':
 				$context = $request->getContext();
 				
@@ -347,11 +375,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				
 				// filter items by dnb status
 				$items = array_filter($items, function ($item) use ($args) {
-					if (isset($args['dnb::status'])) {
+					if (isset($args[$this->getPluginSettingsPrefix().'::status'])) {
 						$result = false;
-						foreach ($args['dnb::status'] as $status) {
-							if ($item['dnb::status'] == NULL && $status == EXPORT_STATUS_NOT_DEPOSITED) $result = $result || true;
-							$result = $result || $item['dnb::status'] == $status;
+						foreach ($args[$this->getPluginSettingsPrefix().'::status'] as $status) {
+							if ($item[$this->getPluginSettingsPrefix().'::status'] == NULL && $status == EXPORT_STATUS_NOT_DEPOSITED) $result = $result || true;
+							$result = $result || $item[$this->getPluginSettingsPrefix().'::status'] == $status;
 						}
 						return $result;
 					}
@@ -369,6 +397,48 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				exit();
 			break;
 		}
+	}
+
+	function fetchHelpMessage($args, $request) {
+
+		// this code ist largely copied from HelpHandler.inc.php
+		$path = $this->getHelpPath();
+		$args[0] = substr($args[0], 0, 2);
+		$args[1] = $args[1] ? $args[1] : "SUMMARY";
+		$urlPart = join('/', $args);
+		$filename = $urlPart . '.md';
+
+		$language = AppLocale::getIso1FromLocale(AppLocale::getLocale());
+		$summaryFile = $path . $language . '/SUMMARY.md';
+
+		// Use the summary document to find next/previous links.
+		// (Yes, we're grepping markdown outside the parser, but this is much faster.)
+		$previousLink = $nextLink = null;
+		if (preg_match_all('/\(([^)]+)\)/sm', file_get_contents($summaryFile), $matches)) {
+			$matches = $matches[1];
+			if (($i = array_search(substr($urlPart, strpos($urlPart, '/')+1), $matches)) !== false) {
+				if ($i>0) $previousLink = $matches[$i-1];
+				if ($i<count($matches)-1) $nextLink = $matches[$i+1];
+			}
+		}
+
+		// Use a URL filter to prepend the current path to relative URLs.
+		$parser = new \Michelf\Markdown;
+		$parser->url_filter_func = function ($url) use ($filename) {
+			return (empty(parse_url($url)['host']) ? dirname($filename) . '/' : '') . $url;
+		};
+		$msg = new JSONMessage(
+			true,
+			array(
+				'content' => $parser->transform(file_get_contents($path . $filename)),
+				'previous' => $previousLink,
+				'next' => $nextLink,
+			)
+		);
+
+		header('Content-Type: application/json');
+		echo $msg->getString();
+		exit();
 	}
 
 	/**
@@ -413,6 +483,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function getStyleSheet() {
 		return $this->getPluginPath() . '/css/dnbplugin.css';
+	}
+
+	/**
+	 * Return the location of the help files
+	 *
+	 * @return string
+	 */
+	function getHelpPath() {
+		return $this->getPluginPath() . '/docs/manual/';
 	}
 
 	/**

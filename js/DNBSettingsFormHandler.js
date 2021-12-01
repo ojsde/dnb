@@ -6,8 +6,8 @@
  *
  * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
  * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
- * Author: Bozana Bokan
- * Last update: May 15, 2017
+ * Author: Ronald Steffen
+ * Last update: Dec 1, 2021
  *
  * @class DNBSettingsFormHandler.js
  * @ingroup plugins_importexport_dnb_js
@@ -16,5 +16,13 @@
  */
 
 jQuery(function() {
-	//$('[data-toggle="tooltip"]').tooltip('data-html="true"');
+		// rewrite the OJS default help handler url
+		// $('#pkpHelpPanel').pkpHandler('$.pkp.controllers.HelpPanelHandler').remove();
+		$('#pkpHelpPanel').pkpHandler(
+		'$.pkp.controllers.HelpPanelHandler',
+		{
+			helpUrl: $.pkp.plugins.importexport.dnbexportplugin.helpUrl,
+			helpLocale: $.pkp.app.currentLocale,
+		}
+	);
 })

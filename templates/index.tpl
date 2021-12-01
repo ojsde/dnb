@@ -23,6 +23,9 @@
 
     <tabs :track-history="true">
         <tab id="settings" label="{translate key="plugins.importexport.common.settings"}">
+
+            {help file="settings" class="pkp_help_tab" topic="settings"}
+        
             <div class="pkp_notification" id="dnbConfigurationErrors">
                 {if DEBUG}
                     {include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.dnb.settings.debugModeActive.title"|translate notificationContents=$debugModeWarning}
@@ -57,10 +60,7 @@
         {if $allowExport}
             <tab id="exportSubmissions-tab" label="{translate key="plugins.importexport.dnb.exportArticle"}" :badge={$nNotRegistered}>
 
-                <a id="dnb_legend" class="pkp_help_tab" data-toggle="tooltip" title='{translate key="plugins.importexport.dnb.status.legend"}'>Help</a>
-                {* <div class="dnb_legend_tooltip">
-                    {translate key="plugins.importexport.dnb.status.legend"}
-                </div> *}
+                {help file="export" class="pkp_help_tab"}
                 
                 <form id="exportXmlForm" class="pkp_form dnb_form" action="" method="post">
                     <submissions-list-panel
