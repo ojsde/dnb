@@ -18,6 +18,18 @@ msgstr "DNB-Export-Plug-In"
 msgid "plugins.importexport.dnb.description"
 msgstr "Artikel im DNB-Format exportieren oder abliefern."
 
+msgid "plugins.importexport.dnb.exportArticle"
+msgstr "Artikel abliefern"
+
+msgid "plugins.importexport.dnb.archiveAccess"
+msgstr "Archivzugriff"
+
+msgid "plugins.importexport.dnb.dnbLogin"
+msgstr "Hotfolder Login"
+
+msgid "plugins.importexport.dnb.deposition"
+msgstr "Ablieferung"
+
 msgid "plugins.importexport.dnb.archiveAccess.required"
 msgstr "<strong>Hinweis:</strong> Diese Zeitschrift ist keine Open-Access-Zeitschrift, so dass Sie zuerst eine der möglichen Zugriffsoptionen für die bei der DNB archivierten Artikeln in den Plug-In-Einstellungen auswählen müssen, bevor Sie mit dem Export fortgahren können."
 
@@ -38,6 +50,9 @@ msgstr "Arts des Zugriffs auf die Artikel im DNB-Archiv"
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.description"
 msgstr "Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch uneingeschränkt für alle (zweite Option). Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen. Bitte beachten Sie, dass auf Ausgaben oder Artikelebene vergebene Zugriffsrechte vorgang von den hier gesetzten Zugriffrechten haben."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.descriptionOA"
+msgstr "Diese Zeitschrift ist als Open-Access-Zeitschrift konfiguriert. Alle abgelieferten Fahnen werden automatisch als Open-Access deklariert."
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.a"
 msgstr "Beschränkter Zugriff, d.h. nur an speziellen Rechnern in den Lesesälen der DNB."
@@ -70,10 +85,13 @@ msgid "plugins.importexport.dnb.settings.form.automaticDeposit.title"
 msgstr "Automatische Ablieferung"
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit"
-msgstr "Automatische Ablieferung der Artikel zur DNB"
+msgstr "Automatisch Fahnen an die DNB abliefern"
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.description"
 msgstr "OJS prüft regelmäßig, ob es Artikel gibt, die noch nicht an die DNB abgeliefert wurden (d.h. Artikel, die noch nicht über OJS in den DNB Hotfolder abgeliefert und nicht als registriert markiert wurden) und liefert diese automatisch in den DNB Hotfolder ab. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der Artikelauflistung überprüfen."
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel"
+msgstr "Ja, ich möchte Fahnen automatisch abliefern"
 
 msgid "plugins.importexport.dnb.status.notDeposited"
 msgstr "Nicht abgeliefert"
@@ -95,6 +113,9 @@ msgstr "Die ausgewählten Artikel wurden abgeliefert!"
 
 msgid "plugins.importexport.dnb.deposit"
 msgstr "Abliefern"
+
+msgid "plugins.importexport.dnb.export"
+msgstr "Exportieren"
 
 msgid "plugins.importexport.dnb.deposit.confirm"
 msgstr "Sie haben schon abgelieferte Artikel ausgewählt. Sind Sie sicher, dass Sie mit der Ablieferung fortfahren möchten?"
@@ -169,7 +190,7 @@ msgid "plugins.importexport.dnb.settings.form.submitSupplementary.title"
 msgstr "Ablieferung von Zusatzmaterial"
 
 msgid "plugins.importexport.dnb.settings.form.submitSupplementary.none"
-msgstr "Zusatzmaterial nicht abliefern<sup><strong>*</strong></sup>"
+msgstr "Zusatzmaterial nicht abliefern"
 
 msgid "plugins.importexport.dnb.settings.form.submitSupplementary.all"
 msgstr "Mit jeder Dokumentfahne das gesamte Zusatzmaterial des Artikels abliefern"
@@ -178,16 +199,37 @@ msgid "plugins.importexport.dnb.settings.form.submitSupplementary.Info"
 msgstr "Die Ablieferung von Zusatzmaterial beschränkt sich auf nicht-ausführbare Dateien. Ausführebare Dateien werden nicht an die DNB übertragen."
 
 msgid "plugins.importexport.dnb.settings.form.submitSupplementary.warning"
-msgstr "<sup><strong>*</strong></sup>Achtung: Es besteht eine Ablieferungspflich für Zusatzmaterial. Bitte deaktivieren Sie diese Funktion nur, wenn technische Probleme die Ablieferung des Zusatzmaterials verhindern."
+msgstr "<strong>Achtung</strong>: Es besteht eine Ablieferungspflich für Zusatzmaterial. Bitte deaktivieren Sie diese Funktion nur, wenn technische Probleme die Ablieferung des Zusatzmaterials verhindern."
 
 msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.title"
-msgstr "Fahnen die an einem externen Ort bereitgestellt werden exportieren"
+msgstr "Fahnen die an einem externen Ort bereitgestellt werden abliefern"
 
 msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.description"
-msgstr "Es werden nur PDF- und EPUB-Fahnen exportiert."
+msgstr "Es werden nur PDF- und EPUB-Fahnen abgeliefert."
 
-msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs"
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.label"
+msgstr "Extern gehostete Fahnen abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.checkboxLabel"
+msgstr "Ja, ich möchte extern gehostete PDF- und EPUB-Fahnen abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.label"
+msgstr "Erlaubte IP-Adressen"
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.description"
 msgstr "Liste von IP-Adressen oder IP-Adressräumen von denen das runterladen von Fahnen erlaubt werden soll. Mehrere Werte müssen durch \"|\" getrennt werden. Beispiel: \"160.45.|160.70.\""
 
 msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.error"
 msgstr "Diese Feld darf nur die Ziffern, Punkte oder \"|\" enthalten."
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired"
+msgstr "Dies ist ein Pflichtfeld wenn die Ablieferung von extern gehosteten Fahnen aktiviert ist."
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.title"
+msgstr "The plugin is set to debug mode!"
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.contents"
+msgstr "SFTP server is configured as: {$server} port {$port}"
+
+msgid "plugins.importexport.dnb.warning.supplementaryNotAssignable"
+msgstr "Dieser Artikel enthält {$nDoc} Dokumentfahnen und {$nSupp} Fahne{$pSupp} mit Zusatzmaterial. Eine eindeutige automatische Zuodnung ist nicht möglich. Bitte konsultieren Sie die Hilfe für weitere Informationen."

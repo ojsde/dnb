@@ -18,6 +18,18 @@ msgstr "DNB Export Plugin"
 msgid "plugins.importexport.dnb.description"
 msgstr "Export or deposit articles in DNB format."
 
+msgid "plugins.importexport.dnb.exportArticle"
+msgstr "Deposit article"
+
+msgid "plugins.importexport.dnb.archiveAccess"
+msgstr "Archive access"
+
+msgid "plugins.importexport.dnb.dnbLogin"
+msgstr "Hotfolder login"
+
+msgid "plugins.importexport.dnb.deposition"
+msgstr "Ablieferung"
+
 msgid "plugins.importexport.dnb.archiveAccess.required"
 msgstr "<strong>Note:</strong> This journal is not open access, thus you have to first chose one of the possible access options for the archived articles at DNB in the plugin settings before you can proceed with the export."
 
@@ -38,6 +50,9 @@ msgstr "Type of access to the articles in the DNB archive"
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.description"
 msgstr "For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed journals and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles. Please note that setting access options at the issue or article level will have precedence over the setting selected here."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.descriptionOA"
+msgstr "This journal is configured as Open-Access-Journal. All deposited galleys will automatically be tagged as Open-Access."
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.a"
 msgstr "Restricted access (access only on specially configured computers in the DNB reading rooms)."
@@ -70,10 +85,13 @@ msgid "plugins.importexport.dnb.settings.form.automaticDeposit.title"
 msgstr "Automatic deposit"
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit"
-msgstr "Deposit articles to DNB automatically"
+msgstr "Deposit galleys automatically"
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.description"
 msgstr "OJS regularly checks if there are articles not yet deposited (that is, articles that are not deposited from within OJS and not marked as registered) and automatically deposits them to the DNB Hotfolder. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the articles listing."
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel"
+msgstr "Yes, I want to deposit galley files automatically"
 
 msgid "plugins.importexport.dnb.status.notDeposited"
 msgstr "Not deposited"
@@ -95,6 +113,9 @@ msgstr "The selected articles were deposited!"
 
 msgid "plugins.importexport.dnb.deposit"
 msgstr "Deposit"
+
+msgid "plugins.importexport.dnb.export"
+msgstr "Export"
 
 msgid "plugins.importexport.dnb.deposit.confirm"
 msgstr "You have selected already deposited articles. Are you sure you want to proceed with the deposit?"
@@ -169,7 +190,7 @@ msgid "plugins.importexport.dnb.settings.form.submitSupplementary.title"
 msgstr "Depositition of supplementary material"
 
 msgid "plugins.importexport.dnb.settings.form.submitSupplementary.none"
-msgstr "Do not deposit supplementary material<sup><strong>*</strong></sup>"
+msgstr "Do not deposit supplementary material"
 
 msgid "plugins.importexport.dnb.settings.form.submitSupplementary.all"
 msgstr "Deposit the complete set of supplementary material with each document galley"
@@ -178,17 +199,37 @@ msgid "plugins.importexport.dnb.settings.form.submitSupplementary.Info"
 msgstr "The deposition of supplementary material is limited to non-executable files. Executable files will not be transfered."
 
 msgid "plugins.importexport.dnb.settings.form.submitSupplementary.warning"
-msgstr "<sup><strong>*</strong></sup>Attention: Deposition of supplementary material is compulsory. Please only disable this feature in case technical problems prevent the deposition of supplementary material."
+msgstr "<strong>Attention</strong>: Deposition of supplementary material is compulsory. Please only disable this feature in case technical problems prevent the deposition of supplementary material."
 
 msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.title"
-msgstr "Export remote galley files"
+msgstr "Remote galleys"
 
 msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.description"
 msgstr "This will only export PDF and EPUB galleys."
 
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.label"
+msgstr "Export remote galley files"
 
-msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs"
-msgstr "Lis of IP-addresses or IP-address ranges from which to allow the download of galley files. Multiple values have to be separated by \"|\". Example: \"160.45.|160.70.\""
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.checkboxLabel"
+msgstr "Yes, I want to deposit PDF- and EPUB remote galley files"
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.label"
+msgstr "Allowed IP-addresses"
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.description"
+msgstr "List of IP-addresses or IP-address ranges from which to allow the download of galley files. Multiple values have to be separated by \"|\". Example: \"160.45.|160.70.\""
 
 msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.error"
 msgstr "This field should only contain numbers, dots or \"|\""
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired"
+msgstr "This field must be filled in if export of remote galleys is enabled."
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.title"
+msgstr "The plugin is set to debug mode!"
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.contents"
+msgstr "SFTP server is configured as: {$server} port {$port}"
+
+msgid "plugins.importexport.dnb.warning.supplementaryNotAssignable"
+msgstr "This article contains {$nDoc} document galleys and {$nSupp} galley{$pSupp} of supplementary material. An unambiguously automatic assigment is not possible. Please refer to the help for more information."

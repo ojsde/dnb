@@ -1,128 +1,204 @@
 <?php
-
 /**
  * @file plugins/importexport/dnb/classes/form/DNBSettingsForm.inc.php
  *
- * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
+ * Copyright (c) 2021 Universitätsbibliothek/Center for Digital Systems (CeDiS), Freie Universität Berlin
  * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
- * Author: Bozana Bokan
- * Last update: May 15, 2017
+ * Author: Ronald Steffen
  *
  * @class DNBSettingsForm
  * @ingroup plugins_importexport_dnb
  *
  * @brief Form for journal managers to setup DNB plugin
  */
+use \PKP\components\forms\FormComponent;
+use \PKP\components\forms\FieldText;
+use \PKP\components\forms\FieldOptions;
 
+define('FORM_DNB_SETTINGS', 'dnb_settings');
 
-import('lib.pkp.classes.form.Form');
+class DNBSettingsForm extends FormComponent {
+	/** @copydoc FormComponent::$id */
+	public $id = FORM_DNB_SETTINGS;
 
-class DNBSettingsForm extends Form {
+	/** @copydoc FormComponent::$method */
+	public $method = 'PUT';
 
-	//
-	// Private properties
-	//
-	/** @var integer */
-	var $_contextId;
+	private $_plugin;
 
-	/**
-	 * Get the context ID.
-	 * @return integer
-	 */
-	function _getContextId() {
-		return $this->_contextId;
-	}
+	private $_contextId;
 
-	/** @var DNBExportPlugin */
-	var $_plugin;
-
-	/**
-	 * Get the plugin.
-	 * @return DNBExportPlugin
-	 */
-	function _getPlugin() {
-		return $this->_plugin;
-	}
-
-
-	//
-	// Constructor
-	//
 	/**
 	 * Constructor
-	 * @param $plugin DNBExportPlugin
-	 * @param $contextId integer
+	 *
+	 * @param $action string URL to submit the form to
+	 * @param $publication Publication The publication to change settings for
 	 */
-	function __construct($plugin, $contextId) {
-		$this->_contextId = $contextId;
+	public function __construct($plugin, $contextId) {
+		$this->action = $plugin->getSettingsFormActionUrl();
 		$this->_plugin = $plugin;
-		parent::__construct($plugin->getTemplateResource('settingsForm.tpl'));
-		// Add form validation checks.
-		$this->addCheck(new FormValidatorCustom($this, 'archiveAccess', 'required', 'plugins.importexport.dnb.settings.form.archiveAccessRequired', create_function('$archiveAccess,$oa', 'if (!$oa && empty($archiveAccess)) { return false; } return true;'), array($this->isOAJournal())));
-		$this->addCheck(new FormValidatorPost($this));
-		$this->addCheck(new FormValidatorCSRF($this));
-		$this->addCheck(new FormValidatorRegExp($this, 'allowedRemoteIPs', 'optional', 'plugins.importexport.dnb.settings.form.allowedRemoteIPs.error','/^[0-9\.\|]+$/'));
-	}
+		$this->_contextId = $contextId;
 
- 	
-	//
-	// Implement template methods from Form
-	//
-	/**
-	 * @copydoc Form::initData()
-	 */
-	function initData() {
-		foreach ($this->getFormFields() as $settingName => $settingType) {
-			$this->setData($settingName, $this->getSetting($settingName));
+		$plugin->setSettingsForm($this);
+
+		// hotfolder credentials
+		$this->addGroup([
+			'id' => 'hotfolderAccess',
+			'label' => __('plugins.importexport.dnb.settings.form.hotfolderAccess'),
+		])->addField(new FieldText('username', [
+			'label' => __('plugins.importexport.dnb.settings.form.username'),
+			'tooltip' => __('plugins.importexport.dnb.registrationIntro'),
+			'groupId' => 'hotfolderAccess',
+			'value' => $plugin->getSetting($contextId, 'username'),
+		]))->addField(new FieldText('password', [
+			'label' => __('plugins.importexport.common.settings.form.password'),
+			'tooltip' => __('plugins.importexport.common.settings.form.password.description'),
+			'groupId' => 'hotfolderAccess',
+			'value' => $plugin->getSetting($contextId, 'password'),
+		]))->addField(new FieldText('folderId', [
+			'label' => __('plugins.importexport.dnb.settings.form.folderId'),
+			'tooltip' => __('plugins.importexport.dnb.settings.form.folderId.description'),
+			'groupId' => 'hotfolderAccess',
+			'value' => $plugin->getSetting($contextId, 'folderId'),
+		]));
+
+		//automatic deposit
+		$this->addGroup([
+			'id' => 'automaticDeposit',
+			'label' => __('plugins.importexport.dnb.settings.form.automaticDeposit.title'),
+		])->addField(new FieldOptions('automaticDeposit', [
+			'label' => __('plugins.importexport.dnb.settings.form.automaticDeposit'),
+			'tooltip' => __('plugins.importexport.dnb.settings.form.automaticDeposit.description'),
+			'groupId' => 'automaticDeposit',
+			'options' => [
+				['value' => false, 'label' => __('plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel')],
+			],
+			'default' => false,
+			'value' => $plugin->getSetting($contextId, 'automaticDeposit'),
+		]));
+
+		// deposit supplementary material
+		$this->addGroup([
+			'id' => 'submitSupplementary',
+			'label' => __('plugins.importexport.dnb.settings.form.submitSupplementary.title'),
+		])->addField(new FieldOptions('submitSupplementaryMode', [
+			'label' => __('plugins.importexport.dnb.settings.form.submitSupplementary.title'),
+			'description' => __('plugins.importexport.dnb.settings.form.submitSupplementary.warning'),
+			'tooltip' => __('plugins.importexport.dnb.settings.form.submitSupplementary.Info'),
+			'type' => 'radio',
+			'groupId' => 'submitSupplementary',
+			'options' => [
+				['value' => "all", 'label' => __('plugins.importexport.dnb.settings.form.submitSupplementary.all')],
+				['value' => "none", 'label' => __('plugins.importexport.dnb.settings.form.submitSupplementary.none')],
+			],
+			'value' => $plugin->getSetting($contextId, 'submitSupplementaryMode') ? $plugin->getSetting($contextId, 'submitSupplementaryMode') : 'all',
+		]));
+
+		// group remote galleys
+        $allowedRemoteIPs = $plugin->getSetting($contextId, 'allowedRemoteIPs');
+
+		$this->addGroup([
+			'id' => 'remoteGalleys',
+			'label' => __('plugins.importexport.dnb.settings.form.exportRemoteGalleys.title'),
+		])->addField(new FieldOptions('exportRemoteGalleys', [
+				'label' => __('plugins.importexport.dnb.settings.form.exportRemoteGalleys.label'),
+				'description' => __('plugins.importexport.dnb.settings.form.exportRemoteGalleys.description'),
+				'groupId' => 'remoteGalleys',
+				'options' => [
+					['value' => true, 'label' => __('plugins.importexport.dnb.settings.form.exportRemoteGalleys.checkboxLabel')],
+				],
+				'default' => false,
+				'value' => (bool)$plugin->getSetting($contextId, 'exportRemoteGalleys'),
+		]))->addField(new FieldText('allowedRemoteIPs', [
+				'label' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.label'),
+				'description' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.description'),
+				'groupId' => 'remoteGalleys',
+				'value' => $allowedRemoteIPs ? $allowedRemoteIPs : "",
+				'showWhen' => 'exportRemoteGalleys',
+				'isRequired' => false // this should actually be set to true but will also be evaluated if parent field is disabled => prevents saving the form, we have to handle this via form execute
+			]));
+
+		// group archive access
+		if ($plugin->isOAJournal()) {
+			$this->addGroup([
+				'id' => 'archiveAccess',
+				'label' => __('plugins.importexport.dnb.archiveAccess'),
+			])->addField(new FieldText('archiveAccess', [
+				'label' => __('plugins.importexport.dnb.settings.form.archiveAccess'),
+				'groupId' => 'archiveAccess',
+				'description' => __('plugins.importexport.dnb.settings.form.archiveAccess.descriptionOA'),
+				'tooltip' => __('plugins.importexport.dnb.settings.form.archiveAccess.description'),
+			]));
+		} else {
+			$this->addGroup([
+				'id' => 'archiveAccess',
+				'label' => __('plugins.importexport.dnb.archiveAccess'),
+			])->addField(new FieldOptions('archiveAccess', [
+				'label' => __('plugins.importexport.dnb.settings.form.archiveAccess'),
+				'type' => 'radio',
+				'groupId' => 'archiveAccess',
+				'options' => [
+					['value' => "a", 'label' => __('plugins.importexport.dnb.settings.form.archiveAccess.a')],
+					['value' => "b", 'label' => __('plugins.importexport.dnb.settings.form.archiveAccess.b')],
+					['value' => "d", 'label' => __('plugins.importexport.dnb.settings.form.archiveAccess.d')],
+				],
+				'value' => $plugin->isOAJournal() ? "b" : $plugin->getSetting($contextId, 'archiveAccess'),
+				'tooltip' => __('plugins.importexport.dnb.settings.form.archiveAccess.description'),
+			]));
 		}
-		// the access option for OA journals is always 'b'
-		if ($this->isOAJournal()) $this->setData('archiveAccess', 'b');
-		if (!$this->getSetting('submitSupplementaryMode')) $this->setData('submitSupplementaryMode',"all");
-		if (!$this->getSetting('exportRemoteGalleys')) $this->setData('exportRemoteGalleys', false);
-		if (!$this->getSetting('allowedRemoteIPs')) $this->setData('allowedRemoteIPs', "");
 	}
 
-	/**
-	 * @copydoc Form::readInputData()
-	 */
-	function readInputData() {
-		$this->readUserVars(array_keys($this->getFormFields()));
+	// not used anymore, only for backwards compatability (called by PubObjectsExportPlugin)
+	function initData() {}
+	function fetch() {}
+	function readInputData() {}
+
+	function validate() {
+		$request = Application::get()->getRequest();
+
+		import('lib.pkp.classes.validation.ValidatorFactory');
+
+		if ($request->getUserVar('exportRemoteGalleys') == "true") {
+			$props = ['allowedRemoteIPs' => $request->getUserVar('allowedRemoteIPs')];
+			$rules = ['allowedRemoteIPs' => ['regex:/^[0-9\.\|]+$/', 'required_unless:exportRemoteGalleys,false']];
+			$messages = [
+				'regex' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.error'),
+				'required_unless' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired')
+			];
+			$validator = ValidatorFactory::make($props, $rules, $messages);
+
+			if ($validator->fails()) {
+				$errors = $validator->errors()->getMessages();
+
+				if (!empty($errors['allowedRemoteIPs'])) {
+					if (!empty($errors)) {
+						import('lib.pkp.classes.core.APIResponse');
+						$response = new APIResponse();
+
+						$app = new \Slim\App();
+						$app->respond($response->withStatus(400)->withJson($errors));
+						exit();
+					}
+				}
+			}
+		}
+
+		$this->execute();
 	}
 
 	/**
 	 * @copydoc Form::execute()
 	 */
 	function execute(...$functionArgs) {
-		$plugin = $this->_getPlugin();
+		$request = Application::get()->getRequest();
 		foreach($this->getFormFields() as $settingName => $settingType) {
 			// do not save the access option for OA journals -- it is always 'b'
 			// but also to be able to check the missing option for closed journals
-			if ($this->isOAJournal() && $settingName == 'archiveAccess') continue;
-			$plugin->updateSetting($this->_getContextId(), $settingName, $this->getData($settingName), $settingType);
+			if ($this->_plugin->isOAJournal() && $settingName == 'archiveAccess') continue;
+			if ($settingName == 'allowedRemoteIPs' &&
+				$request->getUserVar('exportRemoteGalleys') == "false") continue; // handle remote galleys disabled
+			$this->_plugin->updateSetting($this->_contextId, $settingName, $request->getUserVar($settingName), $settingType);
 		}
-	}
-
-	/**
-	 * @copydoc Form::fetch()
-	 */
-	function fetch($request = null, $template = null, $display = false) {
-		$templateMgr = TemplateManager::getManager($request);
-		$templateMgr->assign('oa', $this->isOAJournal());
-		return parent::fetch($request, $template);
-	}
-
-	//
-	// Public helper methods
-	//
-	/**
-	 * Get a plugin setting.
-	 * @param $settingName
-	 * @return mixed The setting value.
-	 */
-	function getSetting($settingName) {
-		$plugin = $this->_getPlugin();
-		$settingValue = $plugin->getSetting($this->_getContextId(), $settingName);
-		return $settingValue;
 	}
 
 	/**
@@ -137,7 +213,7 @@ class DNBSettingsForm extends Form {
 			'folderId' => 'string',
 			'automaticDeposit' => 'bool',
 			'submitSupplementaryMode' => 'string',
-			'exportRemoteGalleys' => 'string',
+			'exportRemoteGalleys' => 'bool',
 			'allowedRemoteIPs' => 'string'
 		);
 	}
@@ -152,16 +228,11 @@ class DNBSettingsForm extends Form {
 	}
 
 	/**
-	 * Check whether this journal is OA.
-	 * @return boolean
+	 * Get a plugin setting.
+	 * @param $settingName
+	 * @return mixed The setting value.
 	 */
-	function isOAJournal() {
-		$journalDao = DAORegistry::getDAO('JournalDAO'); /* @var $journalDao JournalDAO */
-		$journal = $journalDao->getById($this->_getContextId());
-		return  $journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN &&
-		$journal->getSetting('restrictSiteAccess') != 1 &&
-		$journal->getSetting('restrictArticleAccess') != 1;
+	function getSetting($settingName) {
+		return $this->_plugin->getSetting($this->contextId, $settingName);
 	}
 }
-
-?>

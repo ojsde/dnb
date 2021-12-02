@@ -1,159 +1,155 @@
 {**
- * @file plugins/importexport/dnb/index.tpl
+ * plugins/importexport/native/templates/index.tpl
  *
- * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
- * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
- * Author: Bozana Bokan
- * Last update: May 15, 2017
+ * Copyright (c) 2014-2021 Simon Fraser University
+ * Copyright (c) 2003-2021 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * List of operations this plugin can perform
  *}
-
- {extends file="layouts/backend.tpl"}
+{extends file="layouts/backend.tpl"}
 
 {block name="page"}
-	<h1 class="app__pageHeading">
-		{{translate key="plugins.importexport.dnb.displayName"}|escape}
-	</h1>
 
-<script type="text/javascript">{literal}
-	function articleSselectAll() {
-		var elements = document.getElementById('exportSubmissionXmlForm').elements;
-		for (var i=0; i < elements.length; i++) {
-			if (elements[i].name == 'selectedSubmissions[]') {
-				elements[i].checked = true;
-			}
-		}
-	}
+    {if !empty($configurationErrors) || 
+        !$checkTar || 
+        !$checkFilter ||
+        !$checkSettings || 
+        (!$currentContext->getSetting('onlineIssn') && !$currentContext->getSetting('printIssn'))}
+        {assign var="allowExport" value=false}
+    {else}
+        {assign var="allowExport" value=true}
+    {/if}
 
-	function articleDeselectAll() {
-		var elements = document.getElementById('exportSubmissionXmlForm').elements;
-		for (var i=0; i < elements.length; i++) {
-			if (elements[i].name == 'selectedSubmissions[]') {
-				elements[i].checked = false;
-			}
-		}
-	}
-	
-	// If an already deposited article is selected for deposit,
-	// ask user to confirm.
-	function checkDeposited(confirmMsg) {
-		var inputElements = document.getElementsByName('selectedSubmissions[]');
-		for(var i = 0; i < inputElements.length; i++){
-			if(inputElements[i].checked){
-				// get the status from the status table cell id
-				var statusCellIdPattern = 'cell-' + inputElements[i].value + '-status';
-				var statusCell = document.querySelectorAll('[id^=' + statusCellIdPattern + ']');
-				var statusCellText = statusCell[0].firstElementChild.innerHTML.trim();
-				if (statusCellText == '{/literal}{translate key="plugins.importexport.dnb.status.deposited"}{literal}' || statusCellText == '{/literal}{translate key="plugins.importexport.common.status.markedRegistered"}{literal}' ) {
-					return confirm(confirmMsg);
-				}
-			}
-		}
-		return true;
-	}
-{/literal}</script>
+    <tabs :track-history="true">
+        <tab id="settings" label="{translate key="plugins.importexport.common.settings"}">
 
-{if !empty($configurationErrors) || 
-	!$checkTar || 
-	!$checkFilter ||
-	!$checkSettings || 
-	(!$currentContext->getSetting('onlineIssn') && !$currentContext->getSetting('printIssn'))}
-	{assign var="allowExport" value=false}
-{else}
-	{assign var="allowExport" value=true}
-{/if}
+            {help file="settings" class="pkp_help_tab" topic="settings"}
+        
+            <div class="pkp_notification" id="dnbConfigurationErrors">
+                {if DEBUG}
+                    {include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.dnb.settings.debugModeActive.title"|translate notificationContents=$debugModeWarning}
+                {/if}
+                {if !empty($configurationErrors)}
+                        {foreach from=$configurationErrors item=configurationError}
+                            {if $configurationError == $smarty.const.EXPORT_CONFIG_ERROR_SETTINGS}
+                                {include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.common.error.pluginNotConfigured"|translate}
+                            {/if}
+                        {/foreach}
+                {/if}
+                {if !$currentContext->getSetting('onlineIssn') && !$currentContext->getSetting('printIssn')}
+                    {capture assign="journalSettingsUrl"}{url  router=$smarty.const.ROUTE_PAGE page="management" op="settings" path="context" escape=false}{/capture}
+                    {capture assign=missingIssnMessage}{translate key="plugins.importexport.dnb.noISSN" journalSettingsUrl=$journalSettingsUrl}{/capture}
+                    {include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents=$missingIssnMessage}
+                {/if}
+                {if !$checkTar}
+                    {include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.noTAR"|translate}
+                {/if}
+                {if !$checkFilter}
+                    {include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.noExportFilter"|translate}
+                {/if}
+                {if !$checkSettings}
+                    {include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.archiveAccess.required"|translate}
+                {/if}
+            </div>
+            <pkp-form
+                v-bind="components.{$smarty.const.FORM_DNB_SETTINGS}"
+                @set="set" 
+            />
+        </tab>
+        {if $allowExport}
+            <tab id="exportSubmissions-tab" label="{translate key="plugins.importexport.dnb.exportArticle"}" :badge={$nNotRegistered}>
 
-<script type="text/javascript">
-	// Attach the JS file tab handler.
-	$(function() {ldelim}
-		$('#importExportTabs').pkpHandler('$.pkp.controllers.TabHandler');
-	{rdelim});
-</script>
-<div id="importExportTabs">
-	<ul>
-		<li><a href="#settings-tab">{translate key="plugins.importexport.common.settings"}</a></li>
-		{if $allowExport}
-			<li><a href="#exportSubmissions-tab">{translate key="plugins.importexport.common.export.articles"}</a></li>
-		{/if}
-	</ul>
-	<div id="settings-tab">
-		<div class="pkp_notification" id="dnbConfigurationErrors">
-		{if !empty($configurationErrors)}
-				{foreach from=$configurationErrors item=configurationError}
-					{if $configurationError == $smarty.const.EXPORT_CONFIG_ERROR_SETTINGS}
-						{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.common.error.pluginNotConfigured"|translate}
-					{/if}
-				{/foreach}
-		{/if}
-		{if !$currentContext->getSetting('onlineIssn') && !$currentContext->getSetting('printIssn')}
-			{capture assign="journalSettingsUrl"}{url  router=$smarty.const.ROUTE_PAGE page="management" op="settings" path="context" escape=false}{/capture}
-			{capture assign=missingIssnMessage}{translate key="plugins.importexport.dnb.noISSN" journalSettingsUrl=$journalSettingsUrl}{/capture}
-			{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents=$missingIssnMessage}
-		{/if}
-		{if !$checkTar}
-			{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.noTAR"|translate}
-		{/if}
-		{if !$checkFilter}
-			{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.noExportFilter"|translate}
-		{/if}
-		{if !$checkSettings}
-			{include file="controllers/notification/inPlaceNotificationContent.tpl" notificationId=dnbConfigurationErrors notificationStyleClass="notifyWarning" notificationTitle="plugins.importexport.common.missingRequirements"|translate notificationContents="plugins.importexport.dnb.archiveAccess.required"|translate}
-		{/if}
-		</div>
-		{capture assign="dnbSettingsGridUrl"}{url router=$smarty.const.ROUTE_COMPONENT component="grid.settings.plugins.settingsPluginGridHandler" op="manage" plugin="DNBExportPlugin" category="importexport" verb="index" escape=false}{/capture}
-		
-		{load_url_in_div id="dnbSettingsGridContainer" url=$dnbSettingsGridUrl}
-	</div>
-	{if $allowExport}
-		<div id="exportSubmissions-tab">
-			{translate key="plugins.importexport.dnb.status.legend"}
-			<br/>
-			<script type="text/javascript">
-				$(function() {ldelim}
-					// Attach the form handler.
-					$('#exportSubmissionXmlForm').pkpHandler('$.pkp.controllers.form.FormHandler');
-				{rdelim});
-			</script>
-			<form id="exportSubmissionXmlForm" class="pkp_form" action="{plugin_url path="exportSubmissions"}" method="post">
-				{csrf}
-				<input type="hidden" name="tab" value="exportSubmissions-tab" />
-				{fbvFormArea id="submissionsXmlForm"}
-					{capture assign="submissionsListGridUrl"}{url router=$smarty.const.ROUTE_COMPONENT component="grid.submissions.ExportPublishedSubmissionsListGridHandler" op="fetchGrid" plugin="dnb" category="importexport" escape=false}{/capture}
-					{load_url_in_div id="submissionsListGridContainer" url=$submissionsListGridUrl}
-					{**
-					* This checkbox set the PKP NativeExportFilter.inc.php $_noValidation variable which is currently not evaluated in the Plugin
-					{fbvFormSection list="true"}
-						{fbvElement type="checkbox" id="validation" label="plugins.importexport.common.validation" checked=$validation|default:true}
-					{/fbvFormSection}
-					*}
-					{if !empty($actionNames)}
-						{fbvFormSection}
-						<ul class="export_actions">
-							{foreach from=$actionNames key=action item=actionName}
-								<li class="export_action">	
-									{if $action == $smarty.const.EXPORT_ACTION_DEPOSIT}
-										{capture assign=confirmationMessage}{translate|escape:"jsparam" key="plugins.importexport.dnb.deposit.confirm"}{/capture}
-										{fbvElement type="submit" label="$actionName" id="$action" name="$action" value="1" class="$action" translate=false inline=true onclick="return checkDeposited('$confirmationMessage')"}
-									{else}
-										{fbvElement type="submit" label="$actionName" id="$action" name="$action" value="1" class="$action" translate=false inline=true}
-									{/if}
-								</li>
-							{/foreach}
-							<li class="export_action">
-								<button id="selectAll" class="pkp_button selectAll" value="1" name="selectAll" type="button" onclick="articleSselectAll()">{translate key="plugins.importexport.dnb.selectAll"}</button>
-							</li>
-							<li class="export_action">
-								<button id="deselectAll" class="pkp_button deselectAll" value="1" name="deselectAll" type="button" onclick="articleDeselectAll()">{translate key="plugins.importexport.dnb.deselectAll"}</button>
-							</li>
-						</ul>
-						{/fbvFormSection}
-					{/if}					
-				{/fbvFormArea}
-			</form>
-			{if $confirmationMessage}<p>{translate key="plugins.importexport.dnb.deposit.notice"}</p>{/if}
-		</div>
-	{/if}
-</div>
+                {help file="export" class="pkp_help_tab"}
+                <div class="pkp_help_tab dnb_info_center">
+                    <badge
+                        v-if="{$remoteEnabled|count_characters} > 0"
+                        class="dnb_info_tab">{$remoteEnabled}
+                    </badge>
+                    <badge v-if="{$suppDisabled|count_characters} > 0" class="dnb_info_tab">{$suppDisabled}</badge>
+                </div>
 
+                <form id="exportXmlForm" class="pkp_form dnb_form" action="" method="post">
+                    <submissions-list-panel
+                        v-bind="components.submissions"
+                        @set="set"
+                    >
+                        <template v-slot:item="{ldelim}item{rdelim}">
+                            <div class="listPanel__itemSummary">
+                                <input id="checkbox"
+                                    type="checkbox"
+                                    name="selectedSubmissions[]"
+                                    :value="item.id"
+                                    v-model="selectedSubmissions"
+                                />
+                                <label for="checkbox" title="">
+                                </label>
+                                <div class="listPanel__item">
+                                    <badge>{{ item.id }}</badge>
+                                </div>
+                                <div class="listPanel__item">
+                                    <span class="dnb_authors">
+                                        {{ (item.publications.find(p => p.id == item.currentPublicationId).authorsString) }}
+                                    </span>
+                                    <br>
+                                    <a :href="item.urlWorkflow">
+                                        <span>
+                                            {{ localize(item.publications.find(p => p.id == item.currentPublicationId).fullTitle) }}
+                                        </span>
+                                    </a>
+                                    <br>
+                                    <a :href="components.submissions.dnbStatus[item.id]['publishedUrl']">
+                                        <span>
+                                            {{ components.submissions.dnbStatus[item.id]['issueTitle'] }}
+                                        </span>
+                                    </a>
+                                </div>
+                                <div v-if="components.submissions.dnbStatus[item.id]['supplementariesNotAssignable'] !== ''" class="listPanel__item">
+                                    <icon
+                                        icon="exclamation-triangle"
+                                        class="has_tooltip"
+                                        :title="components.submissions.dnbStatus[item.id]['supplementariesNotAssignable']">
+                                    </icon>
+                                </div>
+                                <div class="listPanel__item dnb_align_right">
+                                    <button v-if="components.submissions.dnbStatus[item.id]['statusConst'] !== '{$smarty.const.EXPORT_STATUS_NOT_DEPOSITED}'" 
+                                        class="listPanel__item pkpBadge dnb_align_right dnb_deposited">
+                                        <template>
+                                            {{ components.submissions.dnbStatus[item.id]['status'] }}
+                                        </template>
+                                    </button>
+                                    <button v-else 
+                                        class="listPanel__item pkpBadge dnb_align_right dnb_not_deposited">
+                                        <template>
+                                            {{ components.submissions.dnbStatus[item.id]['status'] }}
+                                        </template>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </submissions-list-panel>
+                    {fbvFormSection}
+                        <pkp-button id="dnb_deposit" onclick="$('#dnb_deposit').closest('form').attr('action', '{plugin_url path=$smarty.const.EXPORT_ACTION_DEPOSIT}');submit('#exportXmlForm')">
+                            {translate key="plugins.importexport.dnb.deposit"}
+                        </pkp-button>
+                        <pkp-button id="dnb_export" onclick="$('#dnb_export').closest('form').attr('action', '{plugin_url path=$smarty.const.EXPORT_ACTION_EXPORT}');submit('#exportXmlForm')">
+                            {translate key="plugins.importexport.dnb.export"}
+                        </pkp-button>
+                        <pkp-button id="dnb_mark" onclick="$('#dnb_mark').closest('form').attr('action', '{plugin_url path=$smarty.const.EXPORT_ACTION_MARKREGISTERED}');submit('#exportXmlForm')">
+                            {translate key="plugins.importexport.common.status.markedRegistered"}
+                        </pkp-button>
+                        <pkp-button :disabled="!components.submissions.itemsMax" @click="toggleSelectAll">
+                            <template v-if="components.submissions.itemsMax && selectedSubmissions.length >= components.submissions.itemsMax">
+                                {translate key="common.selectNone"}
+                            </template>
+                            <template v-else>
+                                {translate key="common.selectAll"}
+                            </template>
+                        </pkp-button>
+                    {/fbvFormSection}
+                </form>
+                <badge>{translate key="plugins.importexport.dnb.deposit.notice"}</badge>
+            </tab>
+        {/if}
+    </tabs>
 {/block}
