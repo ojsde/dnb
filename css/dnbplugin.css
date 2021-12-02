@@ -39,3 +39,20 @@
     color: white;
     padding-left: 0.5rem;
 }
+
+.dnb_info_center {
+	right: 7rem;
+    display: flex;
+    background: none;
+}
+
+.dnb_info_tab {
+    border: none;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+    color: #D00A6C;
+    background: #fff;
+    margin-left: 3px;
+}

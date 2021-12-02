@@ -1,0 +1,3 @@
+# Einleitung
+
+Das DNB Export Plugin erstellt gepackte Archivdateien nach den [Spezifikationen für den DNB Horfolder](https://www.dnb.de/SharedDocs/Downloads/DE/Professionell/Netzpublikationen/spezifikationHotfolder.pdf;jsessionid=30EBEB0D8D5F9C7B717E80FCDD5FC8B3.intranet672?__blob=publicationFile&v=2) und zusätzlichen Vereinbarungen mit der DNB. Diese Dateien können entweder exportiert, oder direkt an Ihren DNB Hotfolder gesendet werden.

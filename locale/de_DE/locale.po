@@ -230,3 +230,6 @@ msgstr "The plugin is set to debug mode!"
 
 msgid "plugins.importexport.dnb.settings.debugModeActive.contents"
 msgstr "SFTP server is configured as: {$server} port {$port}"
+
+msgid "plugins.importexport.dnb.warning.supplementaryNotAssignable"
+msgstr "Dieser Artikel enthält {$nDoc} Dokumentfahnen und {$nSupp} Fahne{$pSupp} mit Zusatzmaterial. Eine eindeutige automatische Zuodnung ist nicht möglich. Bitte konsultieren Sie die Hilfe für weitere Informationen."

@@ -3,22 +3,28 @@
 1. [Artikelstatus](export#status)
 2. [Abliefern](export#deposit)
 3. [Exportieren](export#export)
-
-Import and export content and view usage statistics and reports from the Tools menu.
-
-The tools available to you may depend on what plugins an administrator has configured for your site.
+4. [Zusatzmaterial](export#supplementary)
 
 ## <a name="status"></a>Artikelstatus
 
-<p>Der Ablieferungsstatus eines Artikels kann einen der folgenden Zustände haben:<br/>
-<strong>Nicht abgeliefert</strong>: Der Artikel wurde noch nicht bei der DNB abgeliefert (er wurde nicht über OJS in den DNB Hotfolder und auch nicht extern, z.B. über das DNB Webformular abgeliefert).<br/>
-<strong>Abgeliefert</strong>: Der Artikel wurde über OJS in den DNB-Hotfolder abgeliefert.<br/>
-<strong>Als registriert markiert</strong>: Der Artikel wurde manuell als registriert markiert. Sie können Artikel als registriert markieren (s. Button \"Als registriert markieren\"), um anzuzeigen, dass dieser Artikel außerhalb von OJS an die DNB abgeliefert wurde, z.B. über das DNB Webformular."</p>
+Der Ablieferungsstatus eines Artikels kann einen der folgenden Zustände haben:
+
+***Nicht abgeliefert***: Der Artikel wurde noch nicht bei der DNB abgeliefert (er wurde nicht über OJS in den DNB Hotfolder und auch nicht extern, z.B. über das DNB Webformular abgeliefert).
+
+***Abgeliefert***: Der Artikel wurde über OJS in den DNB-Hotfolder abgeliefert.
+
+***Als registriert markiert***: Der Artikel wurde manuell als registriert markiert. Sie können Artikel als registriert markieren (s. Button *"Als registriert markieren"*), um anzuzeigen, dass dieser Artikel außerhalb von OJS an die DNB abgeliefert wurde, z.B. über das DNB Webformular."
 
 ## <a name="deposit"></a>Abliefern
 
-The system generates reports that track site usage and submissions over a given period of time. Reports are generated in CSV format which requires a spreadsheet application, like Excel, Google Docs or LibreOffice to view.
-
-You can generate detailed custom reports and filter by complex parameters. If you're unsure about any of the parameters, speak to your technical support team for help. For more detailed information, see [Learning OJS 3: Report Generator](https://docs.pkp.sfu.ca/learning-ojs/en/tools#report-generator).
+Mit Hilfe der der Funktion ***Abliefern*** werden die erstellten Archivdateien direkt per SFTP an den unter [Einstellungen](settings) konfigurierten Ordner gesendet. Bitte stellen Sie sicher, dass Ihr Server und Ihre locale IT-Umgebung (z.B. Firewalls) ausgehende SFTP-Verbindungen zulassen.
 
 ## <a name="export"></a>Exportieren
+
+Mit Hilfe der Funktion ***Exportieren*** werden die erstellten Archivdateien auf Ihr lokales System heruntergeladen. Sie können die Dateien einsehen und manuell in den DNB Hotfolder hochladen.
+
+## <a name="supplementary"></a>Zusatzmaterial
+
+OSJ bietet momentan keine Unterstützung für die Zuordnung von Zusatzmaterial zu Dokumentfahnen. Wenn mehr als eine Dokumentfahne existiert kann Zusatzmaterial nicht mehr eindeutig zugeordnet werden. Diese Artikel markiert das DNB Export Plugin mit einem roten Dreieck mit Ausrufezeichen.
+
+Das DNB Export Plugin exportiert immer alle Zusatzmaterialfahnen mit jeder einzelnen Dokumentfahne. Falls Sie Artikel mit unkorrekt zugeordnetem Zusatzmaterial nicht direkt abliefern wollen, sollten Sie in Erwägung ziehen die entsprechenden Artikel zu exportieren, die überflüssigen Dokumentfahnen zu entfernen und die Archivdatei manuell in den DNB Hotfolder hochladen.

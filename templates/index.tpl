@@ -61,7 +61,14 @@
             <tab id="exportSubmissions-tab" label="{translate key="plugins.importexport.dnb.exportArticle"}" :badge={$nNotRegistered}>
 
                 {help file="export" class="pkp_help_tab"}
-                
+                <div class="pkp_help_tab dnb_info_center">
+                    <badge
+                        v-if="{$remoteEnabled|count_characters} > 0"
+                        class="dnb_info_tab">{$remoteEnabled}
+                    </badge>
+                    <badge v-if="{$suppDisabled|count_characters} > 0" class="dnb_info_tab">{$suppDisabled}</badge>
+                </div>
+
                 <form id="exportXmlForm" class="pkp_form dnb_form" action="" method="post">
                     <submissions-list-panel
                         v-bind="components.submissions"
@@ -97,8 +104,12 @@
                                         </span>
                                     </a>
                                 </div>
-                                <div class="listPanel__item">
-                                    <icon icon="exclamation-triangle" class="has_tooltip" title="dasdas"></icon>
+                                <div v-if="components.submissions.dnbStatus[item.id]['supplementariesNotAssignable'] !== ''" class="listPanel__item">
+                                    <icon
+                                        icon="exclamation-triangle"
+                                        class="has_tooltip"
+                                        :title="components.submissions.dnbStatus[item.id]['supplementariesNotAssignable']">
+                                    </icon>
                                 </div>
                                 <div class="listPanel__item dnb_align_right">
                                     <button v-if="components.submissions.dnbStatus[item.id]['statusConst'] !== '{$smarty.const.EXPORT_STATUS_NOT_DEPOSITED}'" 

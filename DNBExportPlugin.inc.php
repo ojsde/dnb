@@ -208,11 +208,27 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				foreach ($publishedSubmissions as $submission) {
 					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
 					$issue = Services::get('issue')->get($submission->getCurrentPublication()->getData('issueId'));
+					
+					$galleys = $submission->getGalleys();
+					$documentGalleys = array_filter($galleys, array($this, 'filterGalleys'));
+					$supplementaryGalleys = array_filter($galleys, array($this, 'filterSupplementaryGalleys'));
+					$msg = "";
+					if ((count($documentGalleys) > 1) && (count($supplementaryGalleys) > 0)) {
+						$plural = AppLocale::getLocale() == "de_DE" ? "n" : "s";
+						$msg = __('plugins.importexport.dnb.warning.supplementaryNotAssignable',
+							array(
+								'nDoc' => count($documentGalleys),
+								'nSupp' => count($supplementaryGalleys),
+								'pSupp' => count($supplementaryGalleys) > 1 ? $plural : ""
+							));
+					}
+
 					$dnbStatus[(int)$submission->getId()] = [
 						'status' => $this->getStatusNames()[$status],
 						'statusConst' => empty($status)?EXPORT_STATUS_NOT_DEPOSITED:$status,
 						'issueTitle' => $issue->getLocalizedTitle(),
-						'publishedUrl' => Services::get('issue')->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl']	
+						'publishedUrl' => Services::get('issue')->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'],
+						'supplementariesNotAssignable' => $msg
 					];
 					if (empty($status)) $nNotRegistered++;
 				}
@@ -224,7 +240,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// add issue filter
 				$issueAutosuggestField = new FieldSelectIssues('issueIds', [
 					'value' => [],
-					'apiUrl' => $request->getDispatcher()->url($request, ROUTE_API, $request->getContext()->getPath(), 'issues'),
+					'apiUrl' => $request->getDispatcher()->url($request, ROUTE_API, $context->getPath(), 'issues'),
 				]);
 				$issueFilter =
 					[
@@ -276,7 +292,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					'pageComponent' => 'ImportExportPage',
 					'baseurl' => $request->getBaseUrl(),
 					'debugModeWarning' => __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => SFTP_SERVER, 'port' => SFTP_PORT]),
-					'nNotRegistered' => $nNotRegistered
+					'nNotRegistered' => $nNotRegistered,
+					'remoteEnabled' => $this->getSetting($context->getId(), 'exportRemoteGalleys') ? "Remote" : "",
+					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') !== "all" ? "Supplementary" : ""
 				]);
 
 				$templateMgr->setConstants([
@@ -395,7 +413,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$app = new \Slim\App();
 				$app->respond($response->withStatus(200)->withJson($data));
 				exit();
-			break;
+				break;
+			default:
+				parent::manage($args, $request);
 		}
 	}
 
@@ -966,8 +986,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$supplementaryGalleys = $filteredSupplementaryGalleys;
 		}
 		// filter PDF and EPUB full text galleys -- DNB concerns only PDF and EPUB formats
-		$filteredDocumentGalleys = array_filter($galleys, array($this, 'filterGalleys'));
-		$galleys = $filteredDocumentGalleys;
+		$galleys = array_filter($galleys, array($this, 'filterGalleys'));
 
 		return (count($galleys) > 0);
 	}
@@ -1022,7 +1041,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     			
     			if (isset($galleyFile)) {
     			    //verify remote URL is not executable file
-    			    $isValidFileType = preg_match('/\.(exe|bat|sh)$/i',$galleyFile);
+    			    $isValidFileType = !preg_match('/\.(exe|bat|sh)$/i',$galleyFile);
     			    //varify allowed domain
     			    return $isValidFileType && $this->isAllowedRemoteIP($galleyFile);
     			} else return false;
@@ -1033,7 +1052,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			if ($genre->getCategory() != GENRE_CATEGORY_SUPPLEMENTARY) {
 				return false;
 			}
-			return $galley->isPdfGalley() ||  $galley->getFileType() == 'application/epub+zip';
+			$isValidFileType = !preg_match('/\.(exe|bat|sh)$/i',$galleyFile->getData('path'));
+			return $isValidFileType;
 		}
 		return false;
 	}
@@ -1242,7 +1262,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function isAllowedRemoteIP($url) {
 		$domain = parse_url($url, PHP_URL_HOST);
 		$pattern = $this->getSetting(Application::get()->getRequest()->getContext()->getId(), 'allowedRemoteIPs');
-    	return preg_match("/".$pattern()."/", gethostbyname($domain));;
+    	return preg_match("/".$pattern."/", gethostbyname($domain));;
 	}
 
 }
