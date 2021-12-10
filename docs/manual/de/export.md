@@ -27,4 +27,4 @@ Mit Hilfe der Funktion ***Exportieren*** werden die erstellten Archivdateien auf
 
 OSJ bietet momentan keine Unterstützung für die Zuordnung von Zusatzmaterial zu Dokumentfahnen. Wenn mehr als eine Dokumentfahne existiert kann Zusatzmaterial nicht mehr eindeutig zugeordnet werden. Diese Artikel markiert das DNB Export Plugin mit einem roten Dreieck mit Ausrufezeichen.
 
-Das DNB Export Plugin exportiert immer alle Zusatzmaterialfahnen mit jeder einzelnen Dokumentfahne. Falls Sie Artikel mit unkorrekt zugeordnetem Zusatzmaterial nicht direkt abliefern wollen, sollten Sie in Erwägung ziehen die entsprechenden Artikel zu exportieren, die überflüssigen Dokumentfahnen zu entfernen und die Archivdatei manuell in den DNB Hotfolder hochladen.
+Das DNB Export Plugin exportiert immer alle Zusatzmaterialfahnen mit jeder einzelnen Dokumentfahne. Falls Sie Artikel mit unkorrekt zugeordnetem Zusatzmaterial nicht direkt abliefern wollen, sollten Sie in Erwägung ziehen die entsprechenden Artikel zu exportieren, die überflüssigen Dokumentfahnen zu entfernen und die Archivdatei manuell in den DNB Hotfolder hochzuladen.

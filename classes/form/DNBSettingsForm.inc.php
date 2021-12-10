@@ -15,7 +15,7 @@ use \PKP\components\forms\FormComponent;
 use \PKP\components\forms\FieldText;
 use \PKP\components\forms\FieldOptions;
 
-define('FORM_DNB_SETTINGS', 'dnb_settings');
+define('FORM_DNB_SETTINGS', 'dnbsettingsform');
 
 class DNBSettingsForm extends FormComponent {
 	/** @copydoc FormComponent::$id */

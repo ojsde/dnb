@@ -49,7 +49,7 @@ msgid "plugins.importexport.dnb.settings.form.archiveAccess"
 msgstr "Type of access to the articles in the DNB archive"
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.description"
-msgstr "For open access journals and articles the access to the archived version will automatically be unrestricted for all (second option). Closed journals and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles. Please note that setting access options at the issue or article level will have precedence over the setting selected here."
+msgstr "For open access journals and articles the access to the archived version will automatically be unrestricted for all. Closed journals and journals with restricted access will have to chose one of these options that DNB provides for access of the archived articles. Please note that setting access options at the issue or article level will have precedence over the setting selected here."
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.descriptionOA"
 msgstr "This journal is configured as Open-Access-Journal. All deposited galleys will automatically be tagged as Open-Access."
@@ -88,7 +88,7 @@ msgid "plugins.importexport.dnb.settings.form.automaticDeposit"
 msgstr "Deposit galleys automatically"
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.description"
-msgstr "OJS regularly checks if there are articles not yet deposited (that is, articles that are not deposited from within OJS and not marked as registered) and automatically deposits them to the DNB Hotfolder. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the articles listing."
+msgstr "OJS regularly checks if there are articles not yet deposited (that is, articles that are not deposited from within OJS and not marked as registered) and automatically deposits them to the DNB Hotfolder. Please note that this may take a short amount of time after publication to process. You can check for all not deposited articles in the articles listing. Please be aware that in order to use this feature a cronjob has to be configured on your server."
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel"
 msgstr "Yes, I want to deposit galley files automatically"

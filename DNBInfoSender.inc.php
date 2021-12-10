@@ -63,7 +63,7 @@ class DNBInfoSender extends ScheduledTask {
 		}
 
 		$filter = $plugin->getSubmissionFilter();
-		$genreDao = DAORegistry::getDAO('GenreDAO');
+		// $genreDao = DAORegistry::getDAO('GenreDAO');
 		$fileManager = new FileManager();
 
 		// get all journals that meet the requirements
@@ -102,11 +102,12 @@ class DNBInfoSender extends ScheduledTask {
 						$fullyDeposited = true;
 						$submissionId = $submission->getId();
 						foreach ($galleys as $galley) {
-							// check if it is a full text
-							$galleyFile = $galley->getFile();
-							$genre = $genreDao->getById($galleyFile->getGenreId());
-							// if it is not a full text, continue
-							if ($genre->getCategory() != 1 || $genre->getSupplementary() || $genre->getDependent()) continue;
+							// TODO @RS test if this is ok
+							// // check if it is a full text
+							// $galleyFile = $galley->getFile();
+							// $genre = $genreDao->getById($galleyFile->getGenreId());
+							// // if it is not a full text, continue
+							// if ($genre->getCategory() != 1 || $genre->getSupplementary() || $genre->getDependent()) continue;
 
 							$exportFile = '';
 							// Get the TAR package for the galley
@@ -120,7 +121,7 @@ class DNBInfoSender extends ScheduledTask {
 								);
 								return false;
 							}
-							// Depost the article
+							// Deposit the article
 							$result = $plugin->depositXML($galley, $journal, $exportFile);
 							if (is_array($result)) {
 								// If error occured add it to the list of errors

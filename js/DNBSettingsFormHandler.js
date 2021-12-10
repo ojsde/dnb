@@ -16,8 +16,10 @@
  */
 
 jQuery(function() {
-		// rewrite the OJS default help handler url
-		// FIXME @RS $('#pkpHelpPanel').pkpHandler('$.pkp.controllers.HelpPanelHandler').remove(); // this seems to remove all handlers, help is not opening anymore
+		// We register the HelpPanelHandler before it is called in backend.tpl
+		// to rewrite the OJS default help handler url to fetch from our plugin directory
+		// This causes a javascript error in the browser that we don't seem to be able to avoid.
+
 		$('#pkpHelpPanel').pkpHandler(
 		'$.pkp.controllers.HelpPanelHandler',
 		{

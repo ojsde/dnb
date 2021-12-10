@@ -64,9 +64,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	}
 
 	function addBackendProperties($hookName, $params) {
-		$props = &$params[0];
-		$props = array_merge($props, [$this->getPluginSettingsPrefix().'::status']);
-		return true;
+		switch ($hookName){
+			case "Submission::getBackendListProperties::properties":
+				$props = &$params[0];
+				$props = array_merge($props, [$this->getPluginSettingsPrefix().'::status']);
+				return true;
+				break;
+		};
 	}
 
 	/**
@@ -210,10 +214,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$issue = Services::get('issue')->get($submission->getCurrentPublication()->getData('issueId'));
 					
 					$galleys = $submission->getGalleys();
-					$documentGalleys = array_filter($galleys, array($this, 'filterGalleys'));
-					$supplementaryGalleys = array_filter($galleys, array($this, 'filterSupplementaryGalleys'));
+
+					$documentGalleys = $supplementaryGalleys = [];
+					$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys); 
 					$msg = "";
-					if ((count($documentGalleys) > 1) && (count($supplementaryGalleys) > 0)) {
+					if ($submission->getData('supplementaryNotAssignable')) {
 						$plural = AppLocale::getLocale() == "de_DE" ? "n" : "s";
 						$msg = __('plugins.importexport.dnb.warning.supplementaryNotAssignable',
 							array(
@@ -304,7 +309,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$state = [
 					'components' => [
 						FORM_DNB_SETTINGS => $settingsFormConfig,
-						// 'submissions' => $submissionsConfig,
 						'submissions' => array_merge(
 								$submissionsConfig,
 								['dnbStatus' => $dnbStatus])
@@ -376,7 +380,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					'contextId' => $context->getId(),
 					'status' => STATUS_PUBLISHED,
 					'searchPhrase' => $args['searchPhrase'],
-					'daysInactive' => isset($args['daysInactive'])?(int)$args['daysInactive']:0,
 					'sectionIds' => isset($args['sectionIds'])?$args['sectionIds']:NULL,
 					'issueIds' => isset($args['issueIds'])?$args['issueIds']:NULL
 				]);
@@ -546,7 +549,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc PubObjectsExportPlugin::depositXML()
 	 */
 	function depositXML($object, $context, $filename) {   
-		$errors = array();
+		$errors = [];
 		$filename = Config::getVar('files', 'files_dir') . '/' .  $filename;
 
 		if (!($this->getSetting($context->getId(), 'username') &&
@@ -639,16 +642,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			}
 			$journalExportPath = $result;
 
-			$errors = $exportFilesNames = array();
+			$errors = $exportFilesNames = [];
 			$submissionDao = DAORegistry::getDAO('SubmissionDAO');
 			$genreDao = DAORegistry::getDAO('GenreDAO');
 
 			// For each selected article
 			foreach ($submissions as $submission) {
 				$issue = null;
-				$galleys = array();
-				$supplementaryGalleys = array();
-				// Get issue and galleys, and check if the article can be exported
+				$galleys = [];
+				$supplementaryGalleys = [];
+				// Get issue and galleys, and check if the article can be exported.
+				// canBeExported(...) returns galleys and supplementary galleys seperately
 				if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
 				    $errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
 					// continue with other articles
@@ -961,7 +965,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @param $galleys array Filtered (i.e. PDF and EPUB) submission full text galleys
 	 * @return boolean
 	 */
-	function canBeExported($submission, &$issue = null, &$galleys = array(), &$supplementaryGalleys = array()) {
+	function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = []) {
 		$cache = $this->getCache();
 		if (!$cache->isCached('articles', $submission->getId())) {
 			$cache->add($submission, null);
@@ -982,11 +986,25 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$galleys = $submission->getGalleys();
 		// filter supplementary files
 		if ($this->getSetting($submission->getData('contextId'), 'submitSupplementaryMode') == 'all') {
-			$filteredSupplementaryGalleys = array_filter($galleys, array($this, 'filterSupplementaryGalleys'));
-			$supplementaryGalleys = $filteredSupplementaryGalleys;
+			$supplementaryGalleys = array_filter($galleys, array($this, 'filterSupplementaryGalleys'));
+			// in case supplementary galleys are exported also provide the galley type
+			$genres = array_map(function ($i) use ($submission){
+				$genreDao = DAORegistry::getDAO('GenreDAO');
+				$genre = $genreDao->getById($i->getFile()->getGenreId());
+				return $genre->getData('name')[$submission->getLocale()];
+			},
+			$supplementaryGalleys);
+			$submission->setData('supplementaryGenres', array_unique($genres));
 		}
 		// filter PDF and EPUB full text galleys -- DNB concerns only PDF and EPUB formats
 		$galleys = array_filter($galleys, array($this, 'filterGalleys'));
+
+		// in case the galley(s) can be exported with supplementary material which cannot umambiuously be assigned we need to flag this submission
+		if ((count($galleys) > 1) && (count($supplementaryGalleys) > 0)) {
+			$submission->setData('supplementaryNotAssignable', TRUE);
+		} else {
+			$submission->setData('supplementaryNotAssignable', FALSE);
+		}
 
 		return (count($galleys) > 0);
 	}

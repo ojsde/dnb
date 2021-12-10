@@ -49,7 +49,7 @@ msgid "plugins.importexport.dnb.settings.form.archiveAccess"
 msgstr "Arts des Zugriffs auf die Artikel im DNB-Archiv"
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.description"
-msgstr "Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch uneingeschränkt für alle (zweite Option). Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen. Bitte beachten Sie, dass auf Ausgaben oder Artikelebene vergebene Zugriffsrechte vorgang von den hier gesetzten Zugriffrechten haben."
+msgstr "Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch uneingeschränkt für alle. Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen. Bitte beachten Sie, dass auf Ausgaben oder Artikelebene vergebene Zugriffsrechte vorgang von den hier gesetzten Zugriffrechten haben."
 
 msgid "plugins.importexport.dnb.settings.form.archiveAccess.descriptionOA"
 msgstr "Diese Zeitschrift ist als Open-Access-Zeitschrift konfiguriert. Alle abgelieferten Fahnen werden automatisch als Open-Access deklariert."
@@ -88,7 +88,7 @@ msgid "plugins.importexport.dnb.settings.form.automaticDeposit"
 msgstr "Automatisch Fahnen an die DNB abliefern"
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.description"
-msgstr "OJS prüft regelmäßig, ob es Artikel gibt, die noch nicht an die DNB abgeliefert wurden (d.h. Artikel, die noch nicht über OJS in den DNB Hotfolder abgeliefert und nicht als registriert markiert wurden) und liefert diese automatisch in den DNB Hotfolder ab. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der Artikelauflistung überprüfen."
+msgstr "OJS prüft regelmäßig, ob es Artikel gibt, die noch nicht an die DNB abgeliefert wurden (d.h. Artikel, die noch nicht über OJS in den DNB Hotfolder abgeliefert und nicht als registriert markiert wurden) und liefert diese automatisch in den DNB Hotfolder ab. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der Artikelauflistung überprüfen. Bitte beachten Sie, dass für die Nutzung dieser Funktion ein cronjob auf ihrem Server konfiguriert werden muss."
 
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel"
 msgstr "Ja, ich möchte Fahnen automatisch abliefern"

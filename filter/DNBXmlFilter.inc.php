@@ -53,15 +53,18 @@ class DNBXmlFilter extends NativeExportFilter {
 		$doc = new DOMDocument('1.0', 'utf-8');
 		$doc->preserveWhiteSpace = false;
 		$doc->formatOutput = true;
+
+		// prepare basic application objects required later
 		$deployment = $this->getDeployment();
 		$journal = $deployment->getContext();
 		$plugin = $deployment->getPlugin();
 		$cache = $plugin->getCache();
 		$request = Application::get()->getRequest();
 
-		// Get all objects
-		$issue = $submission = $galley = $galleyFile = null;
+		// Get all required data objects
+		$issue = $submission = $galleyFile = null;
 		$galley = $pubObject;
+
 		$submissionId = $galley->getFile()->getData('submissionId');
 		if ($cache->isCached('articles', $submissionId)) {
 			$submission = $cache->get('articles', $submissionId);
@@ -71,9 +74,9 @@ class DNBXmlFilter extends NativeExportFilter {
 			
 			if ($submission) $cache->add($submission, null);
 		}
+
 		$issueDao = DAORegistry::getDAO('IssueDAO');
 		$issueId = $issueDao->getBySubmissionId($submission->getId())->getId();		
-
 		if ($cache->isCached('issues', $issueId)) {
 			$issue = $cache->get('issues', $issueId);
 		} else {
@@ -141,6 +144,8 @@ class DNBXmlFilter extends NativeExportFilter {
 		// leader
 		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'leader', '00000naa a2200000 u 4500'));
 
+		// now follow all fields ordered by MARC field number
+
 		// control fields: 001, 007 and 008
 		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', $galley->getId()));
 		$node->setAttribute('tag', '001');
@@ -149,6 +154,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', $yearYY.$month.$day.'s'.$yearYYYY.'||||xx#|||| ||||| ||||| '.$language.'||'));
 		$node->setAttribute('tag', '008');
 
+		// urn
 		$urn = $galley->getStoredPubId('other::urnDNB');
 		if (empty($urn)) $urn = $galley->getStoredPubId('other::urn');
 		if (!empty($urn)) {
@@ -156,6 +162,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			$this->createSubfieldNode($doc, $urnDatafield024, 'a', $urn);
 			$this->createSubfieldNode($doc, $urnDatafield024, '2', 'urn');
 		}
+
 		// DOI
 		// according the the latest arrangement with DNB both, article and galley DOIs will be submited to the DNB  
 		$doi = $galley->getStoredPubId('doi');
@@ -170,14 +177,17 @@ class DNBXmlFilter extends NativeExportFilter {
 		    $this->createSubfieldNode($doc, $doiDatafield024, 'a', $submissionDoi);
 		    $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
+
 		// plugin version
 		$datafield040 = $this->createDatafieldNode($doc, $recordNode, '040', ' ', ' ');
 		$versionDao = DAORegistry::getDAO('VersionDAO'); /* @var $versionDao VersionDAO */
 		$version = $versionDao->getCurrentVersion('plugins.importexport', $plugin->getPluginSettingsPrefix(), true);
 		$this->createSubfieldNode($doc, $datafield040, 'a', "OJS DNB-Export-Plugin Version ".$version->getVersionString());
+
 		// language
 		$datafield041 = $this->createDatafieldNode($doc, $recordNode, '041', ' ', ' ');
 		$this->createSubfieldNode($doc, $datafield041, 'a', $language);
+
 		// access to the archived article
 		$datafield093 = $this->createDatafieldNode($doc, $recordNode, '093', ' ', ' ');
 		if ($openAccess) {
@@ -185,6 +195,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		} else {
 			$this->createSubfieldNode($doc, $datafield093, 'b', $archiveAccess);
 		}
+
 		// first author
 		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
 		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false,true));
@@ -192,6 +203,7 @@ class DNBXmlFilter extends NativeExportFilter {
             $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename($firstAuthor->getOrcid()));
     	}
 		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
+
 		// title
 		$title = $submission->getTitle($galley->getLocale());
 		if (empty($title)) $title = $submission->getTitle($submission->getLocale());
@@ -200,6 +212,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$title = preg_replace("#[\s\n\r]+#",' ',$title);
 		$datafield245 = $this->createDatafieldNode($doc, $recordNode, '245', '0', '0');
 		$this->createSubfieldNode($doc, $datafield245, 'a', $title);
+
 		// subtitle
 		$subTitle = $submission->getSubtitle($galley->getLocale());
 		if (empty($subTitle)) $subTitle = $submission->getSubtitle($submission->getLocale());
@@ -208,9 +221,19 @@ class DNBXmlFilter extends NativeExportFilter {
 		    $subTitle = preg_replace("#[\s\n\r]+#",' ',$subTitle); 
 			$this->createSubfieldNode($doc, $datafield245, 'b', $subTitle);
 		}
+
 		// date published
 		$datafield264 = $this->createDatafieldNode($doc, $recordNode, '264', ' ', '1');
 		$this->createSubfieldNode($doc, $datafield264, 'c', $yearYYYY);
+
+		// if this package will be delivered including supplementary material
+		// we also provide the supplementary galley type (i.e. galley genres)
+		$genres = $submission->getData('supplementaryGenres');
+		if ($genres) {
+			$genresdatafield300 = $this->createDatafieldNode($doc, $recordNode, '300', ' ', '1');
+			$this->createSubfieldNode($doc, $genresdatafield300, 'e', implode($genres,','));
+		}
+
 		// article level URN (only if galley level URN does not exist)
 		if (empty($urn)) {
 			$submissionURN = $submission->getStoredPubId('other::urnDNB');
@@ -220,6 +243,15 @@ class DNBXmlFilter extends NativeExportFilter {
 				if (!empty($submissionURN)) $this->createSubfieldNode($doc, $urnDatafield500, 'a', 'URN: ' . $submissionURN);
 			}
 		}
+
+		// additional info field in case supplememtary galleys cannot be unambiguously assigned to the main document galleys
+		if ($submission->getData('supplementaryNotAssignable')) {
+			// !!! Do not change this message without consultation of the DNB !!!
+			$msg="Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht";
+			$supplementaryDatafield500 = $this->createDatafieldNode($doc, $recordNode, '500', ' ', ' ');
+			$this->createSubfieldNode($doc, $supplementaryDatafield500, 'a', $msg);
+		}
+
 		// abstract
 		$abstract = $submission->getAbstract($galley->getLocale());
 		if (empty($abstract)) $abstract = $submission->getAbstract($submission->getLocale());
@@ -236,6 +268,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			$this->createSubfieldNode($doc, $datafield520, 'a', $abstract);
 			$this->createSubfieldNode($doc, $datafield520, 'u', $abstractURL);
 		}
+
 		// license URL
 		$licenseURL = $submission->getLicenseURL();
 		if (empty($licenseURL)) {
@@ -251,8 +284,8 @@ class DNBXmlFilter extends NativeExportFilter {
 			$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
 			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
 		}
+
 		// keywords
-		//$supportedLocales = array_keys(AppLocale::getSupportedFormLocales());
 		$submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
 		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getCurrentPublication()->getId(), array($galley->getLocale()));
 		if (!empty($controlledVocabulary[$galley->getLocale()])) {
@@ -261,6 +294,7 @@ class DNBXmlFilter extends NativeExportFilter {
 				$this->createSubfieldNode($doc, $datafield653, 'a', $controlledVocabularyItem);
 			}
 		}
+
 		// other authors
 		foreach ((array) $authors as $author) {
 			$datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
@@ -270,6 +304,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			}
 			$this->createSubfieldNode($doc, $datafield700, '4', 'aut');
 		}
+
 		// translators
 		foreach ((array) $translators as $translator) {
 		    $datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
@@ -291,6 +326,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'month:'.$month);
 		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'year:'.$yearYYYY);
 		$this->createSubfieldNode($doc, $issueDatafield773, '7', 'nnas');
+
 		// journal data
 		// there has to be an ISSN
 		$issn = $journal->getData('onlineIssn');
@@ -298,6 +334,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		assert(!empty($issn));
 		$journalDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', '8');
 		$this->createSubfieldNode($doc, $journalDatafield773, 'x', $issn);
+
 		// file data
 		$galleyURL = $request->url($journal->getPath(), 'article', 'view', array($submissionId, $galley->getId()));
 		$datafield856 = $this->createDatafieldNode($doc, $recordNode, '856', '4', ' ');
