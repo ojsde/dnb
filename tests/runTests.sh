@@ -20,7 +20,7 @@ DEBUG=""
 # Parse arguments
 while getopts "d" opt; do
 	case "$opt" in
-		d)	DEBUG="--debug"
+		d)	DEBUG="--debug --verbose"
 			export XDEBUG_SESSION=1
 			;;
 	esac

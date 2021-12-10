@@ -2,7 +2,6 @@
 
 # run with 'sh plugins/importexport/dnb/tests/runTests.sh -d' from ojs folder (note phpunit needs to be installed by running 'composer.phar --working-dir=lib/pkp install' without the -no-dev option)
 # This is not an automatic test. A native xml export file with the appropriate name and submission ID in your systems has to be placed in the tests folder.
-# ATTENTION: Testing the export of pubIds is currently not possible. pubIds plugin category cannot be loaded into mock test environment.
 
     import('lib.pkp.tests.PKPTestCase');
     import('classes.issue.Issue');
@@ -20,7 +19,7 @@
         # How to use this test:
         # 1) Prepare a submission (including DOIs) in the OJS backend
         # 2) Add the keyword "FunctionalExportFilterTest" to the submission
-        # 3) Publish and Export as native xml
+        # 3) Publish and Export individual submissions as native xml
         # 2) Copy exported xml file into "tests" folder and rename as "FunctionalExportFilterTestSubmission<submission ID in your system>.xml"
         #    
         # Alternatively you can import an existing xml file from the tests folder and replace correct submission ID assigned in your system in the file name of the existing xml file
@@ -96,6 +95,8 @@
             $context = Application::get()->getRequest()->getContext();
             $submissionId = $publication->getData('submissionId');
 
+            print_r("Testing submission ID: ", $submissionId);
+
             // define the submission metadata you expect in the exported file
             $exportFile = new DOMDocument();
             $exportFile->load($filename);
@@ -105,25 +106,27 @@
             $version = $xpathNative->query('//d:publication[not(@version < ../d:publication/@version)]')[0]->getAttribute('version');// only the latest version of each document is published and exported by DNB Export plugin
             $publication = "//d:publication[@version = ".$version."]";
 
-            $publication_pubId = $xpathNative->query($publication."/d:id[@type='doi']")[0]->textContent;
+            $publication_pubId = $this->getTextContent($xpathNative, $publication."/d:id[@type='doi']");
             $galley_pubIds = $xpathNative->query($publication."/d:article_galley/d:id[@type='doi']");
             //$language = $xpathNative->query("//submission_file ???? ")[0]->getAttribute('locale'); // not clear where this information is stored in native xml
-            $author = $xpathNative->query($publication."//d:author[1]/d:familyname")[0]->textContent.", ".$xpathNative->query($publication."//d:author[1]/d:givenname")[0]->textContent;
+            $author = $this->getTextContent($xpathNative, $publication."//d:author[1]/d:familyname").", ".$this->getTextContent($xpathNative, $publication."//d:author[1]/d:givenname");
             $access = $xpathNative->query($publication)[0]->getAttribute('access_status');
             $access = $access == 0 ? 'b' : $access;
-            $title = strip_tags($xpathNative->query($publication."//d:prefix")[0]->textContent) . " " . strip_tags($xpathNative->query($publication."//d:title")[0]->textContent);
-            $subtitle = strip_tags($xpathNative->query($publication."//d:subtitle")[0]->textContent);
+            $prefix = $this->getTextContent($xpathNative, $publication."//d:prefix");
+            if ($prefix != "") {$prefix = $prefix." ";}
+            $title = strip_tags($prefix) . strip_tags($this->getTextContent($xpathNative, $publication."//d:title"));
+            $subtitle = strip_tags($this->getTextContent($xpathNative, $publication."//d:subtitle"));
             $fullDatePublished = $xpathNative->query($publication)[0]->getAttribute('date_published');
             $datePublished = date('Y', strtotime($fullDatePublished));
-            $abstract = strip_tags($xpathNative->query($publication."//d:abstract")[0]->textContent);
+            $abstract = strip_tags($this->getTextContent($xpathNative, $publication."//d:abstract"));
             $keyword = $xpathNative->query($publication."//d:keyword")[0]->textContent;
-            $licenseURL = $xpathNative->query($publication."//d:licenseUrl")[0]->textContent;
-            $volume = "volume:".$xpathNative->query($publication."//d:volume")[0]->textContent;
-            $number = "number:".$xpathNative->query($publication."//d:number")[0]->textContent;
+            $licenseURL = $this->getTextContent($xpathNative, $publication."//d:licenseUrl");
+            $volume = "volume:".$this->getTextContent($xpathNative, $publication."//d:volume");
+            $number = "number:".$this->getTextContent($xpathNative, $publication."//d:number");
             $day = "day:".date('d', strtotime($fullDatePublished));;
             $month = "month:".date('m', strtotime($fullDatePublished));
-            $year = "year:".$xpathNative->query($publication."//d:year")[0]->textContent;
-            $filetype = pathinfo($xpathNative->query("//d:submission_file//d:name")[0]->textContent, PATHINFO_EXTENSION);
+            $year = "year:".$this->getTextContent($xpathNative, $publication."//d:year");
+            $filetype = pathinfo($this->getTextContent($xpathNative, "//d:submission_file//d:name"), PATHINFO_EXTENSION);
 
             // prepare xml export
             $submissionDao = DAORegistry::getDAO('SubmissionDAO');
@@ -136,8 +139,9 @@
             $galleys = $submission->getGalleys();
             self::assertTrue(count($galleys) >= 1);
 
-            foreach ($galleys as $galley) { // use first DPF galley
-                if ('application/pdf' === $galley->getFile()->getData('mimetype')) {
+            foreach ($galleys as $galley) { // use first PDF galley
+                $galleyFile = $galley->getFile();
+                if ($galleyFile && 'application/pdf' === $galleyFile->getData('mimetype')) {
                     $testGalley = $galley;
                     continue;
                 }
@@ -153,18 +157,23 @@
             $xpathDNBFilter = new DOMXPath($result);
 
             // pubIds: DOI
-            $entries = $xpathDNBFilter->query("//*[@tag='024']/*[@code='a']");
+            $DNBXMLFilterPubIds = $xpathDNBFilter->query("//*[@tag='024']/*[@code='a']");
+            $DNBXMLFilterPubIds = array_map(function($i) {return $i->textContent;}, iterator_to_array($DNBXMLFilterPubIds));
+            
+            // test publication pubId
             // the last pubId should be the publication pubId
-            $value = $entries[count($entries)-1]->textContent;
-            self::assertTrue($value == $publication_pubId, "DOI/URN was: ".print_r($value, true)."\nValue should have been: ".$publication_pubId);
+            $value = array_pop($DNBXMLFilterPubIds);
+            self::assertTrue($value == $publication_pubId, "Publication DOI/URN was: ".print_r($value, true)."\nValue should have been: ".$publication_pubId);
+
             // test galley pubIds
-            if ($galley_pubIds->length > 0) {
+            $nativeXMLGalleyPubIds = array_map(function($i) {return $i->textContent;}, iterator_to_array($galley_pubIds));
+            if (count($DNBXMLFilterPubIds) && $count($nativeXMLGalleyPubIds) > 0) {
                 // simple test wehther galley DOI is present in native xml export
-                $galleyPubIds = array_map(function($i) {return $i->textContent;}, iterator_to_array($galley_pubIds));
-                $xmlPubIds = array_map(function($i) {return $i->textContent;}, iterator_to_array($entries));
-                self::assertTrue(!empty(array_intersect($galleyPubIds, $xmlPubIds)), "DOI/URN: ".print_r($value, true)."\nNot found in native xml export!");
+                self::assertTrue(!empty(array_intersect($nativeXMLGalleyPubIds, $DNBXMLFilterPubIds)), "DOI/URN: ".print_r($value, true)."\nNot found in native xml export!");
             } else {
-                self::assertTrue($entries->length == count($pubIds), "Number of pubIds was: ".$entries->length."\nValue should have been: ".count($pubIds));
+                // This galley seems to have no pubID. 
+                // TODO @RS How can we test this case ???
+                //self::assertTrue(count($DNBXMLFilterPubIds) == count($nativeXMLGalleyPubIds), "Number of galley pubIds was: ".count($DNBXMLFilterPubIds)."\nValue should have been: ".count($nativeXMLGalleyPubIds));
             }
 
             // language
@@ -219,10 +228,14 @@
                 self::assertTrue($value == $datePublished, "Date published was: ".print_r($value, true)."\nValue should have been: ".$datePublished);
             }
 
-            // abstract -> test will currently fail if abstract contains line breaks or > 999 characters because xml export flattens the abstract
             $entries = $xpathDNBFilter->query("//*[@tag='520']/*[@code='a']");
             if ($entries->length > 0) {
                 $value = $entries[0]->textContent;
+                $abstract = preg_replace("#[\s\n\r]+#",' ',$abstract); 
+                if (strlen($abstract) > 999)  {
+                    $abstract = mb_substr($abstract, 0, 996,"UTF-8");
+                    $abstract .= '...';
+                }
                 self::assertTrue($value == $abstract, "Abstract was: ".print_r($value, true)."\nValue should have been: ".$abstract);
             }
 
@@ -260,9 +273,14 @@
             // file
             $entries = $xpathDNBFilter->query("//*[@tag='856']/*[@code='q']");
             if ($entries->length > 0) {
-                $value = $entries[0]->textContent;
+                $value = $entries[0]->textContent; // TODO @RS CONTINUE HERE !!!
                 self::assertTrue($value == $filetype, "Filetype was: ".print_r($value, true)."\nValue should have been: ".$filetype);
             }
+        }
+
+        function getTextContent($xpathNative, $path) {
+            $node = $xpathNative->query($path);
+            return $node->length > 0 ? $node[0]->textContent : '';
         }
     }
 ?>

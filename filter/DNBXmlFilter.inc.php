@@ -165,16 +165,16 @@ class DNBXmlFilter extends NativeExportFilter {
 
 		// DOI
 		// according the the latest arrangement with DNB both, article and galley DOIs will be submited to the DNB  
-		$doi = $galley->getStoredPubId('doi');
-		if (!empty($doi)) {
+		$galleyDOI = $galley->getStoredPubId('doi');
+		if (!empty($galleyDOI)) {
 			$doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
-			$this->createSubfieldNode($doc, $doiDatafield024, 'a', $doi);
+			$this->createSubfieldNode($doc, $doiDatafield024, 'a', $galleyDOI);
 			$this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
-		$submissionDoi = $submission->getStoredPubId('doi');
-		if (!empty($submissionDoi)) {
+		$submissionDOI = $submission->getStoredPubId('doi');
+		if (!empty($submissionDOI)) {
 		    $doiDatafield024 = $this->createDatafieldNode($doc, $recordNode, '024', '7', ' ');
-		    $this->createSubfieldNode($doc, $doiDatafield024, 'a', $submissionDoi);
+		    $this->createSubfieldNode($doc, $doiDatafield024, 'a', $submissionDOI);
 		    $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
 
@@ -230,8 +230,10 @@ class DNBXmlFilter extends NativeExportFilter {
 		// we also provide the supplementary galley type (i.e. galley genres)
 		$genres = $submission->getData('supplementaryGenres');
 		if ($genres) {
+			// !!! Do not change this message without consultation of the DNB !!!
+			$msg = "Begleitmaterial"; // $msg = implode($genres,',');
 			$genresdatafield300 = $this->createDatafieldNode($doc, $recordNode, '300', ' ', '1');
-			$this->createSubfieldNode($doc, $genresdatafield300, 'e', implode($genres,','));
+			$this->createSubfieldNode($doc, $genresdatafield300, 'e', $msg);
 		}
 
 		// article level URN (only if galley level URN does not exist)
@@ -247,7 +249,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		// additional info field in case supplememtary galleys cannot be unambiguously assigned to the main document galleys
 		if ($submission->getData('supplementaryNotAssignable')) {
 			// !!! Do not change this message without consultation of the DNB !!!
-			$msg="Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht";
+			$msg = "Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht";
 			$supplementaryDatafield500 = $this->createDatafieldNode($doc, $recordNode, '500', ' ', ' ');
 			$this->createSubfieldNode($doc, $supplementaryDatafield500, 'a', $msg);
 		}

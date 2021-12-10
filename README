@@ -23,7 +23,7 @@ This plugin version is compatible with...
  
 TAR executable is required and it has to be configured in config.inc.php.
 
-For the depositing from within OJS, additionally CURL library is needed.
+For the depositing articles directly to the DNB Hofolder your server has to support SFTP via the PHP libcurl library. Please make sure the libcurl library installed on your server supports the SFTP protocol.
 
 Installation
 ------------

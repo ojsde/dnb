@@ -23,7 +23,7 @@ Dieses Plug-In Verison ist kompatibel mit...
 
 TAR-Programm wird benötigt und es muss in der Datei config.inc.php konfiguriert werden.
 
-Für die Ablieferung aus OJS heraus wird zusätzlich die CURL-Bibliothek benötigt.
+Um Artikel direkt in den Hotfolder der DNB abzuliefern muss der Server SFTP über das PHP-Paket libcurl unterstützen. Bitte achten Sie darauf, dass das installierte libcurl-Paket das SFTP-Protokoll unterstützt. 
 
 Installation
 ------------
