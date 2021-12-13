@@ -15,9 +15,9 @@
  */
 
 import('lib.pkp.plugins.importexport.native.filter.NativeExportFilter');
-define('XML_NON_VALID_CHARCTERS', 100);
-define('FIRST_AUTHOR_NOT_REGISTERED', 102);
-define('URN_SET', 101);
+define('XML_NON_VALID_CHARCTERS_EXCEPTION', 100);
+define('FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
+define('URN_SET_EXCEPTION', 101);
 define('MESSAGE_URN_SET','An URN has been set.'); // @RS refine
 
 class DNBXmlFilter extends NativeExportFilter {
@@ -65,13 +65,11 @@ class DNBXmlFilter extends NativeExportFilter {
 		$issue = $submission = $galleyFile = null;
 		$galley = $pubObject;
 
-		$submissionId = $galley->getFile()->getData('submissionId');
+		$submissionId = $galley->getData('submissionId');
 		if ($cache->isCached('articles', $submissionId)) {
 			$submission = $cache->get('articles', $submissionId);
 		} else {
-			$submissionDao = DAORegistry::getDAO('SubmissionDAO'); /* @var $submissionDao SubmissionDAO */
-			$submission = $submissionDao->getById($submissionId);
-			
+			$submission = Services::get('submission')->get($submissionId);
 			if ($submission) $cache->add($submission, null);
 		}
 
@@ -89,7 +87,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
 		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
 		if (!empty($submissionURN)) {
-		    throw new ErrorException(MESSAGE_URN_SET, URN_SET);
+		    throw new ErrorException(MESSAGE_URN_SET, URN_SET_EXCEPTION);
 		};
 		
 		// Data we will need later
@@ -111,7 +109,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			$firstAuthor = array_shift($authors);
 		}
 		if (!$firstAuthor) {
-			throw new ErrorException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED);
+			throw new ErrorException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
 		}
 
 		// extract submission translators
@@ -425,7 +423,7 @@ class DNBXmlFilter extends NativeExportFilter {
     	if ($res != 0) {
 		    // libxml will strip input at the first occurance of an non-allowed character, subsequent character will be lost
 		    // we don't remove these characters automatically because user has to be aware of the issue
-    	    throw new ErrorException("Character code ".ord($matches[0][0][0])." found at position ".$matches[0][0][1]." in MARC21 datafield node ".$datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS);
+    	    throw new ErrorException("Character code ".ord($matches[0][0][0])." found at position ".$matches[0][0][1]." in MARC21 datafield node ".$datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS_EXCEPTION);
 		}
 
 		$node->appendChild($doc->createTextNode($value));
@@ -441,10 +439,18 @@ class DNBXmlFilter extends NativeExportFilter {
 	function _getGalleyFileType($galley) {
 		if ($galley->isPdfGalley()) {
 			return 'pdf';
-		} elseif ($galley->getFileType() == 'application/epub+zip') {
-			return 'epub';
 		}
-		assert(false);
+		
+		switch ($galley->getFileType()) {
+			case 'application/epub+zip':
+				return 'epub';
+			case 'text/plain':
+				return 'txt';
+			case 'text/html':
+				return 'html';
+			default:
+				return NULL;
+		}
 	}
 
 	/**

@@ -233,3 +233,9 @@ msgstr "SFTP server is configured as: {$server} port {$port}"
 
 msgid "plugins.importexport.dnb.warning.supplementaryNotAssignable"
 msgstr "This article contains {$nDoc} document galleys and {$nSupp} galley{$pSupp} of supplementary material. An unambiguously automatic assigment is not possible. Please refer to the help for more information."
+
+msgid "plugins.importexport.dnb.export.error.remoteIPNotAllowed"
+msgstr "The IP address {$remoteIP} of the remote galley is not allowed for export."
+
+msgid "plugins.importexport.dnb.export.error.tempFileNotCreated"
+msgstr "A temporary export file could not be created. Please review folder permissions on the server."

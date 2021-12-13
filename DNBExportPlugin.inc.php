@@ -22,6 +22,8 @@ define('DEBUG', true);
 define('DNB_STATUS_DEPOSITED', 'deposited');
 define('ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
 
+define('REMOTE_IP_NOT_ALLOWED_EXCEPTION', 103);
+
 if (!DEBUG) {
 	define('SFTP_SERVER','sftp://@hotfolder.dnb.de/');
 	define('SFTP_PORT', 22122);
@@ -216,7 +218,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$galleys = $submission->getGalleys();
 
 					$documentGalleys = $supplementaryGalleys = [];
-					$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys); 
+					try {
+						$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys); 
+					} catch (ErrorException $e) {
+						// currently this only throws REMOTE_IP_NOT_ALLOWED_EXCEPTION
+						// we handle this during export
+					}
 					$msg = "";
 					if ($submission->getData('supplementaryNotAssignable')) {
 						$plural = AppLocale::getLocale() == "de_DE" ? "n" : "s";
@@ -662,22 +669,23 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$fullyDeposited = true;
 
 				foreach ($galleys as $galley) {
+
+					// store submission Id in galley object for internal use
+					$galley->setData('submissionId', $submission->getId());
+
 					// check if it is a full text
 					$galleyFile = $galley->getFile();
 
-					//if $galleyFile is not set it might be a remote URL
-					//we already verified before that its pdf or epub 
+					// if $galleyFile is not set it might be a remote URL
 					if (!isset($galleyFile)) {
 						if ($galley->getRemoteURL() == null) continue;
-						//verify remote URL is a pdf or epub
-						if (!preg_match('/\.(epub|pdf)$/i',$galley->getRemoteURL())) continue;
 					} else {
 						$exportPath = $journalExportPath;
 					}
 					
 					$exportFile = '';
 					// Get the TAR package for the galley
-					$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile);
+					$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
 					
 					// If errors occured, remove all created directories and return the errors
 					if (is_array($result)) {
@@ -769,49 +777,44 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 *
 	 * @return boolean|array True for success or an array of error messages.
 	 */
-	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $journalExportPath, &$exportPackageName) {
+	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $journalExportPath, &$exportPackageName, $submissionId) {
 		// Get the final target export directory.
 		// The data will be exported in this structure:
-		// dnb/<journalId>-<dateTime>/<journalId>-<articleId>-<galleyId>/
-		$submissionId = $galley->getFile()->getData('submissionId');
-		$exportContentDir = $journal->getId() . '-' . $submissionId . '-' . $galley->getFileId();
+		// dnb/<journalId>-<dateTime>/<journalId>-<submissionId>-<galleyId>/
+		
+		$exportContentDir = $journal->getId() . '-' . $submissionId . '-' . ($galley->getId());
 	
 		$result = $this->getExportPath($journal->getId(), $journalExportPath, $exportContentDir);
 		if (is_array($result)) return $result;
 		$exportPath = $result;
 		
-		// Copy galley files
-		$result = $this->copyGalleyFile($galley, $exportPath);
-		if (is_array($result)) return $result;
+		try {		
+			// Copy galley files
+			$result = $this->copyGalleyFile($galley, $exportPath . 'content/');
+			if (is_array($result)) return $result;
 
-		// add supplementary files
-		foreach ($supplementaryGalleys as $supplementaryGalley) {
-	       	$sourceGalleyFilePath = $supplementaryGalley->getFile()->getData('path');
-			$targetGalleyFilePath = $exportPath . 'content'  . '/supplementary/' . basename($sourceGalleyFilePath);
-			if (!Services::get('file')->fs->has($sourceGalleyFilePath)) {
-				return array('plugins.importexport.dnb.export.error.galleyFileNotFound',$sourceGalleyFilePath);
+			// add supplementary files
+			foreach ($supplementaryGalleys as $supplementaryGalley) {
+				// Copy supplementary alley files
+				$result = $this->copyGalleyFile($supplementaryGalley, $exportPath . 'content/supplementary/');
+				if (is_array($result)) return $result;
 			}
-			// copy supplementary galley files
-			if (!Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath)) {
-				$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy.param', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
-				return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
-			}
-		}
-		
-		try {
-		  // Export the galley metadata XML.
-		  $metadataXML = $this->exportXML($galley, $filter, $journal, $noValidation);
+
+			// Export the galley metadata XML.
+			$metadataXML = $this->exportXML($galley, $filter, $journal, $noValidation);
 		} catch (ErrorException $e) {
             // we don't remove these automatically because user has to be aware of the issue
 		    switch ($e->getCode()) {
-		        case XML_NON_VALID_CHARCTERS:
+		        case XML_NON_VALID_CHARCTERS_EXCEPTION:
 		            $param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $submissionId, 'node' => $e->getMessage()));		       
                     return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
-		        case URN_SET:
+		        case URN_SET_EXCEPTION:
 					return array('plugins.importexport.dnb.export.error.urnSet');
-				case FIRST_AUTHOR_NOT_REGISTERED:
+				case FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION:
 					$param = __('plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));		       
                     return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
+				case REMOTE_IP_NOT_ALLOWED_EXCEPTION:
+					return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
 		    }
 		}
 
@@ -892,25 +895,23 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	        
     	        $file = fopen($temporaryFilename, "w+");
     	        if (!$file) {
+					return array('plugins.importexport.dnb.export.error.tempFileNotCreated');
     	        }
     	        fputs($file, $response);
     	        fclose($file);
     	        $galley->setData('fileSize',filesize($temporaryFilename));
     	        
-    	        $sourceGalleyFilePath = $temporaryFilename;
-    	        $targetGalleyFilePath = $exportPath . 'content/'  . basename($galley->getRemoteURL());
+    	        $sourceGalleyFilePath =  $this->getPluginSettingsPrefix(). "/" . basename($temporaryFilename);
+    	        $targetGalleyFilePath = $exportPath . basename($galley->getRemoteURL());
 	        }
 	    } else {
 	       	$sourceGalleyFilePath = $galleyFile->getData('path');
-			$targetGalleyFilePath = $exportPath . 'content'  . '/' . basename($sourceGalleyFilePath);
+			$targetGalleyFilePath = $exportPath . basename($sourceGalleyFilePath);
 		}
 	    
 		if (!Services::get('file')->fs->has($sourceGalleyFilePath)) {
-			return array('plugins.importexport.dnb.export.error.galleyFileNotFound',$sourceGalleyFilePath ?: "NULL");
+			return array('plugins.importexport.dnb.export.error.galleyFileNotFound', $sourceGalleyFilePath ?: "NULL");
 		}
-
-		// create export dir
-		Services::get('file')->fs->createDir($exportPath . 'content');
 
 		// copy galley files
 		if (!Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath)) {
@@ -984,17 +985,21 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		if (!$issue->getPublished()) return false;
 		// get all galleys
 		$galleys = $submission->getGalleys();
+		
 		// filter supplementary files
 		if ($this->getSetting($submission->getData('contextId'), 'submitSupplementaryMode') == 'all') {
 			$supplementaryGalleys = array_filter($galleys, array($this, 'filterSupplementaryGalleys'));
-			// in case supplementary galleys are exported also provide the galley type
-			$genres = array_map(function ($i) use ($submission){
-				$genreDao = DAORegistry::getDAO('GenreDAO');
-				$genre = $genreDao->getById($i->getFile()->getGenreId());
-				return $genre->getData('name')[$submission->getLocale()];
-			},
-			$supplementaryGalleys);
-			$submission->setData('supplementaryGenres', array_unique($genres));
+			// TODO @RS remove before official release 
+			// This fails for remote galleys because those don't have a submiison file
+			// Anyway the DNB doesn't want to have the genres anymore ...
+			// // in case supplementary galleys are exported also provide the galley type
+			// $genres = array_map(function ($i) use ($submission){
+			// 	$genreDao = DAORegistry::getDAO('GenreDAO');
+			// 	$genre = $genreDao->getById($i->getFile()->getGenreId());
+			// 	return $genre->getData('name')[$submission->getLocale()];
+			// },
+			// $supplementaryGalleys);
+			// $submission->setData('supplementaryGenres', array_unique($genres));
 		}
 		// filter PDF and EPUB full text galleys -- DNB concerns only PDF and EPUB formats
 		$galleys = array_filter($galleys, array($this, 'filterGalleys'));
@@ -1025,10 +1030,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     			$galleyFile = $galley->getRemoteURL();
     			
     			if (isset($galleyFile)) {
-    			    //verify remote URL is a pdf or epub
-    			    $isValidFileType = preg_match('/\.(epub|pdf)$/i',$galleyFile);
-    			    //varify allowed domain
-    			    return $isValidFileType &&  $this->isAllowedRemoteIP($galleyFile);
+					//verify remote URL is not executable file
+    			    $isValidFileType = !preg_match('/\.(exe|bat|sh)$/i',$galleyFile);
+    			    //file type of remote galley will be verified after download
+    			    //verify allowed domain
+    			    return $isValidFileType && $this->isAllowedRemoteIP($galleyFile);
     			} else return false;
 		    }
 		} else {
@@ -1052,15 +1058,19 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$genreDao = DAORegistry::getDAO('GenreDAO');
 		$galleyFile = $galley->getFile();
 
-		//if $galleyFile is not set it might be a remote URL
+		// if $galleyFile is not set it might be a remote URL
+		// currently OJS doesn't handle supplementary remote galleys
+		// remote galleys are automatically treated as document galleys
+		// we return false until this changes
 		if (!isset($galleyFile)) {
-		    if ($this->exportRemote()) {
+		    return false; 
+			if ($this->exportRemote()) {
     			$galleyFile = $galley->getRemoteURL();
     			
     			if (isset($galleyFile)) {
     			    //verify remote URL is not executable file
     			    $isValidFileType = !preg_match('/\.(exe|bat|sh)$/i',$galleyFile);
-    			    //varify allowed domain
+    			    //verify allowed domain
     			    return $isValidFileType && $this->isAllowedRemoteIP($galleyFile);
     			} else return false;
 		    }
@@ -1278,9 +1288,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	}
 
 	function isAllowedRemoteIP($url) {
-		$domain = parse_url($url, PHP_URL_HOST);
+		$remoteIP = gethostbyname(parse_url($url, PHP_URL_HOST));
 		$pattern = $this->getSetting(Application::get()->getRequest()->getContext()->getId(), 'allowedRemoteIPs');
-    	return preg_match("/".$pattern."/", gethostbyname($domain));;
+		$isAllowed = preg_match("/".$pattern."/", $remoteIP);
+		if ($isAllowed) {
+			return true;
+		} else {
+			throw new ErrorException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), REMOTE_IP_NOT_ALLOWED_EXCEPTION);
+			return false;
+		}
 	}
 
 }

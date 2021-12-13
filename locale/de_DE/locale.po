@@ -233,3 +233,9 @@ msgstr "SFTP server is configured as: {$server} port {$port}"
 
 msgid "plugins.importexport.dnb.warning.supplementaryNotAssignable"
 msgstr "Dieser Artikel enthält {$nDoc} Dokumentfahnen und {$nSupp} Fahne{$pSupp} mit Zusatzmaterial. Eine eindeutige automatische Zuodnung ist nicht möglich. Bitte konsultieren Sie die Hilfe für weitere Informationen."
+
+msgid "plugins.importexport.dnb.export.error.remoteIPNotAllowed"
+msgstr "Die IP-Adresse {$remoteIP} der externen Fahne ist nicht für den Export erlaubt."
+
+msgid "plugins.importexport.dnb.export.error.tempFileNotCreated"
+msgstr "Es konnte keine temporäre Datei für den Export erstellt werden. Bitte überprüfen Sie die Zugriffsrechte auf dem Server."
