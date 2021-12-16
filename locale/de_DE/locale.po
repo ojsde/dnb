@@ -242,3 +242,6 @@ msgstr "Es konnte keine temporäre Datei für den Export erstellt werden. Bitte 
 
 msgid "plugins.importexport.dnb.export.error.exception"
 msgstr "{$param}"
+
+msgid "plugins.importexport.dnb.logFileTabTitle"
+msgstr "Log Automatische Ablieferung"

@@ -152,7 +152,7 @@ class DNBInfoSender extends ScheduledTask {
 		if (!empty($errors)) {
 			// If there were some deposit errors, log them
 			foreach($errors as $error) {
-				$this->addExecutionLogEntry(
+				$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
 					__($error[0], array('param' => (isset($error[1]) ? $error[1] : null))),
 					SCHEDULED_TASK_MESSAGE_TYPE_WARNING
 				);

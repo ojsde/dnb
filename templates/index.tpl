@@ -150,5 +150,12 @@
                 <badge>{translate key="plugins.importexport.dnb.deposit.notice"}</badge>
             </tab>
         {/if}
+        {if $latestLogFile}
+            <tab id="logfile-tab" label="{translate key="plugins.importexport.dnb.logFileTabTitle"}">
+                {foreach from=$latestLogFile item=line}
+                    <p class="dnb_log_entry">{$line}</p>
+                {/foreach}
+            </tab>
+        {/if}
     </tabs>
 {/block}

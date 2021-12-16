@@ -242,3 +242,6 @@ msgstr "A temporary export file could not be created. Please review folder permi
 
 msgid "plugins.importexport.dnb.export.error.exception"
 msgstr "{$param}"
+
+msgid "plugins.importexport.dnb.logFileTabTitle"
+msgstr "Log automatic deposit"

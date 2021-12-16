@@ -385,6 +385,29 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					]
 				);
 
+				// show logs for automatic deposit
+				if ($this->getSetting($this->_currentContextId, 'automaticDeposit')) {
+					$logFiles = Services::get('file')->fs->listContents('scheduledTaskLogs');
+					// filter dnb plugin log files
+					$logFiles = array_filter($logFiles, function($f) {
+						return str_contains($f['filename'],"DNBautomaticdeposittask");
+					});
+					// get latest log file
+					usort($logFiles, function ($f1, $f2) {
+						return $f1['timestamp'] < $f2['timestamp'];
+					});
+					if (count($logFiles) > 0) {
+						$latestLogFile = Services::get('file')->fs->read($logFiles[0]['path']);
+						$latestLogFile = preg_split("/\r\n|\n|\r/", $latestLogFile, NULL, PREG_SPLIT_NO_EMPTY);
+						$lastIndex = count($latestLogFile) - 1;
+						$latestLogFile = array_filter($latestLogFile, function ($line, $index) use ($context, $lastIndex) {
+							return (bool) preg_match('#\['.$context->getData('urlPath').'\]#', $line) || ($index == 1) || ($index == $lastIndex);
+						},
+						ARRAY_FILTER_USE_BOTH);
+					}
+					$templateMgr->assign('latestLogFile', $latestLogFile);
+				}
+
 				$templateMgr->display($this->getTemplateResource('index.tpl'));
 				break;
 		}
