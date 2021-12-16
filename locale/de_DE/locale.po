@@ -130,7 +130,7 @@ msgid "plugins.importexport.dnb.deselectAll"
 msgstr "Alle abwählen"
 
 msgid "plugins.importexport.dnb.export.error.articleCannotBeExported"
-msgstr "Der Artikel {$param} kann nicht exportiert werden, weil er keine lokale PDF- oder EPUB-Fahne hat."
+msgstr "Der Artikel {$param} kann nicht exportiert werden, weil er keine PDF- oder EPUB-Fahne hat."
 
 msgid "plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters"
 msgstr "Die XML-Datei mit der Einreichungs-ID {$param} Es wurden keine Artikel exportiert!"
@@ -239,3 +239,6 @@ msgstr "Die IP-Adresse {$remoteIP} der externen Fahne ist nicht für den Export 
 
 msgid "plugins.importexport.dnb.export.error.tempFileNotCreated"
 msgstr "Es konnte keine temporäre Datei für den Export erstellt werden. Bitte überprüfen Sie die Zugriffsrechte auf dem Server."
+
+msgid "plugins.importexport.dnb.export.error.exception"
+msgstr "{$param}"

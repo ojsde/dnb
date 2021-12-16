@@ -130,7 +130,7 @@ msgid "plugins.importexport.dnb.deselectAll"
 msgstr "Deselect All"
 
 msgid "plugins.importexport.dnb.export.error.articleCannotBeExported"
-msgstr "The article {$param} cannot be exported because it does not have a local PDF or an EPUB galley."
+msgstr "The article {$param} cannot be exported because it does not have a PDF or an EPUB galley."
 
 msgid "plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters"
 msgstr "Error writing XML file for the article with submission ID {$param} No articles exported!"
@@ -239,3 +239,6 @@ msgstr "The IP address {$remoteIP} of the remote galley is not allowed for expor
 
 msgid "plugins.importexport.dnb.export.error.tempFileNotCreated"
 msgstr "A temporary export file could not be created. Please review folder permissions on the server."
+
+msgid "plugins.importexport.dnb.export.error.exception"
+msgstr "{$param}"

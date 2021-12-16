@@ -3,8 +3,8 @@
 /**
  * @file plugins/importexport/dnb/DNBExportPlugin.inc.php
  *
- * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
- * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
+ * Copyright (c) 2021 Center for Digital Systems (CeDiS), Universitätsbibliothek Freie Universität Berlin
+ * Distributed under the GNU GPL v3. For full terms see the plugin file LICENSE.
  * Author: Bozana Bokan, Ronald Steffen
  *
  * @class DNBExportPlugin
@@ -38,6 +38,16 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 	private $_settingsFormURL;
 
+	private $_currentContextId; // We need to set this for runnning deposition from the command line via scheduledTasks. No request object is available to query the context when running from CLI.
+
+	function __construct() {
+		$context = Application::get()->getRequest()->getContext();
+		if (isset($context))
+		{
+			$this->setContextId($context->getId());
+		}
+	}
+	
 	/**
 	 * @copydoc Plugin::register()
 	 */
@@ -108,6 +118,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function getDescription() {
 		return __('plugins.importexport.dnb.description');
+	}
+
+	/**
+	 * @copydoc setContextId()
+	 */
+	function setContextId($Id) {
+		$this->_currentContextId = $Id;
 	}
 
 	/**
@@ -305,8 +322,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					'baseurl' => $request->getBaseUrl(),
 					'debugModeWarning' => __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => SFTP_SERVER, 'port' => SFTP_PORT]),
 					'nNotRegistered' => $nNotRegistered,
-					'remoteEnabled' => $this->getSetting($context->getId(), 'exportRemoteGalleys') ? "Remote" : "",
-					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') !== "all" ? "Supplementary" : ""
+					'remoteEnabled' => $this->getSetting($context->getId(), 'exportRemoteGalleys') ? "Remote On" : "",
+					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') !== "all" ? "Supplementary Off" : ""
 				]);
 
 				$templateMgr->setConstants([
@@ -660,10 +677,16 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$supplementaryGalleys = [];
 				// Get issue and galleys, and check if the article can be exported.
 				// canBeExported(...) returns galleys and supplementary galleys seperately
-				if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
-				    $errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
+				try {
+					if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
+					$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
 					// continue with other articles
 					continue;
+					}
+				} catch (ErrorException $e) {
+					// convert ErrorException to error messages that will be shown to the user
+					$result = $this->hanndleExceptions($e);
+					$errors = array_merge($errors, [$result]);
 				}
 				
 				$fullyDeposited = true;
@@ -803,19 +826,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			// Export the galley metadata XML.
 			$metadataXML = $this->exportXML($galley, $filter, $journal, $noValidation);
 		} catch (ErrorException $e) {
-            // we don't remove these automatically because user has to be aware of the issue
-		    switch ($e->getCode()) {
-		        case XML_NON_VALID_CHARCTERS_EXCEPTION:
-		            $param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $submissionId, 'node' => $e->getMessage()));		       
-                    return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
-		        case URN_SET_EXCEPTION:
-					return array('plugins.importexport.dnb.export.error.urnSet');
-				case FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION:
-					$param = __('plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));		       
-                    return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
-				case REMOTE_IP_NOT_ALLOWED_EXCEPTION:
-					return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
-		    }
+            // we don't remove these automatically because user has to be aware of these issues
+		    return $this->hanndleExceptions($e);
 		}
 
 		// Write the metadata XML to the file.
@@ -833,6 +845,21 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$this->tarFiles($exportPath, $exportPackageName);
 
 		return true;
+	}
+
+	function hanndleExceptions($e) {
+		switch ($e->getCode()) {
+			case XML_NON_VALID_CHARCTERS_EXCEPTION:
+				$param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $submissionId, 'node' => $e->getMessage()));		       
+				return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
+			case URN_SET_EXCEPTION:
+				return array('plugins.importexport.dnb.export.error.urnSet');
+			case FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION:
+				$param = __('plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));		       
+				return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
+			case REMOTE_IP_NOT_ALLOWED_EXCEPTION:
+				return array('plugins.importexport.dnb.export.error.exception', $e->getMessage());
+		}
 	}
 
 	/**
@@ -989,23 +1016,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// filter supplementary files
 		if ($this->getSetting($submission->getData('contextId'), 'submitSupplementaryMode') == 'all') {
 			$supplementaryGalleys = array_filter($galleys, array($this, 'filterSupplementaryGalleys'));
-			// TODO @RS remove before official release 
-			// This fails for remote galleys because those don't have a submiison file
-			// Anyway the DNB doesn't want to have the genres anymore ...
-			// // in case supplementary galleys are exported also provide the galley type
-			// $genres = array_map(function ($i) use ($submission){
-			// 	$genreDao = DAORegistry::getDAO('GenreDAO');
-			// 	$genre = $genreDao->getById($i->getFile()->getGenreId());
-			// 	return $genre->getData('name')[$submission->getLocale()];
-			// },
-			// $supplementaryGalleys);
-			// $submission->setData('supplementaryGenres', array_unique($genres));
 		}
 		// filter PDF and EPUB full text galleys -- DNB concerns only PDF and EPUB formats
 		$galleys = array_filter($galleys, array($this, 'filterGalleys'));
 
 		// in case the galley(s) can be exported with supplementary material which cannot umambiuously be assigned we need to flag this submission
-		if ((count($galleys) > 1) && (count($supplementaryGalleys) > 0)) {
+		if ((count($galleys) > 1) && (isset($supplementaryGalleys) ? count($supplementaryGalleys) > 0 : FALSE)) {
 			$submission->setData('supplementaryNotAssignable', TRUE);
 		} else {
 			$submission->setData('supplementaryNotAssignable', FALSE);
@@ -1181,7 +1197,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function isOAJournal($journal = NULL) {
 		if (!isset($journal)) {
-			$journal = Application::getRequest()->getContext();
+			$journal = Services::get('context')->get($this->_currentContextId);
 		}
 		return  $journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN &&
 			$journal->getSetting('restrictSiteAccess') != 1 &&
@@ -1284,12 +1300,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	}
 
 	function exportRemote() {
-		return $this->getSetting(Application::get()->getRequest()->getContext()->getId(), 'exportRemoteGalleys') == "on";
+		return $this->getSetting($this->_currentContextId, 'exportRemoteGalleys') == "on";
 	}
 
 	function isAllowedRemoteIP($url) {
 		$remoteIP = gethostbyname(parse_url($url, PHP_URL_HOST));
-		$pattern = $this->getSetting(Application::get()->getRequest()->getContext()->getId(), 'allowedRemoteIPs');
+		$pattern = $this->getSetting($this->_currentContextId, 'allowedRemoteIPs');
 		$isAllowed = preg_match("/".$pattern."/", $remoteIP);
 		if ($isAllowed) {
 			return true;

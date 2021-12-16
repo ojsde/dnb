@@ -3,10 +3,9 @@
 /**
  * @file plugins/importexport/dnb/DNBInfoSender.php
  *
- * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
- * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
- * Author: Bozana Bokan
- * Last update: May 15, 2017
+ * Copyright (c) 2021 Center for Digital Systems (CeDiS), Universitätsbibliothek Freie Universität Berlin
+ * Distributed under the GNU GPL v3. For full terms see the plugin file LICENSE.
+ * Author: Bozana Bokan, Ronald Steffen
  *
  * @class DNBInfoSender
  * @ingroup plugins_importexport_dnb
@@ -63,7 +62,6 @@ class DNBInfoSender extends ScheduledTask {
 		}
 
 		$filter = $plugin->getSubmissionFilter();
-		// $genreDao = DAORegistry::getDAO('GenreDAO');
 		$fileManager = new FileManager();
 
 		// get all journals that meet the requirements
@@ -72,6 +70,8 @@ class DNBInfoSender extends ScheduledTask {
 		foreach ($journals as $journal) {
 			// load pubIds for this journal (they are currently not loaded in the base class)
 			PluginRegistry::loadCategory('pubIds', true, $journal->getId());
+			// set the context for all further actions
+			$this->_plugin->setContextId($journal->getId());
 			// Get not deposited articles
 			$notDepositedArticles = $plugin->getUnregisteredArticles($journal);
 			if (!empty($notDepositedArticles)) {
@@ -80,10 +80,7 @@ class DNBInfoSender extends ScheduledTask {
 				// dnb/<journalId>-<dateTime>/
 				$result = $plugin->getExportPath($journal->getId());
 				if (is_array($result)) {
-					$this->addExecutionLogEntry(
-						__($result[0], array('param' => (isset($result[1]) ? $result[1] : null))),
-						SCHEDULED_TASK_MESSAGE_TYPE_WARNING
-					);
+					$errors = array_merge($errors, [$result]);
 					return false;
 				}
 				$journalExportPath = $result;
@@ -92,42 +89,53 @@ class DNBInfoSender extends ScheduledTask {
 					if (is_a($submission, 'Submission')) {
 						$issue = null;
 						$galleys = array();
-						// Get issue and galleys, and check if the article can be exported
-						if (!$plugin->canBeExported($submission, $issue, $galleys)) {
-							$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
-							// continue with other articles
-							continue;
-						}
 
-						$fullyDeposited = true;
-						$submissionId = $submission->getId();
-						foreach ($galleys as $galley) {
-							// TODO @RS test if this is ok
-							// // check if it is a full text
-							// $galleyFile = $galley->getFile();
-							// $genre = $genreDao->getById($galleyFile->getGenreId());
-							// // if it is not a full text, continue
-							// if ($genre->getCategory() != 1 || $genre->getSupplementary() || $genre->getDependent()) continue;
+						try {
+							// Get issue and galleys, and check if the article can be exported
+							if (!$plugin->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
+								$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId())]);
+								// continue with other articles
+								continue;
+							}
 
-							$exportFile = '';
-							// Get the TAR package for the galley
-							$result = $plugin->getGalleyPackage($galley, $filter, null, $journal, $journalExportPath, $exportFile);
-							// If errors occured, remove all created directories and log the errors
-							if (is_array($result)) {
-								$fileManager->rmtree($journalExportPath);
-								$this->addExecutionLogEntry(
-									__($result[0], array('param' => (isset($result[1]) ? $result[1] : null))),
-									SCHEDULED_TASK_MESSAGE_TYPE_WARNING
-								);
-								return false;
+							$fullyDeposited = true;
+							$submissionId = $submission->getId();
+							foreach ($galleys as $galley) {
+
+								// check if it is a full text
+								$galleyFile = $galley->getFile();
+
+								// if $galleyFile is not set it might be a remote URL
+								if (!isset($galleyFile)) {
+									if ($galley->getRemoteURL() == null) continue;
+								} else {
+									$exportPath = $journalExportPath;
+								}
+
+								// store submission Id in galley object for internal use
+								$galley->setData('submissionId', $submission->getId());
+								
+								$exportFile = '';
+								// Get the TAR package for the galley
+								$result = $plugin->getGalleyPackage($galley, $supplementaryGalleys, $filter, null, $journal, $journalExportPath, $exportFile, $submissionId);
+								// If errors occured, remove all created directories and log the errors
+								if (is_array($result)) {
+									$fileManager->rmtree($journalExportPath);
+									$errors = array_merge($errors, [$result]);
+									continue;
+								}
+								// Deposit the article
+								$result = $plugin->depositXML($galley, $journal, $exportFile);
+								if (is_array($result)) {
+									// If error occured add it to the list of errors
+									$errors = array_merge($errors, [$result]);
+									$fullyDeposited = false;
+								}
 							}
-							// Deposit the article
-							$result = $plugin->depositXML($galley, $journal, $exportFile);
-							if (is_array($result)) {
-								// If error occured add it to the list of errors
-								$errors[] = $result;
-								$fullyDeposited = false;
-							}
+						} catch (ErrorException $e) {
+							// convert ErrorException to error messages that will be logged below
+							$result = $plugin->hanndleExceptions($e);
+							$errors = array_merge($errors, [$result]);
 						}
 						if ($fullyDeposited) {
 							// Update article status

@@ -44,89 +44,59 @@
 
             $contextDao = Application::getContextDAO();
 		    $journalFactory = $contextDao->getAll(true);
-
-            $journals = array();
+            
             while($journal = $journalFactory->next()) {
                 $contextId = $journal->getId();
-                // check required plugin settings
-                // if (!$plugin->getSetting($journalId, 'username') ||
-                //     !$plugin->getSetting($journalId, 'password') ||
-                //     !$plugin->getSetting($journalId, 'folderId') ||
-                //     !$plugin->getSetting($journalId, 'automaticDeposit') ||
-                //     !$plugin->checkPluginSettings($journal)) continue;
+                    // check required plugin settings
+                    // if (!$plugin->getSetting($journalId, 'username') ||
+                    //     !$plugin->getSetting($journalId, 'password') ||
+                    //     !$plugin->getSetting($journalId, 'folderId') ||
+                    //     !$plugin->getSetting($journalId, 'automaticDeposit') ||
+                    //     !$plugin->checkPluginSettings($journal)) continue;
 
-                $journals[] = $journal;
-                unset($journal);
-            }
+                // load pubIds for this journal (they are currently not loaded via ScheduledTasks)
+                PluginRegistry::loadCategory('pubIds', true, $contextId); 
 
-            // load pubIds for this journal (they are currently not loaded via ScheduledTasks)
-			PluginRegistry::loadCategory('pubIds', true, $contextId); 
-            $test = Services::get('publication')->get(11);
-
-            $test = Services::get('context')->getMany(['urlPath' => $journalPath])->current();
-
-            // find publications to test
-            $publications = Services::get('publication')->getMany([ 'contextId' => $contextId ]);
-            $testPublications = [];
-            foreach ($publications as $publication) {
-                $publicationId = $publication->getId();
-                $submissionId = $publication->getData('submissionId');
-                $submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO');
-		        $controlledVocabulary = $submissionKeywordDao->getKeywords($publicationId, [$publication->getData('locale')]);
-                if (!empty($controlledVocabulary) && array_search('FunctionalExportFilterTest', $controlledVocabulary[$publication->getData('locale')])) {
-                    $testPublications[] = $publication;
+                // find publications to test
+                $submissions = Services::get('submission')->getMany([ 'contextId' => $contextId, 'status' => STATUS_PUBLISHED]);
+                $testPublications = [];
+                foreach ($submissions as $submission) {
+                    $publication = $submission->getCurrentPublication();
+                    $publicationId = $publication->getId();
+                    $submissionId = $submission->getData('id');
+                    $submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO');
+                    $controlledVocabulary = $submissionKeywordDao->getKeywords($publicationId, [$publication->getData('locale')]);
+                    if (!empty($controlledVocabulary) && array_search('FunctionalExportFilterTest', $controlledVocabulary[$publication->getData('locale')]) !== false) {
+                        $testPublications[] = $publication;
+                    }
                 }
+
+                self::assertTrue(!empty($testPublications), "No publications found in context ".$contextId);
+
+                // run test for each publication
+                foreach ($testPublications as $publication) {
+                    $submissionId = $publication->getData('submissionId');
+                    $this->exportXML("plugins/importexport/dnb/tests/FunctionalExportFilterTestSubmission".$submissionId.".xml", $publication, $journal);
+                }
+                
             }
 
-            self::assertTrue(!empty($testPublications));
-
-            // run test for each publication
-            foreach ($testPublications as $publication) {
-                $submissionId = $publication->getData('submissionId');
-                $this->exportXML("plugins/importexport/dnb/tests/FunctionalExportFilterTestSubmission".$submissionId.".xml", $publication);
-            }
         }
 
         # @param string $filename name of native xml export file to load
         # @param string $submissionId current submission ID (if imported might not be the same as is given in the xml file)
         # @param string $galleyId current galley ID (if imported might not be the same as is given in the xml file)
-        private function exportXML($filename, $publication) {
+        private function exportXML($filename, $publication, $context) {
 
-            $context = Application::get()->getRequest()->getContext();
             $submissionId = $publication->getData('submissionId');
 
             print_r("Testing submission ID: ", $submissionId);
 
             // define the submission metadata you expect in the exported file
             $exportFile = new DOMDocument();
-            $exportFile->load($filename);
+            $exportFile->load($filename, LIBXML_PARSEHUGE);
             $xpathNative = new DOMXPath($exportFile);
             $xpathNative->registerNamespace("d", "http://pkp.sfu.ca");
-
-            $version = $xpathNative->query('//d:publication[not(@version < ../d:publication/@version)]')[0]->getAttribute('version');// only the latest version of each document is published and exported by DNB Export plugin
-            $publication = "//d:publication[@version = ".$version."]";
-
-            $publication_pubId = $this->getTextContent($xpathNative, $publication."/d:id[@type='doi']");
-            $galley_pubIds = $xpathNative->query($publication."/d:article_galley/d:id[@type='doi']");
-            //$language = $xpathNative->query("//submission_file ???? ")[0]->getAttribute('locale'); // not clear where this information is stored in native xml
-            $author = $this->getTextContent($xpathNative, $publication."//d:author[1]/d:familyname").", ".$this->getTextContent($xpathNative, $publication."//d:author[1]/d:givenname");
-            $access = $xpathNative->query($publication)[0]->getAttribute('access_status');
-            $access = $access == 0 ? 'b' : $access;
-            $prefix = $this->getTextContent($xpathNative, $publication."//d:prefix");
-            if ($prefix != "") {$prefix = $prefix." ";}
-            $title = strip_tags($prefix) . strip_tags($this->getTextContent($xpathNative, $publication."//d:title"));
-            $subtitle = strip_tags($this->getTextContent($xpathNative, $publication."//d:subtitle"));
-            $fullDatePublished = $xpathNative->query($publication)[0]->getAttribute('date_published');
-            $datePublished = date('Y', strtotime($fullDatePublished));
-            $abstract = strip_tags($this->getTextContent($xpathNative, $publication."//d:abstract"));
-            $keyword = $xpathNative->query($publication."//d:keyword")[0]->textContent;
-            $licenseURL = $this->getTextContent($xpathNative, $publication."//d:licenseUrl");
-            $volume = "volume:".$this->getTextContent($xpathNative, $publication."//d:volume");
-            $number = "number:".$this->getTextContent($xpathNative, $publication."//d:number");
-            $day = "day:".date('d', strtotime($fullDatePublished));;
-            $month = "month:".date('m', strtotime($fullDatePublished));
-            $year = "year:".$this->getTextContent($xpathNative, $publication."//d:year");
-            $publishedGalleys = $xpathNative->query($publication."[@status=3]"); // status 3 = "published"
 
             // prepare xml export
             $submissionDao = DAORegistry::getDAO('SubmissionDAO');
@@ -134,15 +104,40 @@
             self::assertTrue($submission->getId() == $submissionId);
 
             $xmlFilter = new DNBXmlFilter(new FilterGroup("galley=>dnb-xml"));
-            $xmlFilter->setDeployment(new DNBExportDeployment($context, new DNBExportPlugin()));
+            $xmlFilter->setDeployment(new DNBExportDeployment($context, $plugin = new DNBExportPlugin()));
 
-            $galleys = $submission->getGalleys();
-            self::assertTrue(count($galleys) >= 1);
+            $plugin->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys);
 
-            foreach ($galleys as $galley) { // use first PDF galley
+            foreach ($documentGalleys as $galley) { 
 
                 // store submissionId in galley object
                 $galley->setData('submissionId', $submission->getId());
+                $galleyLocale = $galley->getLocale();
+
+                $version = $xpathNative->query('//d:publication[not(@version < ../d:publication/@version)]')[0]->getAttribute('version');// only the latest version of each document is published and exported by DNB Export plugin
+                $publication = "//d:publication[@version = ".$version."]";
+    
+                $publication_pubId = $this->getTextContent($xpathNative, $publication."/d:id[@type='doi']");
+                $galley_pubIds = $xpathNative->query($publication."/d:article_galley/d:id[@type='doi']");
+                //$language = $xpathNative->query("//submission_file ???? ")[0]->getAttribute('locale'); // not clear where this information is stored in native xml
+                $author = $this->getTextContent($xpathNative, $publication."//d:author[1]/d:familyname").", ".$this->getTextContent($xpathNative, $publication."//d:author[1]/d:givenname");
+                $access = $xpathNative->query($publication)[0]->getAttribute('access_status');
+                $access = $access == 0 ? 'b' : $access;
+                $prefix = $this->getTextContent($xpathNative, $publication."//d:prefix");
+                if ($prefix != "") {$prefix = $prefix." ";}
+                $title = strip_tags($prefix) . strip_tags($this->getTextContent($xpathNative, $publication."//d:title[@locale='".$galleyLocale."']"));
+                $subtitle = strip_tags($this->getTextContent($xpathNative, $publication."//d:subtitle[@locale='".$galleyLocale."']"));
+                $fullDatePublished = $xpathNative->query($publication)[0]->getAttribute('date_published');
+                $datePublished = date('Y', strtotime($fullDatePublished));
+                $abstract = strip_tags($this->getTextContent($xpathNative, $publication."//d:abstract[@locale='".$galleyLocale."']"));
+                $keywords = $xpathNative->query($publication."//d:keywords[@locale='".$galleyLocale."']/d:keyword");
+                $licenseURL = $this->getTextContent($xpathNative, $publication."//d:licenseUrl");
+                $volume = "volume:".$this->getTextContent($xpathNative, $publication."//d:volume");
+                $number = "number:".$this->getTextContent($xpathNative, $publication."//d:number");
+                $day = "day:".date('d', strtotime($fullDatePublished));;
+                $month = "month:".date('m', strtotime($fullDatePublished));
+                $year = "year:".$this->getTextContent($xpathNative, $publication."//d:year");
+                $publishedGalleys = $xpathNative->query($publication."[@status=3]"); // status 3 = "published"                
 
                 $galleyFile = $galley->getFile();
                 // if ($galleyFile && 'application/pdf' === $galleyFile->getData('mimetype')) {
@@ -153,7 +148,17 @@
                 self::assertTrue(isset($testGalley),"Test gallay not found.");
 
                 // run xml export
-                $result = $xmlFilter->process($testGalley); 
+                try {
+                    $result = $xmlFilter->process($testGalley);
+                } catch (ErrorException $e) {
+                    switch($e->getCode()) {
+                        case URN_SET_EXCEPTION:
+                            return;
+                            break;
+                        default:
+                            throw $e;
+                    }
+                }
                 self::assertTrue($result instanceof DOMDocument);
 
                 // verify xml export
@@ -264,9 +269,15 @@
 
                 // keywords
                 $entries = $xpathDNBFilter->query("//*[@tag='653']/*[@code='a']");
-                if ($entries->length > 0) {
-                    $value = $entries[0]->textContent;
-                    self::assertTrue($value == $keyword, "Keywords was: ".print_r($value, true)."\nValue should have been: ".$keyword);
+                self::assertTrue($entries->length == $keywords->length, "No of keywords was: ".print_r($entries->length, true)."\nValue should have been: ".$keywords->length);
+                foreach ($entries as $entry) {
+                    $value = $entry->textContent;
+                    $nativeXMLKeywords = array_map(
+                        function ($i) {return $i->textContent;},
+                        iterator_to_array($keywords)
+                    );
+                    $found = array_search($value,$nativeXMLKeywords);
+                    self::assertTrue($found !== false, "Keywords was: ".print_r($value, true)."\nValue should have been: ".$nativeXMLKeywords[$found]);
                 }
 
                 // issue data

@@ -1,9 +1,11 @@
-=============================================================
-=== OJS DNB-Export-Plug-In
-=== Version: 1.5
-=== Autor: Bozana Bokan, Ronald Steffen
-=== Letzte Änderung: 10. Oktober 2021
-=============================================================
+# OJS DNB-Export-Plug-In
+**Version: 1.5rc**
+
+**Autor: Bozana Bokan, Ronald Steffen**
+
+**Letzte Änderung: 12. Dezember 2021**
+
+---
 
 Über
 -----
@@ -14,12 +16,12 @@ Details über das XML-Format und die Datenanforderungen sind hier zu finden: <ht
 
 Lizenz
 -------
-Das Plug-In ist unter GNU General Public License v2 lizenziert. Sehen Sie die Datei LICENSE für mehr Informationen über die Lizenz.
+Das Plug-In ist unter GNU General Public License v3 lizenziert. Sehen Sie die Datei LICENSE für mehr Informationen über die Lizenz.
 
 Systemanforderungen
 -------------------
 Dieses Plug-In Verison ist kompatibel mit...
- - OJS 3.2.1
+ - OJS 3.3.0
 
 TAR-Programm wird benötigt und es muss in der Datei config.inc.php konfiguriert werden.
 

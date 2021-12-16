@@ -1,9 +1,11 @@
-=============================================================
-=== OJS DNB Export Plugin
-=== Version: 1.5
-=== Author: Bozana Bokan, Ronald Steffen
-=== Last update: October 10, 2021
-=============================================================
+# OJS DNB Export Plugin
+**Version: 1.5rc**
+
+**Author: Bozana Bokan, Ronald Steffen**
+
+**Last update: December 12, 2021**
+
+---
 
 About
 -----
@@ -14,12 +16,12 @@ Details on the XML format and data requirements are available at: http://nbn-res
 
 License
 -------
-This plugin is licensed under the GNU General Public License v2. See the file LICENSE for the complete terms of this license.
+This plugin is licensed under the GNU General Public License v3. See the file LICENSE for the complete terms of this license.
 
 System Requirements
 -------------------
 This plugin version is compatible with...
- - OJS 3.2.1
+ - OJS 3.3.0
  
 TAR executable is required and it has to be configured in config.inc.php.
 

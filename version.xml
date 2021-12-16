@@ -4,16 +4,15 @@
 <!--
   * plugins/importexport/dnb/version.xml
   *
- * Copyright (c) 2017 Center for Digital Systems (CeDiS), Freie Universität Berlin
- * Distributed under the GNU GPL v2. For full terms see the plugin file LICENSE.
- * Author: Bozana Bokan, Ronald Steffen
- * Last update: January 15th, 2021
+  * Copyright (c) 2021 Center for Digital Systems (CeDiS), Universitätsbibliothek Freie Universität Berlin
+  * Distributed under the GNU GPL v3. For full terms see the plugin file LICENSE.
+  * Author: Bozana Bokan, Ronald Steffen
   *
   * Plugin version information.
   -->
 <version>
 	<application>dnb</application>
 	<type>plugins.importexport</type>
-	<release>1.5dev</release>
-	<date>2021-11-10</date>
+	<release>1.5rc</release>
+	<date>2021-12-16</date>
 </version>
