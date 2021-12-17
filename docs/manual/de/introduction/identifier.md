@@ -1,0 +1,6 @@
+# Persistent Identifier / Öffentliche Kennungen 
+
+Die DNB braucht für die Langzeitarchivierung der abgelieferten Transferpakete URNs auf Galleyebene. URNs auf Artikelebene werden von der DNB nicht akzeptiert und dürfen nicht 
+abgeliefert werden. Die DNB empfiehlt grundsätzlich keine URNs auf Artikelebene zu vergeben. Werden URNs auf Galleyebene bei der Ablieferung nicht mitgeliefert, geht die DNB davon aus, dass für die Galleys keine URNs existieren. Dann generiert die DNB selbständig URNs aus dem DNB-Namensraum und verzeichnet sie im [URN-Resolver](https://nbn-resolving.org/) mit der URL der OJS-Website als erste und der DNB-URL als zweite URL. Mitgelieferte URNs werden von der DNB nicht im URN-Resolver verzeichnet, die Verantwortung dafür obliegt den Zeitschriften. 
+
+Die mitgelieferten oder von der DNB vergebenen URNs werden im DNB-Katalog im Feld „Persistent Identifier“ angezeigt, ebenso wie eventuell mitgelieferte DOIs. Eine automatische Übertragung der von der DNB vergebenen URNs in das OJS-System ist leider nicht möglich. Wir empfehlen daher, die URNs eigenverantwortlich in OJS einzutragen. 

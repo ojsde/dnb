@@ -387,7 +387,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 				// show logs for automatic deposit
 				if ($this->getSetting($this->_currentContextId, 'automaticDeposit')) {
-					$logFiles = Services::get('file')->fs->listContents('scheduledTaskLogs');
+					$logFiles = Services::get('file')->fs->listContents(SCHEDULED_TASK_EXECUTION_LOG_DIR);
 					// filter dnb plugin log files
 					$logFiles = array_filter($logFiles, function($f) {
 						return str_contains($f['filename'],"DNBautomaticdeposittask");
@@ -397,6 +397,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						return $f1['timestamp'] < $f2['timestamp'];
 					});
 					if (count($logFiles) > 0) {
+						// filter context specific messages
 						$latestLogFile = Services::get('file')->fs->read($logFiles[0]['path']);
 						$latestLogFile = preg_split("/\r\n|\n|\r/", $latestLogFile, NULL, PREG_SPLIT_NO_EMPTY);
 						$lastIndex = count($latestLogFile) - 1;
