@@ -323,7 +323,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					'debugModeWarning' => __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => SFTP_SERVER, 'port' => SFTP_PORT]),
 					'nNotRegistered' => $nNotRegistered,
 					'remoteEnabled' => $this->getSetting($context->getId(), 'exportRemoteGalleys') ? "Remote On" : "",
-					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') !== "all" ? "Supplementary Off" : ""
+					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') === "none" ? "Supplementary Off" : ""
 				]);
 
 				$templateMgr->setConstants([
