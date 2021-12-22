@@ -494,7 +494,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 
 		// Use a URL filter to prepend the current path to relative URLs.
-		$parser = new \Michelf\Markdown;
+		$parser = new \Michelf\MarkdownExtra;
 		$parser->url_filter_func = function ($url) use ($filename) {
 			return (empty(parse_url($url)['host']) ? dirname($filename) . '/' : '') . $url;
 		};

@@ -32,7 +32,7 @@ Installation
 Installation über die OJS-Benutzeroberfläche:
  - Download  des tar.gz-Archivs (dnb-[Version].tar.gz)von https://github.com/ojsde/dnb 
 
-  Bitte immer die neuste Revisionsnummer (.x) des Plugins für die installierten OJS Version benutzen:
+  Bitte immer die neuste Revisionsnummer (.x) des Plugins für die installierte OJS Version benutzen:
    | OJS version | plugin version    |
    | ----------- | ----------------- |
    | 3.2         | 1.4.x             |
@@ -46,7 +46,7 @@ Installation über die Kommandozeile ohne Git:
  - ggf. Umbenennen des Hauptverzeichnisses in "dnb"
  - Aktualisierung der Datenbank (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen),
    führen Sie dazu aus Ihrem OJS-Verzeichnis aus: php tools/upgrade.php upgrade oder
-   php tools/upgrade.php upgrade or php tools/installPluginVersion.php
+   php tools/installPluginVersion.php plugins/importexport/dnb/version.xml
 
 Installation über die Kommandozeile mit Git:
  - cd [my_ojs_installation]/plugins/importexport

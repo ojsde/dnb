@@ -15,6 +15,8 @@ Bitte bachten Sie:
 
 Falls eine direkte Ablieferung der Artikel in Ihren DNB-Hotfolder gewünscht wird, tragen Sie Ihre DNB-Kontodaten (Benutzer/innennamen, Passwort, Unterordner-ID des Hotfolders) im Abschintt *Zugangsdaten DNB Hotfolder* in die entsprechenden Felder ein. Für eine direkte Ablieferung muss ausserdem SFTP auf Ihrem Server konfiguriert sein. Sollte dies nicht der Fall sein erhalten Sie eine Fehlermeldung. Bitte kontaktieren Sie dazu Ihren Systemadministrator.
 
+Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Klartext, d.h. unverschlüsselt, gespeichert wird. 
+
 ## <a name="autodeposit"></a>Automatische Ablieferung 
 
 Wenn Sie die automatische Ablieferung aktivieren werden neue, nicht abgelieferte Artikel mittels eines von Ihrem Systemadminstrator konfigurieten Cronjobs in regelmäßigen Abständen automatisch in den *DNB-Hotfolder* übertragen. Wenn diese Option aktiv ist wird außerdem ein zusätzlicher Reiter mit dem letzten Ablieferungsprotokoll angezeigt.

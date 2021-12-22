@@ -52,7 +52,7 @@ Installation with Git:
  - cd dnb
  - git checkout [branch]
  - cd [my_ojs_installation]
- - php tools/upgrade.php upgrade or php tools/installPluginVersion.php
+ - php tools/upgrade.php upgrade or php tools/installPluginVersion.php plugins/importexport/dnb/version.xml
 
 Export
 ------------

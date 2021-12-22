@@ -10,4 +10,4 @@
   * [Weitere Hinweise](introduction/hints)
 * [Einstellungen](settings)
 * [Ablieferung von Artikeln](export)
-* [Installation des DNB Export Plugins](Installation)
+* [Installation des DNB Export Plugins](installation)
