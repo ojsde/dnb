@@ -1,5 +1,7 @@
 # Export or deposition of articles
 
+***The English version of this manual is under construction. Please switch to the German language version for full details.***
+
 1. [State of an article](export#status)
 2. [Deposition to the DNB Hotfolder](export#deposit)
 3. [Export](export#export)
