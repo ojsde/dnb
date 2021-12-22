@@ -152,6 +152,7 @@
         {/if}
         {if $latestLogFile}
             <tab id="logfile-tab" label="{translate key="plugins.importexport.dnb.logFileTabTitle"}">
+                <h4>{translate key="plugins.importexport.dnb.logFileTabInfo"}</h4>
                 {foreach from=$latestLogFile item=line}
                     <p class="dnb_log_entry">{$line}</p>
                 {/foreach}

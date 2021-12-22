@@ -244,7 +244,16 @@ msgid "plugins.importexport.dnb.export.error.exception"
 msgstr "{$param}"
 
 msgid "plugins.importexport.dnb.logFileTabTitle"
-msgstr "Log automatic deposit"
+msgstr "Log file"
+
+msgid "plugins.importexport.dnb.logFileTabInfo"
+msgstr "Log file of the last automatic deposit to the DNB hotfolder:"
 
 msgid "plugins.importexport.dnb.export.error.noError"
 msgstr "All articles successfully deposited."
+
+msgid "plugins.importexport.dnb.logFile.info.conutArticles"
+msgstr "{$param} articles found to be exported."
+
+msgid "plugins.importexport.dnb.logFile.info.nocredentials"
+msgstr "Hotfolder credentials not set. Automatic deposit not possible."

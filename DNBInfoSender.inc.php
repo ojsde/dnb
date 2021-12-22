@@ -85,6 +85,10 @@ class DNBInfoSender extends ScheduledTask {
 				}
 				$journalExportPath = $result;
 
+				$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
+					__('plugins.importexport.dnb.logFile.info.conutArticles', array('param' => count($notDepositedArticles))),
+					SCHEDULED_TASK_MESSAGE_TYPE_NOTICE
+				);
 				foreach ($notDepositedArticles as $submission) {
 					if (is_a($submission, 'Submission')) {
 						$issue = null;
@@ -92,6 +96,7 @@ class DNBInfoSender extends ScheduledTask {
 
 						try {
 							// Get issue and galleys, and check if the article can be exported
+							$galleys = $supplementaryGalleys = [];
 							if (!$plugin->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
 								$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId())]);
 								// continue with other articles
@@ -128,7 +133,7 @@ class DNBInfoSender extends ScheduledTask {
 								$result = $plugin->depositXML($galley, $journal, $exportFile);
 								if (is_array($result)) {
 									// If error occured add it to the list of errors
-									$errors = array_merge($errors, [$result]);
+									$errors = array_merge($errors, $result);
 									$fullyDeposited = false;
 								}
 							}
@@ -151,7 +156,7 @@ class DNBInfoSender extends ScheduledTask {
 			if (empty($errors)) {
 				$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.noError')]);
 			}
-			// log all messages
+			// log all error messages
 			foreach($errors as $error) {
 				$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
 					__($error[0], array('param' => (isset($error[1]) ? $error[1] : null))),
@@ -181,7 +186,13 @@ class DNBInfoSender extends ScheduledTask {
 				!$plugin->getSetting($journalId, 'password') ||
 				!$plugin->getSetting($journalId, 'folderId') ||
 				!$plugin->getSetting($journalId, 'automaticDeposit') ||
-				!$plugin->checkPluginSettings($journal)) continue;
+				!$plugin->checkPluginSettings($journal)) {
+					$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
+						__('plugins.importexport.dnb.logFile.info.nocredentials'),
+						SCHEDULED_TASK_MESSAGE_TYPE_NOTICE
+					);
+					continue;
+				}
 
 			$journals[] = $journal;
 			unset($journal);

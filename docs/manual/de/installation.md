@@ -32,7 +32,7 @@ Im Managementbereich von OJS (Einstellungen -> Website -> Plugins -> „Ein neue
   - `php tools/upgrade.php upgrade` oder
   - `php tools/installPluginVersion.php plugins/importexport/dnb/version.xml`
 
-*Installation über die Kommandozeile mit Git*
+**Installation über die Kommandozeile mit Git**
 
 - cd [my_ojs_installation]/plugins/importexport
 - git clone https://github.com/ojsde/dnb
