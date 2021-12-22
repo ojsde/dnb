@@ -17,7 +17,7 @@ import('classes.plugins.PubObjectsExportPlugin');
 
 use APP\components\forms\FieldSelectIssues;
 
-define('DEBUG', true);
+define('DEBUG', false);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 define('ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers

@@ -202,7 +202,7 @@ msgid "plugins.importexport.dnb.settings.form.submitSupplementary.warning"
 msgstr "<strong>Achtung</strong>: Es besteht eine Ablieferungspflich für Zusatzmaterial. Bitte deaktivieren Sie diese Funktion nur, wenn technische Probleme die Ablieferung des Zusatzmaterials verhindern."
 
 msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.title"
-msgstr "Fahnen die an einem externen Ort bereitgestellt werden abliefern"
+msgstr "Fahnen die an einem externen Ort bereitgestellt werden (Remote Galleys) abliefern"
 
 msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.description"
 msgstr "Es werden nur PDF- und EPUB-Fahnen abgeliefert."
@@ -245,3 +245,6 @@ msgstr "{$param}"
 
 msgid "plugins.importexport.dnb.logFileTabTitle"
 msgstr "Log Automatische Ablieferung"
+
+msgid "plugins.importexport.dnb.export.error.noError"
+msgstr "Alle Artikel erfolgreich abgeliefert."

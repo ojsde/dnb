@@ -245,3 +245,6 @@ msgstr "{$param}"
 
 msgid "plugins.importexport.dnb.logFileTabTitle"
 msgstr "Log automatic deposit"
+
+msgid "plugins.importexport.dnb.export.error.noError"
+msgstr "All articles successfully deposited."

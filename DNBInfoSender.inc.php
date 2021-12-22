@@ -66,7 +66,7 @@ class DNBInfoSender extends ScheduledTask {
 
 		// get all journals that meet the requirements
 		$journals = $this->_getJournals();
-		$errors = array();
+		$errors = [];
 		foreach ($journals as $journal) {
 			// load pubIds for this journal (they are currently not loaded in the base class)
 			PluginRegistry::loadCategory('pubIds', true, $journal->getId());
@@ -148,15 +148,17 @@ class DNBInfoSender extends ScheduledTask {
 				// Remove the generated directories
 				$fileManager->rmtree($journalExportPath);
 			}
-		}
-		if (!empty($errors)) {
-			// If there were some deposit errors, log them
+			if (empty($errors)) {
+				$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.noError')]);
+			}
+			// log all messages
 			foreach($errors as $error) {
 				$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
 					__($error[0], array('param' => (isset($error[1]) ? $error[1] : null))),
 					SCHEDULED_TASK_MESSAGE_TYPE_WARNING
 				);
 			}
+			$errors = [];
 		}
 		return true;
 	}
