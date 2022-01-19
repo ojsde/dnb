@@ -127,6 +127,7 @@ class DNBInfoSender extends ScheduledTask {
 								if (is_array($result)) {
 									$fileManager->rmtree($journalExportPath);
 									$errors = array_merge($errors, [$result]);
+									$fullyDeposited = false;
 									continue;
 								}
 								// Deposit the article

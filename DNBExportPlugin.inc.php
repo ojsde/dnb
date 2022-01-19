@@ -648,7 +648,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		
 		if ($curlError) {
 			// error occured
-			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getFile()->getData('submissionId'), 'error' => $curlError));
+			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getData('submissionId'), 'error' => $curlError));
 			$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 		}
 		curl_close($curlCh);
@@ -726,10 +726,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					// if $galleyFile is not set it might be a remote URL
 					if (!isset($galleyFile)) {
 						if ($galley->getRemoteURL() == null) continue;
-					} else {
-						$exportPath = $journalExportPath;
 					}
 					
+					$exportPath = $journalExportPath;
 					$exportFile = '';
 					// Get the TAR package for the galley
 					$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));

@@ -134,9 +134,9 @@
                 $licenseURL = $this->getTextContent($xpathNative, $publication."//d:licenseUrl");
                 $volume = "volume:".$this->getTextContent($xpathNative, $publication."//d:volume");
                 $number = "number:".$this->getTextContent($xpathNative, $publication."//d:number");
-                $day = "day:".date('d', strtotime($fullDatePublished));;
+                $day = "day:".date('d', strtotime($fullDatePublished));
                 $month = "month:".date('m', strtotime($fullDatePublished));
-                $year = "year:".$this->getTextContent($xpathNative, $publication."//d:year");
+                $year = "year:".date('Y', strtotime($fullDatePublished));
                 $publishedGalleys = $xpathNative->query($publication."[@status=3]"); // status 3 = "published"                
 
                 $galleyFile = $galley->getFile();
@@ -280,19 +280,19 @@
                     self::assertTrue($found !== false, "Keywords was: ".print_r($value, true)."\nValue should have been: ".$nativeXMLKeywords[$found]);
                 }
 
-                // issue data
+                // issue data and article publication date
                 $entries = $xpathDNBFilter->query("//*[@tag='773']/*[@code='g']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == $volume, "Volume was: ".print_r($value, true)."\nValue should have been: ".$volume);
+                    self::assertTrue($value == $volume, "Issue Volume was: ".print_r($value, true)."\nValue should have been: ".$volume);
                     $value = $entries[1]->textContent;
-                    self::assertTrue($value == $number, "Number was: ".print_r($value, true)."\nValue should have been: ".$number);
+                    self::assertTrue($value == $number, "Issue Number was: ".print_r($value, true)."\nValue should have been: ".$number);
                     $value = $entries[2]->textContent;
-                    self::assertTrue($value == $day, "Day was: ".print_r($value, true)."\nValue should have been: ".$day);
+                    self::assertTrue($value == $day, "Galley publication day was: ".print_r($value, true)."\nValue should have been: ".$day);
                     $value = $entries[3]->textContent;
-                    self::assertTrue($value == $month, "Month was: ".print_r($value, true)."\nValue should have been: ".$month);
+                    self::assertTrue($value == $month, "Galley publication month was: ".print_r($value, true)."\nValue should have been: ".$month);
                     $value = $entries[4]->textContent;
-                    self::assertTrue($value == $year, "Year was: ".print_r($value, true)."\nValue should have been: ".$year);
+                    self::assertTrue($value == $year, "Galley publication year was: ".print_r($value, true)."\nValue should have been: ".$year);
                 }
 
                 //  tag 773: journal data not provided in native xml export
