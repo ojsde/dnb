@@ -744,7 +744,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						$exportFilesNames[] = $exportFile;
 					} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
 						// Deposit the galley
-						$result = $this->depositXML($galley, $journal, $exportFile);
+						// $exportfile will be empty if XML file could not be created
+						$result = false;
+						if ($exportfile) {
+							$result = $this->depositXML($galley, $journal, $exportFile);
+						}
 						if (is_array($result)) {
 							// If error occured add it to the list of errors
 							$errors = array_merge($errors, $result);
@@ -950,9 +954,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	        fputs($file, $response);
     	        fclose($file);
     	        $galley->setData('fileSize',filesize($temporaryFilename));
-    	        
+
     	        $sourceGalleyFilePath =  $this->getPluginSettingsPrefix(). "/" . basename($temporaryFilename);
     	        $targetGalleyFilePath = $exportPath . basename($galley->getRemoteURL());
+				$galley->setData('fileType', pathinfo($targetGalleyFilePath, PATHINFO_EXTENSION));
 	        }
 	    } else {
 	       	$sourceGalleyFilePath = $galleyFile->getData('path');
@@ -1039,6 +1044,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// filter supplementary files
 		if ($this->getSetting($submission->getData('contextId'), 'submitSupplementaryMode') == 'all') {
 			$supplementaryGalleys = array_filter($galleys, array($this, 'filterSupplementaryGalleys'));
+			$supplementaryGalleys?$submission->setData('hasSupplementary', true):NULL;
 		}
 		// filter PDF and EPUB full text galleys -- DNB concerns only PDF and EPUB formats
 		$galleys = array_filter($galleys, array($this, 'filterGalleys'));

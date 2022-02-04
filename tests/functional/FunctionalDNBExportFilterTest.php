@@ -129,15 +129,17 @@
                 $subtitle = strip_tags($this->getTextContent($xpathNative, $publication."//d:subtitle[@locale='".$galleyLocale."']"));
                 $fullDatePublished = $xpathNative->query($publication)[0]->getAttribute('date_published');
                 $datePublished = date('Y', strtotime($fullDatePublished));
+                $day = "day:".date('d', strtotime($fullDatePublished));
+                $month = "month:".date('m', strtotime($fullDatePublished));
+                $year = "year:".date('Y', strtotime($fullDatePublished));
                 $abstract = strip_tags($this->getTextContent($xpathNative, $publication."//d:abstract[@locale='".$galleyLocale."']"));
                 $keywords = $xpathNative->query($publication."//d:keywords[@locale='".$galleyLocale."']/d:keyword");
                 $licenseURL = $this->getTextContent($xpathNative, $publication."//d:licenseUrl");
                 $volume = "volume:".$this->getTextContent($xpathNative, $publication."//d:volume");
                 $number = "number:".$this->getTextContent($xpathNative, $publication."//d:number");
-                $day = "day:".date('d', strtotime($fullDatePublished));
-                $month = "month:".date('m', strtotime($fullDatePublished));
-                $year = "year:".date('Y', strtotime($fullDatePublished));
-                $publishedGalleys = $xpathNative->query($publication."[@status=3]"); // status 3 = "published"                
+                $issueYear = "year:".$this->getTextContent($xpathNative, $publication."//d:year"); // day and month not available 
+                $publishedGalleys = $xpathNative->query($publication."[@status=3]"); // status 3 = "published"
+                $supplementaryGenres = $xpathNative->query("//d:submission_file[@genre != 'Artikeltext' and @genre != 'Multimedia' and @genre != 'Bild' and @genre != 'HTML_Stylesheet']");
 
                 $galleyFile = $galley->getFile();
                 // if ($galleyFile && 'application/pdf' === $galleyFile->getData('mimetype')) {
@@ -249,6 +251,28 @@
                     self::assertTrue($value == $datePublished, "Date published was: ".print_r($value, true)."\nValue should have been: ".$datePublished);
                 }
 
+                // supplementary material
+                $entries = $xpathDNBFilter->query("//*[@tag='300']/*[@code='e']");
+                if ($entries->length > 0) {
+                    $value = $entries[0]->textContent;
+                    self::assertTrue($value == DNB_MSG_SUPPLEMENTARY, "hasSupplementary was: ".print_r($value, true)."\nValue should have been: ".DNB_MSG_SUPPLEMENTARY);
+                    self::assertTrue(count($supplementaryGenres) > 0, "hasSupplementary was: ".print_r($value, true)."\nValue should have been empty");
+                } else {
+                    self::assertTrue(count($supplementaryGenres) == 0, "hasSupplementary was: empty\nValue should have been: ".DNB_MSG_SUPPLEMENTARY);                    
+                }
+
+                // additional info field in case supplememtary galleys cannot be unambiguously assigned to the main document galleys
+                $entries = $xpathDNBFilter->query("//*[@tag='500']/*[@code='a']");
+                if ($entries->length > 0) {
+                    $value = $entries[0]->textContent;
+                    self::assertTrue($value == DNB_MSG_SUPPLEMENTARY_AMBIGUOUS, "Ambiguous flag value error.");
+                    self::assertTrue(count($supplementaryGenres) > 0, "Ambiguos flag set but no supplementary found.");
+                } else {
+                    // not able to test this here
+                    // self::assertTrue(count($supplementaryGenres) == 0, "Ambiguos flag not set but supplementary found.");                    
+                }
+
+                // Abstract
                 $entries = $xpathDNBFilter->query("//*[@tag='520']/*[@code='a']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
@@ -287,12 +311,13 @@
                     self::assertTrue($value == $volume, "Issue Volume was: ".print_r($value, true)."\nValue should have been: ".$volume);
                     $value = $entries[1]->textContent;
                     self::assertTrue($value == $number, "Issue Number was: ".print_r($value, true)."\nValue should have been: ".$number);
-                    $value = $entries[2]->textContent;
-                    self::assertTrue($value == $day, "Galley publication day was: ".print_r($value, true)."\nValue should have been: ".$day);
-                    $value = $entries[3]->textContent;
-                    self::assertTrue($value == $month, "Galley publication month was: ".print_r($value, true)."\nValue should have been: ".$month);
+                    // issue day and month not available in native XML
+                    // $value = $entries[2]->textContent;
+                    // self::assertTrue($value == $day, "Galley publication day was: ".print_r($value, true)."\nValue should have been: ".$day);
+                    // $value = $entries[3]->textContent;
+                    // self::assertTrue($value == $month, "Galley publication month was: ".print_r($value, true)."\nValue should have been: ".$month);
                     $value = $entries[4]->textContent;
-                    self::assertTrue($value == $year, "Galley publication year was: ".print_r($value, true)."\nValue should have been: ".$year);
+                    self::assertTrue($value == $issueYear, "Issue publication year was: ".print_r($value, true)."\nValue should have been: ".$issueYear);
                 }
 
                 //  tag 773: journal data not provided in native xml export
@@ -306,7 +331,12 @@
                         "']/parent::d:article_galley/d:submission_file_ref"
                         , $publishedGalleys[0]);
 
-                    if ($nodes->length >0) {
+                    if ($nodes->length == 0) {
+                        self::assertTrue(strlen($galley->getData('urlRemote')) > 0, "File type not provided.");
+                    } else {
+                        self::assertTrue($nodes->length > 0, "File type not provided.");
+                    }
+                    if ($nodes->length > 0) {
                         $file = $xpathNative->query("//d:submission_file[@id=".$nodes[0]->getAttribute('id')."]/d:file");
                         $filetype = $file[0]->getAttribute('extension');
                         $value = $entries[0]->textContent;

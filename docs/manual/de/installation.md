@@ -4,7 +4,7 @@
 2. [Plugin installieren](installation#plugin)
 3. [Cronjob einrichten](installation#cronjob)
 
-##<a name="version"></a>Welche Plugin-Version muss ich installieren?
+## <a name="version"></a>Welche Plugin-Version muss ich installieren?
 
 Bitte installieren Sie immer die neuste Revisionsnummer (.x) des Plugins für Ihre installierte OJS Version. Die aktuellen Plugin-Versionen finden Sie auf [Github - Releases -DNB Export Plugin](https://github.com/ojsde/dnb/releases).
 

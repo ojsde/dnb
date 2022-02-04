@@ -19,6 +19,9 @@ define('FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
 define('URN_SET_EXCEPTION', 101);
 define('MESSAGE_URN_SET','An URN has been set.'); // @RS refine
 
+define('DNB_MSG_SUPPLEMENTARY','Begleitmaterial');
+define('DNB_MSG_SUPPLEMENTARY_AMBIGUOUS','Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht');
+
 class DNBXmlFilter extends NativeExportFilter {
 	/**
 	 * Constructor
@@ -82,7 +85,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			if ($issue) $cache->add($issue, null);
 		}
 
-		// abort export in case any URN is set, this is a special case that has to be discussed with DNB and implmented differently in each case
+		// abort export in case any URN is set, this is a special case that has to be discussed with DNB and implemented differently in each case
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
 		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
 		if (!empty($submissionURN)) {
@@ -223,14 +226,11 @@ class DNBXmlFilter extends NativeExportFilter {
 		$datafield264 = $this->createDatafieldNode($doc, $recordNode, '264', ' ', '1');
 		$this->createSubfieldNode($doc, $datafield264, 'c', $yearYYYY);
 
-		// if this package will be delivered including supplementary material
-		// we also provide the supplementary galley type (i.e. galley genres)
-		$genres = $submission->getData('supplementaryGenres');
-		if ($genres) {
+		// this package will be delivered including supplementary material
+		if ($submission->getData('hasSupplementary')) {
 			// !!! Do not change this message without consultation of the DNB !!!
-			$msg = "Begleitmaterial"; // $msg = implode($genres,',');
-			$genresdatafield300 = $this->createDatafieldNode($doc, $recordNode, '300', ' ', '1');
-			$this->createSubfieldNode($doc, $genresdatafield300, 'e', $msg);
+			$datafield300 = $this->createDatafieldNode($doc, $recordNode, '300', ' ', '1');
+			$this->createSubfieldNode($doc, $datafield300, 'e', DNB_MSG_SUPPLEMENTARY);
 		}
 
 		// article level URN (only if galley level URN does not exist)
@@ -246,9 +246,8 @@ class DNBXmlFilter extends NativeExportFilter {
 		// additional info field in case supplememtary galleys cannot be unambiguously assigned to the main document galleys
 		if ($submission->getData('supplementaryNotAssignable')) {
 			// !!! Do not change this message without consultation of the DNB !!!
-			$msg = "Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht";
 			$supplementaryDatafield500 = $this->createDatafieldNode($doc, $recordNode, '500', ' ', ' ');
-			$this->createSubfieldNode($doc, $supplementaryDatafield500, 'a', $msg);
+			$this->createSubfieldNode($doc, $supplementaryDatafield500, 'a', DNB_MSG_SUPPLEMENTARY_AMBIGUOUS);
 		}
 
 		// abstract
@@ -321,9 +320,14 @@ class DNBXmlFilter extends NativeExportFilter {
 		$issueDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', ' ');
 		if (!empty($volume)) $this->createSubfieldNode($doc, $issueDatafield773, 'g', 'volume:'.$volume);
 		if (!empty($number)) $this->createSubfieldNode($doc, $issueDatafield773, 'g', 'number:'.$number);
-		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'day:'.$day);
-		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'month:'.$month);
-		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'year:'.$yearYYYY);
+		$issueDatePublished = $issue->getDatePublished();
+		$issueYearYYYY = date('Y', strtotime($issueDatePublished));
+		$issueYearYY = date('y', strtotime($issueDatePublished));
+		$issueMonth = date('m', strtotime($issueDatePublished));
+		$issueDay = date('d', strtotime($issueDatePublished));
+		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'day:'.$issueDay);
+		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'month:'.$issueMonth);
+		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'year:'.$issueYearYYYY);
 		$this->createSubfieldNode($doc, $issueDatafield773, '7', 'nnas');
 
 		// journal data
@@ -339,14 +343,15 @@ class DNBXmlFilter extends NativeExportFilter {
 		$datafield856 = $this->createDatafieldNode($doc, $recordNode, '856', '4', ' ');
 		$this->createSubfieldNode($doc, $datafield856, 'u', $galleyURL);
 		$this->createSubfieldNode($doc, $datafield856, 'q', $this->_getGalleyFileType($galley));
+		$galleyFile = $galley->getFile();
 		if (isset($galleyFile)) {
 		    # galley is a local file
-		    $fileSize = $galleyFile->getFileSize();
+		    $fileSize = Services::get('file')->fs->getSize($galleyFile->getData('path'));
 		} else {
 		    # galley is a remote URL and we stored the filesize before
 		    $fileSize = $galley->getData('fileSize');
 		}
-		if ($fileSize > 0) $this->createSubfieldNode($doc, $datafield856, 's', $this->_getFileSize($fileSize));
+		if ($fileSize > 0) $this->createSubfieldNode($doc, $datafield856, 's', Services::get('file')->getNiceFileSize($fileSize));
 		if ($openAccess) $this->createSubfieldNode($doc, $datafield856, 'z', 'Open Access');
 
 		return $doc;
@@ -448,26 +453,9 @@ class DNBXmlFilter extends NativeExportFilter {
 			case 'text/html':
 				return 'html';
 			default:
-				return NULL;
+				return $galley->getData('fileType');
 		}
 	}
-
-	/**
-	 * Get human friendly file size.
-	 * @param $fileSize integer
-	 * @return string
-	 */
-	function _getFileSize($fileSize) {
-		$fileSize = round(((int)$fileSize) / 1024);
-		if ($fileSize >= 1024) {
-			$fileSize = round($fileSize / 1024, 2);
-			$fileSize = $fileSize . ' MB';
-		} elseif ($fileSize >= 1) {
-			$fileSize = $fileSize . ' kB';
-		}
-		return $fileSize;
-	}
-
 }
 
 ?>
