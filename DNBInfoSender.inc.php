@@ -153,7 +153,11 @@ class DNBInfoSender extends ScheduledTask {
 				}
 				// Remove the generated directories
 				$fileManager->rmtree($journalExportPath);
+			} else {
+				// there were no articles to deposit
+				$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.noNoArticlesToDeposit')]);
 			}
+			
 			if (empty($errors)) {
 				$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.noError')]);
 			}

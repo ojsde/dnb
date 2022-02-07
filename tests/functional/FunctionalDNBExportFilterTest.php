@@ -2,6 +2,7 @@
 
 # run with 'sh plugins/importexport/dnb/tests/runTests.sh -d' from ojs folder (note phpunit needs to be installed by running 'composer.phar --working-dir=lib/pkp install' without the -no-dev option)
 # This is not an automatic test. A native xml export file with the appropriate name and submission ID in your systems has to be placed in the tests folder.
+# You may need to install phpunit in lib/pkp: 'composer.phar require --dev phpunit/phpunit'
 
     import('lib.pkp.tests.PKPTestCase');
     import('classes.issue.Issue');
