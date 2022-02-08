@@ -122,7 +122,9 @@ class DNBInfoSender extends ScheduledTask {
 								
 								$exportFile = '';
 								// Get the TAR package for the galley
-								$result = $plugin->getGalleyPackage($galley, $supplementaryGalleys, $filter, null, $journal, $journalExportPath, $exportFile, $submissionId);
+								// we set $noValidation to true because the validation schema doesn't exist anymore under the give URL (TODO @RS: is there an alternative?)
+								$noValidation = true; 
+								$result = $plugin->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $journalExportPath, $exportFile, $submissionId);
 								// If errors occured, remove all created directories and log the errors
 								if (is_array($result)) {
 									$fileManager->rmtree($journalExportPath);

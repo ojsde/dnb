@@ -666,7 +666,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	/**
 	 * @copydoc PubObjectsExportPlugin::executeExportAction()
 	 */
-	function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null) {
+
+	// we set $noValidation to true because the validation schema doesn't exist anymore under the give URL (TODO @RS: is there an alternative?)
+
+	function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = true) {
 
 		$journal = $request->getContext();
 		$path = array('plugin', $this->getName());
