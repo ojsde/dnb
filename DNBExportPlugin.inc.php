@@ -667,8 +667,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc PubObjectsExportPlugin::executeExportAction()
 	 */
 
-	// we set $noValidation to true because the validation schema doesn't exist anymore under the give URL (TODO @RS: is there an alternative?)
-
 	function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = true) {
 
 		$journal = $request->getContext();
@@ -856,6 +854,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @return boolean|array True for success or an array of error messages.
 	 */
 	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $journalExportPath, &$exportPackageName, $submissionId) {
+
+		if (DEBUG) $noValidation = false;
+
 		// Get the final target export directory.
 		// The data will be exported in this structure:
 		// dnb/<journalId>-<dateTime>/<journalId>-<submissionId>-<galleyId>/

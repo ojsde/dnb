@@ -85,7 +85,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			if ($issue) $cache->add($issue, null);
 		}
 
-		// abort export in case any URN is set, this is a special case that has to be discussed with DNB and implemented differently in each case
+		// abort export in case any URN is set on the submission level, this is a special case that has to be discussed with DNB and implemented differently in each case
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
 		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
 		if (!empty($submissionURN)) {
