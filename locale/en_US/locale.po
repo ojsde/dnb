@@ -257,3 +257,15 @@ msgstr "{$param} articles found to be exported."
 
 msgid "plugins.importexport.dnb.logFile.info.nocredentials"
 msgstr "Hotfolder credentials not set. Automatic deposit not possible."
+
+msgid "plugins.importexport.dnb.exclude"
+msgstr "Exclude/Include"
+
+msgid "plugins.importexport.dnb.status.excluded"
+msgstr "Excluded"
+
+msgid "plugins.importexport.dnb.export.error.articleMarkedExcluded"
+msgstr "The article {$param} was not deposited because it is marked as "Excluded"."
+
+msgid "plugins.importexport.dnb.export.error.noNoArticlesToDeposit"
+msgstr "No articles found to deliver."

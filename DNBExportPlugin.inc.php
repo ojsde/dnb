@@ -21,7 +21,8 @@ define('DEBUG', false);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 define('ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
-
+define('EXPORT_ACTION_MARKEXCLUDED','exclude');
+define('EXPORT_STATUS_MARKEXCLUDED','markExcluded');
 define('REMOTE_IP_NOT_ALLOWED_EXCEPTION', 103);
 
 if (!DEBUG) {
@@ -162,6 +163,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				case EXPORT_ACTION_MARKREGISTERED:
 					$this->_exportAction = EXPORT_ACTION_MARKREGISTERED;
 					$request->_requestVars[EXPORT_ACTION_MARKREGISTERED] = true;
+					break;
+				case EXPORT_ACTION_MARKEXCLUDED:
+					$this->_exportAction = EXPORT_ACTION_MARKEXCLUDED;
 					break;
 			}
 			$args[0] = 'exportSubmissions';
@@ -521,6 +525,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			EXPORT_STATUS_NOT_DEPOSITED => __('plugins.importexport.dnb.status.notDeposited'),
 			DNB_STATUS_DEPOSITED => __('plugins.importexport.dnb.status.deposited'),
 			EXPORT_STATUS_MARKEDREGISTERED => __('plugins.importexport.common.status.markedRegistered'),
+			EXPORT_STATUS_MARKEXCLUDED => __('plugins.importexport.dnb.status.excluded')
 		);
 	}
 
@@ -530,6 +535,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function getExportActionNames() {
 		return array_merge(parent::getExportActionNames(), array(
 			EXPORT_ACTION_DEPOSIT => __('plugins.importexport.dnb.deposit'),
+			EXPORT_ACTION_MARKEXCLUDED => __('plugins.importexport.dnb.exclude')
 		));
 	}
 
@@ -569,7 +575,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc PubObjectsExportPlugin::getExportActions()
 	 */
 	function getExportActions($context) {
-		return array(EXPORT_ACTION_DEPOSIT, EXPORT_ACTION_EXPORT, EXPORT_ACTION_MARKREGISTERED);
+		return array(EXPORT_ACTION_DEPOSIT, EXPORT_ACTION_EXPORT, EXPORT_ACTION_MARKREGISTERED, EXPORT_ACTION_MARKEXCLUDED);
 	}
 
 	/**
@@ -660,158 +666,180 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	/**
 	 * @copydoc PubObjectsExportPlugin::executeExportAction()
 	 */
-	function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null) {
+
+	// we set $noValidation to true because the validation schema doesn't exist anymore under the give URL (TODO @RS: is there an alternative?)
+
+	function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = true) {
 
 		$journal = $request->getContext();
 		$path = array('plugin', $this->getName());
+		$tab = "exportSubmissions-tab";
 		
-		if ($this->_exportAction == EXPORT_ACTION_EXPORT ||
-			$this->_exportAction == EXPORT_ACTION_DEPOSIT) {
+		switch ($this->_exportAction) {
+			case EXPORT_ACTION_EXPORT:
+			case EXPORT_ACTION_DEPOSIT:
 
-			assert($filter != null);
+				assert($filter != null);
 
-			// The tar tool for packaging is needed. Check this
-			// early on to avoid unnecessary export processing.
-			$result = $this->checkForTar();
-			if (is_array($result)) {
-				$this->errorNotification($request, $result);
-				// redirect back to the right tab
-				$request->redirect(null, null, null, $path, null, $tab);
-			}
-
-			// Get the journal target export directory.
-			// The data will be exported in this structure:
-			// dnb/<journalId>-<dateTime>/
-			$result = $this->getExportPath($journal->getId());
-			if (is_array($result)) {
-				$this->errorNotification($request, $result);
-				// redirect back to the right tab
-				$request->redirect(null, null, null, $path, null, $tab);
-			}
-			$journalExportPath = $result;
-
-			$errors = $exportFilesNames = [];
-			$submissionDao = DAORegistry::getDAO('SubmissionDAO');
-			$genreDao = DAORegistry::getDAO('GenreDAO');
-
-			// For each selected article
-			foreach ($submissions as $submission) {
-				$issue = null;
-				$galleys = [];
-				$supplementaryGalleys = [];
-				// Get issue and galleys, and check if the article can be exported.
-				// canBeExported(...) returns galleys and supplementary galleys seperately
-				try {
-					if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
-					$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
-					// continue with other articles
-					continue;
-					}
-				} catch (ErrorException $e) {
-					// convert ErrorException to error messages that will be shown to the user
-					$result = $this->hanndleExceptions($e);
-					$errors = array_merge($errors, [$result]);
+				// The tar tool for packaging is needed. Check this
+				// early on to avoid unnecessary export processing.
+				$result = $this->checkForTar();
+				if (is_array($result)) {
+					$this->errorNotification($request, $result);
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
 				}
-				
-				$fullyDeposited = true;
 
-				foreach ($galleys as $galley) {
+				// Get the journal target export directory.
+				// The data will be exported in this structure:
+				// dnb/<journalId>-<dateTime>/
+				$result = $this->getExportPath($journal->getId());
+				if (is_array($result)) {
+					$this->errorNotification($request, $result);
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
+				}
+				$journalExportPath = $result;
 
-					// store submission Id in galley object for internal use
-					$galley->setData('submissionId', $submission->getId());
+				$errors = $exportFilesNames = [];
+				$submissionDao = DAORegistry::getDAO('SubmissionDAO');
+				$genreDao = DAORegistry::getDAO('GenreDAO');
 
-					// check if it is a full text
-					$galleyFile = $galley->getFile();
-
-					// if $galleyFile is not set it might be a remote URL
-					if (!isset($galleyFile)) {
-						if ($galley->getRemoteURL() == null) continue;
-					}
-					
-					$exportPath = $journalExportPath;
-					$exportFile = '';
-					// Get the TAR package for the galley
-					$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
-					
-					// If errors occured, remove all created directories and return the errors
-					if (is_array($result)) {
-					    // If error occured add it to the list of errors
-					    $errors[] = $result;
-					    $fullyDeposited = false;
-					}
-					if ($this->_exportAction == EXPORT_ACTION_EXPORT) {
-						// Add the galley package to the list of all exported files
-						$exportFilesNames[] = $exportFile;
-					} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
-						// Deposit the galley
-						// $exportfile will be empty if XML file could not be created
-						$result = false;
-						if ($exportfile) {
-							$result = $this->depositXML($galley, $journal, $exportFile);
+				// For each selected article
+				foreach ($submissions as $submission) {
+					$issue = null;
+					$galleys = [];
+					$supplementaryGalleys = [];
+					// Get issue and galleys, and check if the article can be exported.
+					// canBeExported(...) returns galleys and supplementary galleys seperately
+					try {
+						if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
+						$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
+						// continue with other articles
+						continue;
 						}
+					} catch (ErrorException $e) {
+						// convert ErrorException to error messages that will be shown to the user
+						$result = $this->hanndleExceptions($e);
+						$errors = array_merge($errors, [$result]);
+					}
+					
+					$fullyDeposited = true;
+
+					foreach ($galleys as $galley) {
+
+						// store submission Id in galley object for internal use
+						$galley->setData('submissionId', $submission->getId());
+
+						// check if it is a full text
+						$galleyFile = $galley->getFile();
+
+						// if $galleyFile is not set it might be a remote URL
+						if (!isset($galleyFile)) {
+							if ($galley->getRemoteURL() == null) continue;
+						}
+						
+						$exportPath = $journalExportPath;
+						$exportFile = '';
+						// Get the TAR package for the galley
+						$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
+						
+						// If errors occured, remove all created directories and return the errors
 						if (is_array($result)) {
 							// If error occured add it to the list of errors
-							$errors = array_merge($errors, $result);
+							$errors[] = $result;
 							$fullyDeposited = false;
 						}
+						if ($this->_exportAction == EXPORT_ACTION_EXPORT) {
+							// Add the galley package to the list of all exported files
+							$exportFilesNames[] = $exportFile;
+						} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
+							// Deposit the galley
+							// $exportfile will be empty if XML file could not be created
+							$result = false;
+							if ($exportfile) {
+								$result = $this->depositXML($galley, $journal, $exportFile);
+							}
+							if (is_array($result)) {
+								// If error occured add it to the list of errors
+								$errors = array_merge($errors, $result);
+								$fullyDeposited = false;
+							}
+						}
+					}
+					
+					if ($fullyDeposited && $this->_exportAction == EXPORT_ACTION_DEPOSIT) {
+						// Update article status
+						$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
+						$submissionDao->updateObject($submission);
 					}
 				}
 				
-				if ($fullyDeposited && $this->_exportAction == EXPORT_ACTION_DEPOSIT) {
-					// Update article status
-					$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
-					$submissionDao->updateObject($submission);
+				if ($this->_exportAction == EXPORT_ACTION_EXPORT) {
+					if (!empty($errors)) {
+						// If there were some deposit errors, display them to the user
+						$this->errorNotification($request, $errors);	
+					} else {
+						// If there is more than one export package, package them all in a single .tar.gz
+						assert(count($exportFilesNames) >= 1);
+						if (count($exportFilesNames) > 1) {
+							$finalExportFileName = $journalExportPath . $this->getPluginSettingsPrefix() . '-export.tar.gz';
+							$this->tarFiles($journalExportPath, $finalExportFileName, $exportFilesNames, true);
+						} else {
+							$finalExportFileName = reset($exportFilesNames);
+						}
+						// Stream the results to the browser
+						// Starting from OJS 3.3 this would be the prefered way to stream a file for download:
+						// 	Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
+						// However, this function exits execution after dowload not allowing for clean up of the intermediate zip file
+						// We therfore copied the appropriate functions from OJS 3.2 FileManager
+						// It was suggested (Alec) to use OJS-queues for clean up which are supposed to come with OJS 3.4 
+						$finalExportFileName = Config::getVar('files', 'files_dir') . '/' . $finalExportFileName;
+						$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
+					}
+					// Remove the generated directories
+					Services::get('file')->fs->deleteDir($journalExportPath);
+					// redirect back to the right tab
+					// redirect causes a PHP Warning because headers were already sent by above downloadByPath call
+					// we disable warning before redirect not to spam error log
+					error_reporting(~E_WARNING);
+					$request->redirect(null, null, null, $path, null, $tab);
+				} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
+					if (!empty($errors)) {
+						// If there were some deposit errors, display them to the user
+						$this->errorNotification($request, $errors);
+					} else {
+						// Provide the user with some visual feedback that deposit was successful
+						$this->_sendNotification(
+							$request->getUser(),
+							$this->getDepositSuccessNotificationMessageKey(),
+							NOTIFICATION_TYPE_SUCCESS
+						);
+					}
+					// Remove the generated directories
+					Services::get('file')->fs->deleteDir($journalExportPath);
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
 				}
-			}
-			
-			if ( $this->_exportAction == EXPORT_ACTION_EXPORT) {
-			    if (!empty($errors)) {
-			        // If there were some deposit errors, display them to the user
-			        $this->errorNotification($request, $errors);	
-			    } else {
-    				// If there is more than one export package, package them all in a single .tar.gz
-    			    assert(count($exportFilesNames) >= 1);
-    				if (count($exportFilesNames) > 1) {
-    					$finalExportFileName = $journalExportPath . $this->getPluginSettingsPrefix() . '-export.tar.gz';
-    					$this->tarFiles($journalExportPath, $finalExportFileName, $exportFilesNames, true);
-    				} else {
-    					$finalExportFileName = reset($exportFilesNames);
-    				}
-       				// Stream the results to the browser
-					// Starting from OJS 3.3 this would be the prefered way to stream a file for download:
-					// 	Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
-					// However, this function exits execution after dowload not allowing for clean up of the intermediate zip file
-					// We therfore copied the appropriate functions from OJS 3.2 FileManager
-					// It was suggested (Alec) to use OJS-queues for clean up which are supposed to come with OJS 3.4 
-					$finalExportFileName = Config::getVar('files', 'files_dir') . '/' . $finalExportFileName;
-					$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
-				}
-			    // Remove the generated directories
-				Services::get('file')->fs->deleteDir($journalExportPath);
-			    // redirect back to the right tab
-				// redirect causes a PHP Warning because headers were already sent by above downloadByPath call
-				// we disable warning before redirect not to spam error log
-				error_reporting(~E_WARNING);
-				$request->redirect(null, null, null, $path, null, $tab);
-			} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
-				if (!empty($errors)) {
-					// If there were some deposit errors, display them to the user
-					$this->errorNotification($request, $errors);
-				} else {
-					// Provide the user with some visual feedback that deposit was successful
-					$this->_sendNotification(
-						$request->getUser(),
-						$this->getDepositSuccessNotificationMessageKey(),
-						NOTIFICATION_TYPE_SUCCESS
-					);
-				}
-				// Remove the generated directories
-				Services::get('file')->fs->deleteDir($journalExportPath);
-				// redirect back to the right tab
-				$request->redirect(null, null, null, $path, null, $tab);
-			}
-		} else {
-			return parent::executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation);
+				break;
+			case EXPORT_ACTION_MARKEXCLUDED:
+					foreach ($submissions as $object) {
+						switch($object->getData($this->getDepositStatusSettingName())) {
+							case EXPORT_STATUS_NOT_DEPOSITED:
+							case NULL:
+								$object->setData($this->getDepositStatusSettingName(), EXPORT_STATUS_MARKEXCLUDED);
+								break;
+							case EXPORT_STATUS_MARKEXCLUDED:
+								$object->setData($this->getDepositStatusSettingName(), NULL);
+								break;
+						}
+						$this->updateObject($object);
+					}
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
+				break;
+			default:
+				return parent::executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation);
 		}
 	}
 
@@ -1038,6 +1066,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 		assert(is_a($issue, 'Issue'));
 		if (!$issue->getPublished()) return false;
+
 		// get all galleys
 		$galleys = $submission->getGalleys();
 		
@@ -1342,6 +1371,35 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			throw new ErrorException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), REMOTE_IP_NOT_ALLOWED_EXCEPTION);
 			return false;
 		}
+	}
+
+	/**
+	 * Retrieve all unregistered articles.
+	 * @param $context Context
+	 * @return array
+	 */
+	function getUnregisteredArticles($context) {
+		$submissions = parent::getUnregisteredArticles($context);
+		return array_filter($submissions, array($this, 'filterMarkExcluded'));
+	}
+
+	/**
+	 * Get published submissions from submission IDs.
+	 * @param $submissionIds array
+	 * @param $context Context
+	 * @return array
+	 */
+	function getPublishedSubmissions($submissionIds, $context) {
+		$submissions = parent::getPublishedSubmissions($submissionIds, $context);
+		if ($this->_exportAction != EXPORT_ACTION_MARKEXCLUDED)
+		{
+			return array_filter($submissions, array($this, 'filterMarkExcluded'));
+		}
+		return $submissions;
+	}
+
+	function filterMarkExcluded($submission) {
+		return ($submission->getData($this->getDepositStatusSettingName()) !== EXPORT_STATUS_MARKEXCLUDED);
 	}
 
 }

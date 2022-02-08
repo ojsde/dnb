@@ -257,3 +257,15 @@ msgstr "{$param} Artikel zum exportieren gefunden."
 
 msgid "plugins.importexport.dnb.logFile.info.nocredentials"
 msgstr "Hotfolder Zugangsdaten nicht gesetzt. Eine automatische Ablieferung ist nicht möglich."
+
+msgid "plugins.importexport.dnb.exclude"
+msgstr "Ausschließen/Einschließen"
+
+msgid "plugins.importexport.dnb.status.excluded"
+msgstr "Ausgeschlossen"
+
+msgid "plugins.importexport.dnb.export.error.articleMarkedExcluded"
+msgstr "Der Artikel {$param} wurde nicht abgeliefert da er als "Ausgeschlossen" markiert ist."
+
+msgid "plugins.importexport.dnb.export.error.noNoArticlesToDeposit"
+msgstr "Keine Artikel zur Ablieferung gefunden."

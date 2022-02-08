@@ -16,7 +16,9 @@ Der Ablieferungsstatus eines Artikels kann einen der folgenden Zustände haben:
 
 ***Abgeliefert***: Der Artikel wurde über OJS in den DNB-Hotfolder abgeliefert.
 
-***Als registriert markiert***: Der Artikel wurde manuell als registriert markiert. Sie können Artikel als registriert markieren (s. Button *"Als registriert markieren"*), um anzuzeigen, dass dieser Artikel außerhalb von OJS an die DNB abgeliefert wurde, z.B. über das DNB Webformular."
+***Als registriert markiert***: Der Artikel wurde manuell als registriert markiert. Sie können Artikel als registriert markieren (s. Button *"Als registriert markieren"*), um anzuzeigen, dass dieser Artikel außerhalb von OJS an die DNB abgeliefert wurde, z.B. über das DNB Webformular. *Diese Einstellung wirkt sich nicht auf die Ablieferung mittles Cronjob aus und kann nicht rückgängig gemacht werden* (Originalimplementation von PKP)."
+
+***Ausgeschlossen***: Der Artikel wurde vom Export ausgeschlossen. Er wird werder beim Abliefern über die Benutzeroberflächen noch beim Abliefern durch einen Cronjob berücksichtigt. Diese Einstellung kann rückgängig gemacht werden.
 
 ## <a name="deposit"></a>Abliefern
 
