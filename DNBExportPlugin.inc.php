@@ -757,7 +757,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 							// Deposit the galley
 							// $exportfile will be empty if XML file could not be created
 							$result = false;
-							if ($exportfile) {
+							if ($exportFile) {
 								$result = $this->depositXML($galley, $journal, $exportFile);
 							}
 							if (is_array($result)) {
