@@ -85,7 +85,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			if ($issue) $cache->add($issue, null);
 		}
 
-		// abort export in case any URN is set on the submission level, this is a special case that has to be discussed with DNB and implemented differently in each case
+		// abort export in case any URN is set on the submission/article level, this is a special case that has to be discussed with DNB and implemented differently in each case
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
 		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
 		if (!empty($submissionURN)) {
@@ -315,19 +315,19 @@ class DNBXmlFilter extends NativeExportFilter {
 		
 		// issue data
 		// at least the year has to be provided
+		// 17.2.2022
+		//   - provide issue year if available, if not year of publication date of the issue
+		//   - remove day and month
 		$volume = $issue->getVolume();
 		$number = $issue->getNumber();
+		$year = $issue->getYear();
 		$issueDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', ' ');
 		if (!empty($volume)) $this->createSubfieldNode($doc, $issueDatafield773, 'g', 'volume:'.$volume);
 		if (!empty($number)) $this->createSubfieldNode($doc, $issueDatafield773, 'g', 'number:'.$number);
-		$issueDatePublished = $issue->getDatePublished();
-		$issueYearYYYY = date('Y', strtotime($issueDatePublished));
-		$issueYearYY = date('y', strtotime($issueDatePublished));
-		$issueMonth = date('m', strtotime($issueDatePublished));
-		$issueDay = date('d', strtotime($issueDatePublished));
-		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'day:'.$issueDay);
-		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'month:'.$issueMonth);
-		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'year:'.$issueYearYYYY);
+		if (empty($year)) {
+			$year = date('Y', strtotime($issue->getDatePublished()));
+		}
+		$this->createSubfieldNode($doc, $issueDatafield773, 'g', 'year:'.$year);
 		$this->createSubfieldNode($doc, $issueDatafield773, '7', 'nnas');
 
 		// journal data
