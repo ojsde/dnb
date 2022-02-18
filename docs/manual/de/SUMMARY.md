@@ -11,3 +11,4 @@
 * [Einstellungen](settings)
 * [Ablieferung von Artikeln](export)
 * [Installation des DNB Export Plugins](installation)
+* [Spezifikation Marc 21 für OJS Transferpakete](introduction/specification)
