@@ -229,7 +229,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		// this package will be delivered including supplementary material
 		if ($submission->getData('hasSupplementary')) {
 			// !!! Do not change this message without consultation of the DNB !!!
-			$datafield300 = $this->createDatafieldNode($doc, $recordNode, '300', ' ', '1');
+			$datafield300 = $this->createDatafieldNode($doc, $recordNode, '300', ' ', ' ');
 			$this->createSubfieldNode($doc, $datafield300, 'e', DNB_MSG_SUPPLEMENTARY);
 		}
 
@@ -318,9 +318,9 @@ class DNBXmlFilter extends NativeExportFilter {
 		// 17.2.2022
 		//   - provide issue year if available, if not year of publication date of the issue
 		//   - remove day and month
-		$volume = $issue->getVolume();
-		$number = $issue->getNumber();
-		$year = $issue->getYear();
+		$volume = $issue->getShowVolume()?$issue->getVolume():null;
+		$number = $issue->getShowNumber()?$issue->getNumber():null;
+		$year = $issue->getShowYear()?$issue->getYear():null;
 		$issueDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', ' ');
 		if (!empty($volume)) $this->createSubfieldNode($doc, $issueDatafield773, 'g', 'volume:'.$volume);
 		if (!empty($number)) $this->createSubfieldNode($doc, $issueDatafield773, 'g', 'number:'.$number);

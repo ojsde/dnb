@@ -138,7 +138,11 @@
                 $licenseURL = $this->getTextContent($xpathNative, $publication."//d:licenseUrl");
                 $volume = "volume:".$this->getTextContent($xpathNative, $publication."//d:volume");
                 $number = "number:".$this->getTextContent($xpathNative, $publication."//d:number");
-                $issueYear = "year:".$this->getTextContent($xpathNative, $publication."//d:year"); // day and month not available 
+                if ($this->getTextContent($xpathNative, $publication."//d:year")) {
+                    $issueYear = "year:".$this->getTextContent($xpathNative, $publication."//d:year");
+                } else {
+                    $issueYear = "NA"; // issue publication date not available in article XML (only in issue xml)
+                }
                 $publishedGalleys = $xpathNative->query($publication."[@status=3]"); // status 3 = "published"
                 $supplementaryGenres = $xpathNative->query("//d:submission_file[@genre != 'Artikeltext' and @genre != 'Multimedia' and @genre != 'Bild' and @genre != 'HTML_Stylesheet']");
 
@@ -312,13 +316,15 @@
                     self::assertTrue($value == $volume, "Issue Volume was: ".print_r($value, true)."\nValue should have been: ".$volume);
                     $value = $entries[1]->textContent;
                     self::assertTrue($value == $number, "Issue Number was: ".print_r($value, true)."\nValue should have been: ".$number);
-                    // issue day and month not available in native XML
+                    // issue day and month not available in native article XML
                     // $value = $entries[2]->textContent;
                     // self::assertTrue($value == $day, "Galley publication day was: ".print_r($value, true)."\nValue should have been: ".$day);
                     // $value = $entries[3]->textContent;
                     // self::assertTrue($value == $month, "Galley publication month was: ".print_r($value, true)."\nValue should have been: ".$month);
-                    $value = $entries[4]->textContent;
-                    self::assertTrue($value == $issueYear, "Issue publication year was: ".print_r($value, true)."\nValue should have been: ".$issueYear);
+                    if ($issueYear != "NA") {
+                        $value = $entries[2]->textContent;
+                        self::assertTrue($value == $issueYear, "Issue publication year was: ".print_r($value, true)."\nValue should have been: ".$issueYear);
+                    }
                 }
 
                 //  tag 773: journal data not provided in native xml export

@@ -69,7 +69,7 @@ Begleitmaterial vorhanden
 ---
 Feld | tag | ind1 | ind2 | code | Inhalt/Beschreibung
 -----|:---:|:----:|:----:|:----:|------------------
-datafield | 300 |  | 1 | e | 'Begleitmaterial'<br/><br/>Wenn diesem Artikel mindestens eine Begleitmaterialfahne zugeordnet ist.
+datafield | 300 |  |   | e | 'Begleitmaterial'<br/><br/>Wenn diesem Artikel mindestens eine Begleitmaterialfahne zugeordnet ist.
 
 Artikel-URN
 ---
