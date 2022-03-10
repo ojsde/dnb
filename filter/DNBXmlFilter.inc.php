@@ -275,7 +275,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			if (empty($copyrightNotice)) $copyrightNotice = $journal->getSetting('copyrightNotice', $journal->getPrimaryLocale());
 			if (!empty($copyrightNotice)) {
 				// link to the article view page where the copyright notice can be found
-			    $licenseURL = $request->url($journal->getPath(), 'article', 'view', array($article->getId()));
+			    $licenseURL = $request->url($journal->getPath(), 'article', 'view', array($submission->getId()));
 			}
 		}
 		if (!empty($licenseURL)) {
