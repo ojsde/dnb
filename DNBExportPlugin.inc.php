@@ -247,7 +247,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// => prepare additonal data and pass it as state
 				$publishedSubmissions = Services::get('submission')->getMany([
 					'contextId' => $context->getId(),
-					'status' => STATUS_PUBLISHED
+					'status' => STATUS_PUBLISHED,
+					// we cannot filter by issue id because the data collected here cannot be updated by the vue ListPanel
+					//'issueIds' => [$issue->getId()]
 				]);
 				$dnbStatus = [];
 				$nNotRegistered = 0;
