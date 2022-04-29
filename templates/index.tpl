@@ -97,17 +97,17 @@
                                         </span>
                                     </a>
                                     <br>
-                                    <a :href="components.submissions.dnbStatus[item.id]['publishedUrl']">
+                                    <a :href="item.issueUrl">
                                         <span>
-                                            {{ components.submissions.dnbStatus[item.id]['issueTitle'] }}
+                                            {{ item.issueTitle }}
                                         </span>
                                     </a>
                                 </div>
-                                <div v-if="components.submissions.dnbStatus[item.id]['supplementariesNotAssignable'] !== ''" class="listPanel__item">
+                                <div v-if="item.supplementariesNotAssignable !== ''">
                                     <icon
                                         icon="exclamation-triangle"
                                         class="has_tooltip"
-                                        :title="components.submissions.dnbStatus[item.id]['supplementariesNotAssignable']">
+                                        :title="item.supplementariesNotAssignable">
                                     </icon>
                                 </div>
                                 <div class="listPanel__item dnb_align_right">

@@ -227,7 +227,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// But currently the SubmissionListPanel title cannot be updated on filter requests and cannot render HTML -> no linking possible.
 				// For now we continue to use these values as item parameters (see below).
 				$issue = Services::get('issue')->get($issues[0]->getId());
-				$issueUrl = Services::get('issue')->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'];
 
 				$submissionsListPanel = new \APP\components\listPanels\SubmissionsListPanel(
 					'submissions',
@@ -257,30 +256,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				foreach ($publishedSubmissions as $submission) {
 					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
 
-					$documentGalleys = $supplementaryGalleys = [];
-					try {
-						$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys); 
-					} catch (ErrorException $e) {
-						// currently this only throws REMOTE_IP_NOT_ALLOWED_EXCEPTION
-						// we handle this during export
-					}
-					$msg = "";
-					if ($submission->getData('supplementaryNotAssignable')) {
-						$plural = AppLocale::getLocale() == "de_DE" ? "n" : "s";
-						$msg = __('plugins.importexport.dnb.warning.supplementaryNotAssignable',
-							array(
-								'nDoc' => count($documentGalleys),
-								'nSupp' => count($supplementaryGalleys),
-								'pSupp' => count($supplementaryGalleys) > 1 ? $plural : ""
-							));
-					}
-
 					$dnbStatus[(int)$submission->getId()] = [
 						'status' => $this->getStatusNames()[$status],
 						'statusConst' => empty($status)?EXPORT_STATUS_NOT_DEPOSITED:$status,
-						'issueTitle' => $issue->getLocalizedTitle(),
-						'publishedUrl' => $issueUrl,
-						'supplementariesNotAssignable' => $msg
 					];
 					if (empty($status)) $nNotRegistered++;
 				}
@@ -460,10 +438,35 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$items = [];
 				foreach ($submissionsIterator as $submission) {
 					// we need this to get the AuthorsString
-					$items[] = \Services::get('submission')->getBackendListProperties($submission, [
+					$item = \Services::get('submission')->getBackendListProperties($submission, [
 						'request' => $request,
 						'userGroups' => $userGroupDao->getByContextId($context->getId())->toArray()
 					]);
+					$issue = Services::get('issue')->get($submission->getCurrentPublication()->getData('issueId'));
+					$item['issueTitle'] = $issue->getLocalizedTitle();
+					$issueUrl = Services::get('issue')->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'];
+					$item['issueUrl'] = $issueUrl;
+
+					$documentGalleys = $supplementaryGalleys = [];
+					try {
+						$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys); 
+					} catch (ErrorException $e) {
+						// currently this only throws REMOTE_IP_NOT_ALLOWED_EXCEPTION
+						// we handle this during export
+					}
+					$msg = "";
+					if ($submission->getData('supplementaryNotAssignable')) {
+						$plural = AppLocale::getLocale() == "de_DE" ? "n" : "s";
+						$msg = __('plugins.importexport.dnb.warning.supplementaryNotAssignable',
+							array(
+								'nDoc' => count($documentGalleys),
+								'nSupp' => count($supplementaryGalleys),
+								'pSupp' => count($supplementaryGalleys) > 1 ? $plural : ""
+							));
+					}
+					$item['supplementariesNotAssignable'] = $msg;
+
+					$items[] = $item;
 				}
 				
 				// filter items by dnb status
