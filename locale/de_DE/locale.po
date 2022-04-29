@@ -121,7 +121,7 @@ msgid "plugins.importexport.dnb.deposit.confirm"
 msgstr "Sie haben schon abgelieferte Artikel ausgewählt. Sind Sie sicher, dass Sie mit der Ablieferung fortfahren möchten?"
 
 msgid "plugins.importexport.dnb.deposit.notice"
-msgstr "<strong>Hinweis:</strong> Die Ablieferung kann lange dauern. Bitte wählen Sie wenige Artikel aus und haben Sie Geduld, nachdem Sie den \"Abliefern\"-Knopf gedrückt haben. Sie werden benachrichtigt werden, wenn der Prozess fertig ist."
+msgstr "<strong>Hinweis</strong>: Beim ersten Aufruf der Seite wird nur die letzte Ausgabe angezeigt. Bitte wählen sie andere/zusätzliche Ausagben über das Menü "Filter" aus.</br><strong>Hinweis:</strong> Die Ablieferung kann lange dauern. Bitte wählen Sie wenige Artikel aus und haben Sie Geduld, nachdem Sie den \"Abliefern\"-Knopf gedrückt haben. Sie werden benachrichtigt werden, wenn der Prozess fertig ist."
 
 msgid "plugins.importexport.dnb.selectAll"
 msgstr "Alle auswählen"
@@ -269,3 +269,6 @@ msgstr "Der Artikel {$param} wurde nicht abgeliefert da er als "Ausgeschlossen" 
 
 msgid "plugins.importexport.dnb.export.error.noNoArticlesToDeposit"
 msgstr "Keine Artikel zur Ablieferung gefunden."
+
+msgid "plugins.importexport.dnb.deposit.error.noIssuesPublished"
+msgstr "Keine publizierten Ausgaben gefunden. Das DNB Export Plugin kann nur publizierte Ausgaben exportieren."

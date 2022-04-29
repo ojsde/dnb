@@ -133,7 +133,19 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function display($args, $request) {
 		$context = $request->getContext();
+
+		// if no issue is published go back to tools 
+		$issues = $this->getAllPublishedIssues($context);
+		if (count($issues) < 1) {
+			//show error
+			$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noIssuesPublished')));
+			// redirect back to exportSubmissions-tab
+			$path = array('plugin', $this->getName());
+			$request->redirectUrl($request->getRouter()->url($request, null, 'management', 'tools'));
+			return;
+		}
 		
+		// if no object is selected go back to export submission tab
 		if (!empty($args)) {
 			if ((($args[0] == 'exportSubmissions') ||
 				($args[0] == EXPORT_ACTION_EXPORT) || 
@@ -210,6 +222,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				);
 
 				// instantinate SubmissionListPanel
+
+				// It would be nice to have the issue title in the SubmissionListPanel title field.
+				// But currently the SubmissionListPanel title cannot be updated on filter requests and cannot render HTML -> no linking possible.
+				// For now we continue to use these values as item parameters (see below).
+				$issue = Services::get('issue')->get($issues[0]->getId());
+				$issueUrl = Services::get('issue')->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'];
+
 				$submissionsListPanel = new \APP\components\listPanels\SubmissionsListPanel(
 					'submissions',
 					__('common.publications'),
@@ -235,7 +254,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// fetching information for each submisson - this is one of the perfomance bottlenecks !
 				foreach ($publishedSubmissions as $submission) {
 					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
-					$issue = Services::get('issue')->get($submission->getCurrentPublication()->getData('issueId'));
 
 					$documentGalleys = $supplementaryGalleys = [];
 					try {
@@ -259,7 +277,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						'status' => $this->getStatusNames()[$status],
 						'statusConst' => empty($status)?EXPORT_STATUS_NOT_DEPOSITED:$status,
 						'issueTitle' => $issue->getLocalizedTitle(),
-						'publishedUrl' => Services::get('issue')->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'],
+						'publishedUrl' => $issueUrl,
 						'supplementariesNotAssignable' => $msg
 					];
 					if (empty($status)) $nNotRegistered++;
@@ -426,13 +444,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				break;
 			case 'get':
 				$context = $request->getContext();
-				
+
+				$issues = $this->getAllPublishedIssues($context);				
 				$submissionsIterator = \Services::get('submission')->getMany([
 					'contextId' => $context->getId(),
 					'status' => STATUS_PUBLISHED,
 					'searchPhrase' => $args['searchPhrase'],
 					'sectionIds' => isset($args['sectionIds'])?$args['sectionIds']:NULL,
-					'issueIds' => isset($args['issueIds'])?$args['issueIds']:NULL
+					'issueIds' => isset($args['issueIds'])?$args['issueIds']:$issues[0]->getId()
 				]);
 
 				$userGroupDao = DAORegistry::getDAO('UserGroupDAO'); /* @var $userGroupDao UserGroupDAO */
@@ -1372,6 +1391,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			throw new ErrorException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), REMOTE_IP_NOT_ALLOWED_EXCEPTION);
 			return false;
 		}
+	}
+
+	/**
+	 * Retrieve all publsihes issues.
+	 * @param $context Context
+	 */
+	function getAllPublishedIssues($context) {
+		$params['contextId'] = $context->getId();
+		$params['isPublished'] = true;
+		$issuesIterator = Services::get('issue')->getMany($params);
+		return  iterator_to_array($issuesIterator);
 	}
 
 	/**

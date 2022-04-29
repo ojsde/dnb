@@ -121,7 +121,7 @@ msgid "plugins.importexport.dnb.deposit.confirm"
 msgstr "You have selected already deposited articles. Are you sure you want to proceed with the deposit?"
 
 msgid "plugins.importexport.dnb.deposit.notice"
-msgstr "<strong>Note:</strong> The deposit can take a long time. So please choose only a few articles each time and be patient after clicking the \"Deposit\" button. You'll be notified when the process is completed."
+msgstr "<strong>Note</strong>: Initially only the last issue will be shown. Please select other/additional issues via the button "Filter".</br><strong>Note:</strong> The deposit can take a long time. So please choose only a few articles each time and be patient after clicking the \"Deposit\" button. You'll be notified when the process is completed."
 
 msgid "plugins.importexport.dnb.selectAll"
 msgstr "Select All"
@@ -269,3 +269,6 @@ msgstr "The article {$param} was not deposited because it is marked as "Excluded
 
 msgid "plugins.importexport.dnb.export.error.noNoArticlesToDeposit"
 msgstr "No articles found to deliver."
+
+msgid "plugins.importexport.dnb.deposit.error.noIssuesPublished"
+msgstr "No published issues found. DNB Export Plugin can only export published issues."
