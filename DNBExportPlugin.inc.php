@@ -171,7 +171,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$args[0] = 'exportSubmissions';
 		}
 
-		// settings form action url (needs to be set before parent::display initiliazes the settingd form)
+		// settings form action url (needs to be set before parent::display initiliazes the settings form)
 		$this->import("classes.form.DNBSettingsForm");
 		$this->_settingsFormURL = $request->getDispatcher()->url(
 			$request,
@@ -215,7 +215,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					__('common.publications'),
 					[
 						'apiUrl' => $apiUrl,
-						'count' => 100,
+						'count' => $context->getData('itemsPerPage'),
 						'getParams' => [
 							'contextId' => $context->getId(),
 							'status' => STATUS_PUBLISHED
@@ -232,11 +232,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				]);
 				$dnbStatus = [];
 				$nNotRegistered = 0;
+				// fetching information for each submisson - this is one of the perfomance bottlenecks !
 				foreach ($publishedSubmissions as $submission) {
 					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
 					$issue = Services::get('issue')->get($submission->getCurrentPublication()->getData('issueId'));
-					
-					$galleys = $submission->getGalleys();
 
 					$documentGalleys = $supplementaryGalleys = [];
 					try {
@@ -460,7 +459,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				});
 
 				$data['itemsMax'] = count($items);
-				$data['items'] = array_values($items);
+				$itemsPerPage = $context->getData('itemsPerPage');
+				$data['items'] = array_values(array_slice($items,$args['offset'],$itemsPerPage));
 
 				import('lib.pkp.classes.core.APIResponse');
 				$response = new APIResponse();
