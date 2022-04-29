@@ -256,10 +256,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				foreach ($publishedSubmissions as $submission) {
 					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
 
-					$dnbStatus[(int)$submission->getId()] = [
-						'status' => $this->getStatusNames()[$status],
-						'statusConst' => empty($status)?EXPORT_STATUS_NOT_DEPOSITED:$status,
-					];
 					if (empty($status)) $nNotRegistered++;
 				}
 
@@ -334,9 +330,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$state = [
 					'components' => [
 						FORM_DNB_SETTINGS => $settingsFormConfig,
-						'submissions' => array_merge(
-								$submissionsConfig,
-								['dnbStatus' => $dnbStatus])
+						'submissions' => $submissionsConfig
 					],
 				];		
 				$templateMgr->setState($state);
@@ -465,6 +459,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 							));
 					}
 					$item['supplementariesNotAssignable'] = $msg;
+
+					$item['dnbStatus'] = $this->getStatusNames()[$item['dnb::status']];
+					// the vue templates cannot handle the 'dnb::status' parameter name
+					// so we need to dupilcate this value
+					$item['dnbStatusConst'] = empty($item['dnb::status'])?EXPORT_STATUS_NOT_DEPOSITED:$item['dnb::status'];
 
 					$items[] = $item;
 				}

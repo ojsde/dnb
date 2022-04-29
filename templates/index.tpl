@@ -111,16 +111,16 @@
                                     </icon>
                                 </div>
                                 <div class="listPanel__item dnb_align_right">
-                                    <button v-if="components.submissions.dnbStatus[item.id]['statusConst'] !== '{$smarty.const.EXPORT_STATUS_NOT_DEPOSITED}'" 
+                                    <button v-if="item.dnbStatusConst !== '{$smarty.const.EXPORT_STATUS_NOT_DEPOSITED}'" 
                                         class="listPanel__item pkpBadge dnb_align_right dnb_deposited">
                                         <template>
-                                            {{ components.submissions.dnbStatus[item.id]['status'] }}
+                                            {{ item.dnbStatus }}
                                         </template>
                                     </button>
                                     <button v-else 
                                         class="listPanel__item pkpBadge dnb_align_right dnb_not_deposited">
                                         <template>
-                                            {{ components.submissions.dnbStatus[item.id]['status'] }}
+                                            {{ item.dnbStatus }}
                                         </template>
                                     </button>
                                 </div>
