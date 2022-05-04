@@ -255,7 +255,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// fetching information for each submisson - this is one of the perfomance bottlenecks !
 				foreach ($publishedSubmissions as $submission) {
 					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
-
 					if (empty($status)) $nNotRegistered++;
 				}
 
@@ -436,6 +435,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						'request' => $request,
 						'userGroups' => $userGroupDao->getByContextId($context->getId())->toArray()
 					]);
+					
 					$issue = Services::get('issue')->get($submission->getCurrentPublication()->getData('issueId'));
 					$item['issueTitle'] = $issue->getLocalizedTitle();
 					$issueUrl = Services::get('issue')->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'];
