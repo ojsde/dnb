@@ -43,6 +43,15 @@ Im Managementbereich von OJS (Einstellungen -> Website -> Plugins -> „Ein neue
   - `php tools/upgrade.php upgrade` oder
   - `php tools/installPluginVersion.php plugins/importexport/dnb/version.xml`
 
+**Hinzufügen des DNB SFTP-Servers zu den SSH known_hosts**
+  (nur bei Erstinstallation auf einem Server)
+
+Damit das DNB-Plugin Transferpakete an die DNB übertragen kann muss eine SSH-Verbindung aufgebaut werden. Dazu muss der DNB-Server zur known_hosts-Datei Ihres Webserver-Accounts hinzugefügt werden. Eine einfache Methode dies zu erreichen ist, einmalig eine Verbindung zum DNB-Server über die Kommandozeile Ihres OJS-Servers herzustellen. Benutzen Sie dazu folgenden Befehl (Debian):
+
+ - `sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>`
+
+Ersetzen Sie `<username>` und `<folder ID>` durch die Ihnen von der DNB mitgeteilen Login-Daten.
+
 
 ## <a name="cronjob"></a>Cronjob für automatische Ablieferung einrichten
 
