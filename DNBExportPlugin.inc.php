@@ -424,6 +424,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					'status' => STATUS_PUBLISHED,
 					'searchPhrase' => $args['searchPhrase'],
 					'sectionIds' => isset($args['sectionIds'])?$args['sectionIds']:NULL,
+					# using array_map to grab all issue IDs introduces performance drawbacks, only last issue is shown per default
+					# 'issueIds' => isset($args['issueIds'])?$args['issueIds']:array_map(function ($issue) {return $issue->getId();}, $issues)
 					'issueIds' => isset($args['issueIds'])?$args['issueIds']:$issues[0]->getId()
 				]);
 
