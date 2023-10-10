@@ -17,14 +17,14 @@
 			symbolic="galley=>dnb-xml"
 			displayName="plugins.importexport.dnb.displayName"
 			description="plugins.importexport.dnb.description"
-			inputType="class::classes.article.ArticleGalley"
+			inputType="class::classes.article.Galley"
 			outputType="xml::schema(http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd)" />
 	</filterGroups>
 	<filters>
 		<!-- DNB XML galley output -->
 		<filter
 			inGroup="galley=>dnb-xml"
-			class="plugins.importexport.dnb.filter.DNBXmlFilter"
+			class="APP\plugins\importexport\dnb\filter\DNBXmlFilter"
 			isTemplate="0" />
 	</filters>
 </filterConfig>

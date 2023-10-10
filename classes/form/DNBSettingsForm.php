@@ -11,6 +11,10 @@
  *
  * @brief Form for journal managers to setup DNB plugin
  */
+
+namespace APP\plugins\importexport\dnb\classes\form;
+
+use APP\core\Application;
 use \PKP\components\forms\FormComponent;
 use \PKP\components\forms\FieldText;
 use \PKP\components\forms\FieldOptions;

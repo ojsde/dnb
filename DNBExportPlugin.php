@@ -13,9 +13,26 @@
  * @brief DNB export plugin
  */
 
-import('classes.plugins.PubObjectsExportPlugin');
+namespace APP\plugins\importexport\dnb;
 
+use APP\core\Application;
+use APP\plugins\PubObjectsExportPlugin;
+use PKP\plugins\Hook;
+use APP\core\Services;
+use APP\facades\Repo;
+use APP\template\TemplateManager;
+use PKP\config\Config;
+use PKP\db\DAORegistry;
+use APP\submission\Submission;
+use PKP\core\APIResponse;
+// use PKP\filter\FilterDAO;
+// use PKP\notification\PKPNotification;
 use APP\components\forms\FieldSelectIssues;
+use DNBSettingsForm;
+use APP\plugins\importexport\dnb\DNBExportDeployment;
+use PKP\plugins\importexport\PKPImportExportDeployment;
+use APP\plugins\importexport\dnb\filter\DNBXmlFilter;
+
 
 define('DEBUG', false);
 
@@ -53,13 +70,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc Plugin::register()
 	 */
 	function register($category, $path, $mainContextId = null) {
-		if (!parent::register($category, $path, $mainContextId)) return false;
+		if (!parent::register($category, $path, $mainContextId)) {
+			// TODO @RS temporary fix, this should be handled in PubObjectsExportPlugin
+			if (!Application::isUnderMaintenance()) {
+				return false;
+			}
+		}
 
-		AppLocale::requireComponents(LOCALE_COMPONENT_APP_MANAGER);
-		$this->addLocaleData();
+		Hook::add('Schema::get::submission', array($this, 'addToSchema'));
 
-		HookRegistry::register('Schema::get::submission', array($this, 'addToSchema'));
-		HookRegistry::register('Submission::getBackendListProperties::properties', array($this, 'addBackendProperties'));
+		// TODO @RS hook doesn't exist anymore
+		// Hook::add('Submission::getBackendListProperties::properties', array($this, 'addBackendProperties'));
 
 		return true;
 	}	
@@ -135,7 +156,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$context = $request->getContext();
 
 		// if no issue is published go back to tools 
-		$issues = $this->getAllPublishedIssues($context);
+		$issues = $this->getPublishedIssues(NULL, $context);
 		if (count($issues) < 1) {
 			//show error
 			$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noIssuesPublished')));
@@ -184,7 +205,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 
 		// settings form action url (needs to be set before parent::display initiliazes the settings form)
-		$this->import("classes.form.DNBSettingsForm");
 		$this->_settingsFormURL = $request->getDispatcher()->url(
 			$request,
 			ROUTE_COMPONENT,
@@ -226,7 +246,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// It would be nice to have the issue title in the SubmissionListPanel title field.
 				// But currently the SubmissionListPanel title cannot be updated on filter requests and cannot render HTML -> no linking possible.
 				// For now we continue to use these values as item parameters (see below).
-				$issue = Services::get('issue')->get($issues[0]->getId());
+				$issue = Repo::issue()->get($issues[1]->getId());
 
 				$submissionsListPanel = new \APP\components\listPanels\SubmissionsListPanel(
 					'submissions',
@@ -244,12 +264,27 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 				// we can not hook into the API call because we can not register when API is called from SubmissionListPanel
 				// => prepare additonal data and pass it as state
-				$publishedSubmissions = Services::get('submission')->getMany([
-					'contextId' => $context->getId(),
-					'status' => STATUS_PUBLISHED,
-					// we cannot filter by issue id because the data collected here cannot be updated by the vue ListPanel
-					//'issueIds' => [$issue->getId()]
-				]);
+
+				// OJS 3.4
+				// we cannot use PubObjectsExportPlugin::getPublishedSubmissions because its always filtering by submission IDs
+				// $publishedSubmissions = $this->getPublishedSubmissions([], $context);
+				
+				// we use the Repo facade directly
+				$publishedSubmissions = Repo::submission()
+					->getCollector()
+					->filterByContextIds([$context->getId()])
+					->filterByStatus([Submission::STATUS_PUBLISHED])
+					->getMany()
+					->toArray();
+
+				// OJS 3.3
+				// $publishedSubmissions = Services::get('submission')->getMany([
+				// 	'contextId' => $context->getId(),
+				// 	'status' => STATUS_PUBLISHED,
+				// 	// we cannot filter by issue id because the data collected here cannot be updated by the vue ListPanel
+				// 	//'issueIds' => [$issue->getId()]
+				// ]);
+
 				$dnbStatus = [];
 				$nNotRegistered = 0;
 				// fetching information for each submisson - this is one of the perfomance bottlenecks !
@@ -417,31 +452,36 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				break;
 			case 'get':
 				$context = $request->getContext();
+				$statusName = $this->getDepositStatusSettingName();
 
-				$issues = $this->getAllPublishedIssues($context);				
-				$submissionsIterator = \Services::get('submission')->getMany([
-					'contextId' => $context->getId(),
-					'status' => STATUS_PUBLISHED,
+				$issues = $this->getPublishedIssues(NULL, $context);
+				$submissionsIterator = Repo::submission()
+				->getCollector()
+				->filterByContextIds([$context->getId()])
+				->filterByIssueIds(isset($args['issueIds'])?$args['issueIds']:[$issues[1]->getId()])
+				->filterByStatus([Submission::STATUS_PUBLISHED])
+				->getMany([
 					'searchPhrase' => $args['searchPhrase'],
 					'sectionIds' => isset($args['sectionIds'])?$args['sectionIds']:NULL,
-					# using array_map to grab all issue IDs introduces performance drawbacks, only last issue is shown per default
-					# 'issueIds' => isset($args['issueIds'])?$args['issueIds']:array_map(function ($issue) {return $issue->getId();}, $issues)
-					'issueIds' => isset($args['issueIds'])?$args['issueIds']:$issues[0]->getId()
 				]);
 
-				$userGroupDao = DAORegistry::getDAO('UserGroupDAO'); /* @var $userGroupDao UserGroupDAO */
+				$userGroups = Repo::userGroup()->getCollector()->filterByContextIds([$context->getId()])->getMany();
 				$items = [];
 				foreach ($submissionsIterator as $submission) {
-					// we need this to get the AuthorsString
-					$item = \Services::get('submission')->getBackendListProperties($submission, [
-						'request' => $request,
-						'userGroups' => $userGroupDao->getByContextId($context->getId())->toArray()
-					]);
 					
-					$issue = Services::get('issue')->get($submission->getCurrentPublication()->getData('issueId'));
+					$issue = Repo::issue()->get($submission->getCurrentPublication()->getData('issueId'));
 					$item['issueTitle'] = $issue->getLocalizedTitle();
-					$issueUrl = Services::get('issue')->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'];
-					$item['issueUrl'] = $issueUrl;
+
+					// TODO @RS
+					// $issueUrl = Repo::issue()->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'];
+					$item['issueUrl'] = $request->getDispatcher()->url(
+                        $request,
+                        Application::ROUTE_PAGE,
+                        $context->getPath(),
+                        'issue',
+                        'view',
+                        $issue->getId()
+                    );
 
 					$documentGalleys = $supplementaryGalleys = [];
 					try {
@@ -462,21 +502,30 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					}
 					$item['supplementariesNotAssignable'] = $msg;
 
-					$item['dnbStatus'] = $this->getStatusNames()[$item['dnb::status']];
+					$item['id'] = $submission->getData('id');
+					$currentPublication = $submission->getCurrentPublication();
+					$item['publication']['id'] = $currentPublication->getData('id');
+					$authorUserGroups = Repo::userGroup()->getCollector()->filterByRoleIds([\PKP\security\Role::ROLE_ID_AUTHOR])->filterByContextIds([$context->getId()])->getMany();
+                    $item['publication']['authorsString'] = $currentPublication->getAuthorString($authorUserGroups);
+            		$item['publication']['fullTitle'] = $currentPublication->getLocalizedFullTitle('html');
+
+					$item[$statusName] = $submission->getData($this->getDepositStatusSettingName())?:EXPORT_STATUS_NOT_DEPOSITED;
+					$item['dnbStatus'] = $this->getStatusNames()[$item[$statusName]];
 					// the vue templates cannot handle the 'dnb::status' parameter name
 					// so we need to dupilcate this value
-					$item['dnbStatusConst'] = empty($item['dnb::status'])?EXPORT_STATUS_NOT_DEPOSITED:$item['dnb::status'];
+					$item['dnbStatusConst'] = empty($item[$statusName])?EXPORT_STATUS_NOT_DEPOSITED:$item[$statusName];
 
 					$items[] = $item;
 				}
 				
 				// filter items by dnb status
 				$items = array_filter($items, function ($item) use ($args) {
-					if (isset($args[$this->getPluginSettingsPrefix().'::status'])) {
+					$statusName = $this->getDepositStatusSettingName();
+					if (isset($args[$statusName])) {
 						$result = false;
-						foreach ($args[$this->getPluginSettingsPrefix().'::status'] as $status) {
-							if ($item[$this->getPluginSettingsPrefix().'::status'] == NULL && $status == EXPORT_STATUS_NOT_DEPOSITED) $result = $result || true;
-							$result = $result || $item[$this->getPluginSettingsPrefix().'::status'] == $status;
+						foreach ($args[$statusName] as $status) {
+							if ($item[$statusName] == NULL && $status == EXPORT_STATUS_NOT_DEPOSITED) $result = $result || true;
+							$result = $result || $item[$statusName] == $status;
 						}
 						return $result;
 					}
@@ -487,7 +536,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$itemsPerPage = $context->getData('itemsPerPage');
 				$data['items'] = array_values(array_slice($items,$args['offset'],$itemsPerPage));
 
-				import('lib.pkp.classes.core.APIResponse');
 				$response = new APIResponse();
 
 				$app = new \Slim\App();
@@ -607,14 +655,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc PubObjectsExportPlugin::getExportDeploymentClassName()
 	 */
 	function getExportDeploymentClassName() {
-		return 'DNBExportDeployment';
+		return '\APP\plugins\importexport\dnb\DNBExportDeployment';
 	}
 
 	/**
 	 * @copydoc PubObjectsExportPlugin::getSettingsFormClassName()
 	 */
 	function getSettingsFormClassName() {
-		return 'DNBSettingsForm';
+		return '\APP\plugins\importexport\dnb\classes\form\DNBSettingsForm';
 	}
 
 	/**
@@ -670,7 +718,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_URL, SFTP_SERVER.$folderId.'/'.basename($filename));
 		curl_setopt($curlCh, CURLOPT_PORT, SFTP_PORT);
 		curl_setopt($curlCh, CURLOPT_USERPWD, "$username:$password");
-		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename)); // Todo @RS Config::getVar('files', 'files_dir') . '/' .
+		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename)); // TODO @RS Config::getVar('files', 'files_dir') . '/' .
 		curl_setopt($curlCh, CURLOPT_INFILE, $fh);
 
 		$response = curl_exec($curlCh);
@@ -692,8 +740,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc PubObjectsExportPlugin::executeExportAction()
 	 */
 
-	function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = true) {
-
+	public function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null, $shouldRedirect = true)
+    {
 		$journal = $request->getContext();
 		$path = array('plugin', $this->getName());
 		$tab = "exportSubmissions-tab";
@@ -725,7 +773,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$journalExportPath = $result;
 
 				$errors = $exportFilesNames = [];
-				$submissionDao = DAORegistry::getDAO('SubmissionDAO');
+				// TODO @RS
+				// $submissionDao = DAORegistry::getDAO('SubmissionDAO');
 				$genreDao = DAORegistry::getDAO('GenreDAO');
 
 				// For each selected article
@@ -794,7 +843,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					if ($fullyDeposited && $this->_exportAction == EXPORT_ACTION_DEPOSIT) {
 						// Update article status
 						$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
-						$submissionDao->updateObject($submission);
+						// TODO @RS 
+						// $submissionDao->updateObject($submission);
 					}
 				}
 				
@@ -821,7 +871,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
 					}
 					// Remove the generated directories
-					Services::get('file')->fs->deleteDir($journalExportPath);
+					Services::get('file')->fs->deleteDirectory($journalExportPath);
 					// redirect back to the right tab
 					// redirect causes a PHP Warning because headers were already sent by above downloadByPath call
 					// we disable warning before redirect not to spam error log
@@ -1023,10 +1073,18 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 
 		// copy galley files
-		if (!Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath)) {
+		try {
+			Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath);
+		} catch (FilesystemException | UnableToCopyFile $exception) {
+			// handle the error
 			$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy.param', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
 			return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
 		}
+		
+		// if (!Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath)) {
+		// 	$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy.param', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
+		// 	return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
+		// }
 
 		// remove temporary file
 		if (!empty($temporaryFilename))	Services::get('file')->fs->deleteDir($temporaryFilename);
@@ -1056,7 +1114,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		}
 		if ($exportContentDir) $exportPath .= $exportContentDir;
 		if (!Services::get('file')->fs->has($exportPath)) {
-			Services::get('file')->fs->createDir($exportPath);
+			Services::get('file')->fs->createDirectory($exportPath);
 		}
 		if (!Services::get('file')->fs->has($exportPath)) {
 			$errors = array(
@@ -1080,16 +1138,19 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		if (!$cache->isCached('articles', $submission->getId())) {
 			$cache->add($submission, null);
 		}
-		$issueDao = DAORegistry::getDAO('IssueDAO');
-		$issueId = $issueDao->getBySubmissionId($submission->getId())->getId();
+		
+		$issue = Repo::issue()->getBySubmissionId($submission->getId());
+		$issueId = $issue->getId();
 
-		if ($cache->isCached('issues', $issueId)) {
-			$issue = $cache->get('issues', $issueId);
-		} else {
-			$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
-			$issue = $issueDao->getById($issueId, $submission->getContextId());
-			if ($issue) $cache->add($issue, null);
-		}
+		// TODO @RS we used to cache this -> still necessary ?
+
+		// if ($cache->isCached('issues', $issueId)) {
+		// 	$issue = $cache->get('issues', $issueId);
+		// } else {
+		// 	$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
+		// 	$issue = $issueDao->getById($issueId, $submission->getContextId());
+		// 	if ($issue) $cache->add($issue, null);
+		// }
 		assert(is_a($issue, 'Issue'));
 		if (!$issue->getPublished()) return false;
 
@@ -1397,17 +1458,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			throw new ErrorException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), REMOTE_IP_NOT_ALLOWED_EXCEPTION);
 			return false;
 		}
-	}
-
-	/**
-	 * Retrieve all publsihes issues.
-	 * @param $context Context
-	 */
-	function getAllPublishedIssues($context) {
-		$params['contextId'] = $context->getId();
-		$params['isPublished'] = true;
-		$issuesIterator = Services::get('issue')->getMany($params);
-		return  iterator_to_array($issuesIterator);
 	}
 
 	/**

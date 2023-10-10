@@ -88,12 +88,12 @@
                                 </div>
                                 <div class="listPanel__item">
                                     <span class="dnb_authors">
-                                        {{ (item.publications.find(p => p.id == item.currentPublicationId).authorsString) }}
+                                        {{ item.publication.authorsString }}
                                     </span>
                                     <br>
                                     <a :href="item.urlWorkflow">
                                         <span>
-                                            {{ localize(item.publications.find(p => p.id == item.currentPublicationId).fullTitle) }}
+                                            {{ item.publication.fullTitle }}
                                         </span>
                                     </a>
                                     <br>

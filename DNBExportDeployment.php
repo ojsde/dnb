@@ -17,6 +17,8 @@
  * application's specifics.
  */
 
+namespace APP\plugins\importexport\dnb;
+
 // XML attributes
 define('DNB_XMLNS' , 'http://www.loc.gov/MARC21/slim');
 define('DNB_XMLNS_XSI' , 'http://www.w3.org/2001/XMLSchema-instance');

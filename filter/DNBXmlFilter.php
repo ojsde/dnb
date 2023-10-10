@@ -13,7 +13,13 @@
  * @brief Class that converts an Article to a DNB XML document.
  */
 
-import('lib.pkp.plugins.importexport.native.filter.NativeExportFilter');
+namespace APP\plugins\importexport\dnb\filter;
+
+use APP\core\Application;
+use PKP\db\DAORegistry;
+use PKP\filter\PersistableFilter;
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
+
 define('XML_NON_VALID_CHARCTERS_EXCEPTION', 100);
 define('FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
 define('URN_SET_EXCEPTION', 101);
@@ -22,7 +28,7 @@ define('MESSAGE_URN_SET','An URN has been set.'); // @RS refine
 define('DNB_MSG_SUPPLEMENTARY','Begleitmaterial');
 define('DNB_MSG_SUPPLEMENTARY_AMBIGUOUS','Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht');
 
-class DNBXmlFilter extends NativeExportFilter {
+class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportFilter {
 	/**
 	 * Constructor
 	 * @param $filterGroup FilterGroup
@@ -38,8 +44,8 @@ class DNBXmlFilter extends NativeExportFilter {
 	/**
 	 * @copydoc PersistableFilter::getClassName()
 	 */
-	function getClassName() {
-		return 'plugins.importexport.dnb.filter.DNBXmlFilter';
+	function getClassName(): string {
+		return 'APP\plugins\importexport\dnb\filter\DNBXmlFilter';
 	}
 
 	//
@@ -52,7 +58,7 @@ class DNBXmlFilter extends NativeExportFilter {
 	 */
 	function &process(&$pubObject) {
 		// Create the XML document
-		$doc = new DOMDocument('1.0', 'utf-8');
+		$doc = new \DOMDocument('1.0', 'utf-8');
 		$doc->preserveWhiteSpace = false;
 		$doc->formatOutput = true;
 

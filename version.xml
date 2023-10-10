@@ -13,6 +13,6 @@
 <version>
 	<application>dnb</application>
 	<type>plugins.importexport</type>
-	<release>1.5.0</release>
-	<date>2022-5-4</date>
+	<release>1.6.0</release>
+	<date>2023-10-5</date>
 </version>
