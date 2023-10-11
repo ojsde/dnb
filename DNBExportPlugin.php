@@ -19,6 +19,7 @@ use APP\core\Application;
 use APP\plugins\PubObjectsExportPlugin;
 use PKP\plugins\Hook;
 use APP\core\Services;
+use PKP\i18n\LocaleConversion;
 use APP\facades\Repo;
 use APP\template\TemplateManager;
 use PKP\config\Config;
@@ -32,9 +33,10 @@ use DNBSettingsForm;
 use APP\plugins\importexport\dnb\DNBExportDeployment;
 use PKP\plugins\importexport\PKPImportExportDeployment;
 use APP\plugins\importexport\dnb\filter\DNBXmlFilter;
+use PKP\core\PKPString;
 
 
-define('DEBUG', false);
+define('DEBUG', true);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 define('ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
@@ -556,7 +558,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$urlPart = join('/', $args);
 		$filename = $urlPart . '.md';
 
-		$language = AppLocale::getIso1FromLocale(AppLocale::getLocale());
+		$language = LocaleConversion::getIso1FromLocale(AppLocale::getLocale());
 		$summaryFile = $path . $language . '/SUMMARY.md';
 
 		// Use the summary document to find next/previous links.
@@ -890,7 +892,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						);
 					}
 					// Remove the generated directories
-					Services::get('file')->fs->deleteDir($journalExportPath);
+					Services::get('file')->fs->deleteDirectory($journalExportPath);
 					// redirect back to the right tab
 					$request->redirect(null, null, null, $path, null, $tab);
 				}

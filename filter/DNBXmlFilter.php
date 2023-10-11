@@ -16,9 +16,13 @@
 namespace APP\plugins\importexport\dnb\filter;
 
 use APP\core\Application;
+use APP\facades\Repo;
+use PKP\i18n\LocaleConversion;
 use PKP\db\DAORegistry;
 use PKP\filter\PersistableFilter;
 use PKP\plugins\importexport\native\filter\NativeExportFilter;
+use PKP\core\PKPString;
+use APP\core\Services;
 
 define('XML_NON_VALID_CHARCTERS_EXCEPTION', 100);
 define('FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
@@ -77,17 +81,17 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		if ($cache->isCached('articles', $submissionId)) {
 			$submission = $cache->get('articles', $submissionId);
 		} else {
-			$submission = Services::get('submission')->get($submissionId);
+			$submission = Repo::submission()->get($submissionId);
 			if ($submission) $cache->add($submission, null);
 		}
+		
+		// TODO @RS verify caching
+		$issue = Repo::issue()->getBySubmissionId($submission->getId());
+		$issueId = $issue->getId();
 
-		$issueDao = DAORegistry::getDAO('IssueDAO');
-		$issueId = $issueDao->getBySubmissionId($submission->getId())->getId();		
 		if ($cache->isCached('issues', $issueId)) {
 			$issue = $cache->get('issues', $issueId);
 		} else {
-			$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
-			$issue = $issueDao->getById($issueId, $journal->getId());
 			if ($issue) $cache->add($issue, null);
 		}
 
@@ -99,7 +103,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		};
 		
 		// Data we will need later
-		$language = AppLocale::get3LetterIsoFromLocale($galley->getLocale());
+		$language = LocaleConversion::get3LetterIsoFromLocale($galley->getLocale());
 		$datePublished = $submission->getDatePublished();
 		if (!$datePublished) $datePublished = $issue->getDatePublished();
 		assert(!empty($datePublished));
@@ -107,10 +111,20 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		$yearYY = date('y', strtotime($datePublished));
 		$month = date('m', strtotime($datePublished));
 		$day = date('d', strtotime($datePublished));
-		$contributors = $submission->getAuthors();
 
-		// extract submission authors
-		$authors = array_filter($contributors, array($this, '_filterAuthors'));
+		// get contributers and split into authors and translators
+		$publication = $submission->getCurrentPublication();
+		$contributors = $publication->getData('authors');
+		foreach ($contributors as $contributor) {
+			$nameLocalKey = $contributor->getUserGroup()->getData('nameLocaleKey');
+			if ($nameLocalKey == 'default.groups.name.author') {
+				$authors[] = $contributor;
+			} elseif ($nameLocalKey == 'default.groups.name.translator') {
+				$translators[] = $contributor;
+			};
+		}
+
+		// get primary author
 		if (is_array($authors) && !empty($authors)) {
 			// get and remove first author from the array
 			// so the array can be used later in the field 700 1 _
@@ -119,9 +133,6 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		if (!$firstAuthor) {
 			throw new ErrorException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
 		}
-
-		// extract submission translators
-		$translators = array_filter($contributors, array($this, '_filterTranslators'));
 		
 		// is open access
 		$openAccess = false;
@@ -352,7 +363,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		$galleyFile = $galley->getFile();
 		if (isset($galleyFile)) {
 		    # galley is a local file
-		    $fileSize = Services::get('file')->fs->getSize($galleyFile->getData('path'));
+		    $fileSize = Services::get('file')->fs->fileSize($galleyFile->getData('path'));
 		} else {
 		    # galley is a remote URL and we stored the filesize before
 		    $fileSize = $galley->getData('fileSize');
@@ -361,26 +372,6 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		if ($openAccess) $this->createSubfieldNode($doc, $datafield856, 'z', 'Open Access');
 
 		return $doc;
-	}
-
-	/**
-	 * Check if the contributor is an author resistered with the journal.
-	 * @param $contributor Author
-	 * @return boolean
-	 */
-	function _filterAuthors($contributor) {
-	    $userGroup = $contributor->getUserGroup();
-	    return $userGroup->getData('nameLocaleKey') == 'default.groups.name.author';
-	}
-
-	/**
-	 * Check if the contributor is a translator resistered with the journal.
-	 * @param $contributor Author
-	 * @return boolean
-	 */
-	function _filterTranslators($contributor) {
-	    $userGroup = $contributor->getUserGroup();
-	    return $userGroup->getData('nameLocaleKey') == 'default.groups.name.translator';
 	}
 	
 	/**
