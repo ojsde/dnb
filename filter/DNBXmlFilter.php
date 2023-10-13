@@ -23,6 +23,7 @@ use PKP\filter\PersistableFilter;
 use PKP\plugins\importexport\native\filter\NativeExportFilter;
 use PKP\core\PKPString;
 use APP\core\Services;
+use APP\plugins\importexport\dnb\DNBPluginException;
 
 define('XML_NON_VALID_CHARCTERS_EXCEPTION', 100);
 define('FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
@@ -99,7 +100,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
 		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
 		if (!empty($submissionURN)) {
-		    throw new ErrorException(MESSAGE_URN_SET, URN_SET_EXCEPTION);
+		    throw new DNBPluginException(MESSAGE_URN_SET, URN_SET_EXCEPTION);
 		};
 		
 		// Data we will need later
@@ -115,6 +116,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		// get contributers and split into authors and translators
 		$publication = $submission->getCurrentPublication();
 		$contributors = $publication->getData('authors');
+		$authors = $translators = [];
 		foreach ($contributors as $contributor) {
 			$nameLocalKey = $contributor->getUserGroup()->getData('nameLocaleKey');
 			if ($nameLocalKey == 'default.groups.name.author') {
@@ -131,7 +133,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$firstAuthor = array_shift($authors);
 		}
 		if (!$firstAuthor) {
-			throw new ErrorException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
+			throw new DNBPluginException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
 		}
 		
 		// is open access
@@ -424,7 +426,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
     	if ($res != 0) {
 		    // libxml will strip input at the first occurance of an non-allowed character, subsequent character will be lost
 		    // we don't remove these characters automatically because user has to be aware of the issue
-    	    throw new ErrorException("Character code ".ord($matches[0][0][0])." found at position ".$matches[0][0][1]." in MARC21 datafield node ".$datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS_EXCEPTION);
+    	    throw new DNBPluginException("Character code ".ord($matches[0][0][0])." found at position ".$matches[0][0][1]." in MARC21 datafield node ".$datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS_EXCEPTION);
 		}
 
 		$node->appendChild($doc->createTextNode($value));

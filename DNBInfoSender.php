@@ -13,7 +13,10 @@
  * @brief Scheduled task to send article information to the DNB server.
  */
 
-import('lib.pkp.classes.scheduledTask.ScheduledTask');
+namespace APP\plugins\importexport\dnb;
+
+use PKP\classes\scheduledTask\ScheduledTask;
+// import('lib.pkp.classes.scheduledTask.ScheduledTask');
 
 
 class DNBInfoSender extends ScheduledTask {

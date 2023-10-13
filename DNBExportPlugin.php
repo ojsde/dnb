@@ -34,6 +34,9 @@ use APP\plugins\importexport\dnb\DNBExportDeployment;
 use PKP\plugins\importexport\PKPImportExportDeployment;
 use APP\plugins\importexport\dnb\filter\DNBXmlFilter;
 use PKP\core\PKPString;
+use ErrorException;
+use PKP\facades\Locale;
+use PKP\core\JSONMessage;
 
 
 define('DEBUG', true);
@@ -245,10 +248,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 				// instantinate SubmissionListPanel
 
+				// TODO @RS
 				// It would be nice to have the issue title in the SubmissionListPanel title field.
 				// But currently the SubmissionListPanel title cannot be updated on filter requests and cannot render HTML -> no linking possible.
 				// For now we continue to use these values as item parameters (see below).
-				$issue = Repo::issue()->get($issues[1]->getId());
+				// $issue = Repo::issue()->get($issues[1]->getId());
 
 				$submissionsListPanel = new \APP\components\listPanels\SubmissionsListPanel(
 					'submissions',
@@ -327,17 +331,22 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 							[
 								'param' => $this->getPluginSettingsPrefix().'::status',
 								'value' => EXPORT_STATUS_NOT_DEPOSITED,
-								'title' => __('plugins.importexport.dnb.status.notDeposited')
+								'title' => $this->getStatusNames()[EXPORT_STATUS_NOT_DEPOSITED]
 							],
 							[
 								'param' => $this->getPluginSettingsPrefix().'::status',
 								'value' => DNB_STATUS_DEPOSITED,
-								'title' => __('plugins.importexport.dnb.status.deposited')
+								'title' => $this->getStatusNames()[DNB_STATUS_DEPOSITED]
 							],
 							[
 								'param' => $this->getPluginSettingsPrefix().'::status',
 								'value' => EXPORT_STATUS_MARKEDREGISTERED,
-								'title' => __('plugins.importexport.common.status.markedRegistered')
+								'title' => $this->getStatusNames()[EXPORT_STATUS_MARKEDREGISTERED]
+							],
+							[
+								'param' => $this->getPluginSettingsPrefix().'::status',
+								'value' => EXPORT_STATUS_MARKEXCLUDED,
+								'title' => $this->getStatusNames()[EXPORT_STATUS_MARKEXCLUDED]
 							],
 						],
 					];
@@ -409,7 +418,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$templateMgr->addJavaScript(
 					'dnbexportpluginData',
 					'$.pkp.plugins.importexport = $.pkp.plugins.importexport || {};' .
-						'$.pkp.plugins.importexport.' . strtolower(get_class($this)) . ' = ' . json_encode($script_data) . ';',
+						'$.pkp.plugins.importexport.' . strtolower($this->getName()) . ' = ' . json_encode($script_data) . ';',
 					[
 						'inline' => true,
 						'contexts' => 'backend',
@@ -457,10 +466,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$statusName = $this->getDepositStatusSettingName();
 
 				$issues = $this->getPublishedIssues(NULL, $context);
+				$issueIds = [];
+				foreach ($issues as $issue) {
+					$issueIds[] = $issue->getId();
+				}
 				$submissionsIterator = Repo::submission()
 				->getCollector()
 				->filterByContextIds([$context->getId()])
-				->filterByIssueIds(isset($args['issueIds'])?$args['issueIds']:[$issues[1]->getId()])
+				->filterByIssueIds(isset($args['issueIds'])?$args['issueIds']:$issueIds)
 				->filterByStatus([Submission::STATUS_PUBLISHED])
 				->getMany([
 					'searchPhrase' => $args['searchPhrase'],
@@ -488,7 +501,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$documentGalleys = $supplementaryGalleys = [];
 					try {
 						$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys); 
-					} catch (ErrorException $e) {
+					} catch (DNBPluginException $e) {
 						// currently this only throws REMOTE_IP_NOT_ALLOWED_EXCEPTION
 						// we handle this during export
 					}
@@ -507,6 +520,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$item['id'] = $submission->getData('id');
 					$currentPublication = $submission->getCurrentPublication();
 					$item['publication']['id'] = $currentPublication->getData('id');
+					$item['sectionIds'] = $currentPublication->getData('sectionId');
 					$authorUserGroups = Repo::userGroup()->getCollector()->filterByRoleIds([\PKP\security\Role::ROLE_ID_AUTHOR])->filterByContextIds([$context->getId()])->getMany();
                     $item['publication']['authorsString'] = $currentPublication->getAuthorString($authorUserGroups);
             		$item['publication']['fullTitle'] = $currentPublication->getLocalizedFullTitle('html');
@@ -558,7 +572,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$urlPart = join('/', $args);
 		$filename = $urlPart . '.md';
 
-		$language = LocaleConversion::getIso1FromLocale(AppLocale::getLocale());
+		$language = LocaleConversion::getIso1FromLocale(Locale::getLocale());
 		$summaryFile = $path . $language . '/SUMMARY.md';
 
 		// Use the summary document to find next/previous links.
@@ -792,8 +806,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						// continue with other articles
 						continue;
 						}
-					} catch (ErrorException $e) {
-						// convert ErrorException to error messages that will be shown to the user
+					} catch (DNBPluginException $e) {
+						// convert DNBPluginException to error messages that will be shown to the user
 						$result = $this->hanndleExceptions($e);
 						$errors = array_merge($errors, [$result]);
 					}
@@ -843,10 +857,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					}
 					
 					if ($fullyDeposited && $this->_exportAction == EXPORT_ACTION_DEPOSIT) {
-						// Update article status
+						// update submission status in memory
 						$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
-						// TODO @RS 
-						// $submissionDao->updateObject($submission);
+						// update submission status in database
+						Repo::submission()->edit($submission, [$this->getDepositStatusSettingName() => DNB_STATUS_DEPOSITED]);
+
 					}
 				}
 				
@@ -958,7 +973,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 			// Export the galley metadata XML.
 			$metadataXML = $this->exportXML($galley, $filter, $journal, $noValidation);
-		} catch (ErrorException $e) {
+		} catch (DNBPluginException $e) {
             // we don't remove these automatically because user has to be aware of these issues
 		    return $this->hanndleExceptions($e);
 		}
@@ -971,7 +986,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// tar supplementary files
 		if (Services::get('file')->fs->has($exportPath . 'content/supplementary')) {
 			$this->tarFiles($exportPath . '/content/supplementary', $exportPath . '/content/supplementary.tar');
-			Services::get('file')->fs->deleteDir($exportPath . 'content/supplementary');
+			Services::get('file')->fs->deleteDirectory($exportPath . 'content/supplementary');
 		}
 		// The package file name will be then <journalId>-<articleId>-<galleyId>.tar
 		$exportPackageName = $journalExportPath . $exportContentDir . '.tar';
@@ -1457,7 +1472,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		if ($isAllowed) {
 			return true;
 		} else {
-			throw new ErrorException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), REMOTE_IP_NOT_ALLOWED_EXCEPTION);
+			throw new DNBPluginException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), REMOTE_IP_NOT_ALLOWED_EXCEPTION);
 			return false;
 		}
 	}
@@ -1491,6 +1506,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		return ($submission->getData($this->getDepositStatusSettingName()) !== EXPORT_STATUS_MARKEXCLUDED);
 	}
 
+}
+
+class DNBPluginException extends \ErrorException {
 }
 
 ?>

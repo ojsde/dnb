@@ -4,16 +4,24 @@
 # This is not an automatic test. A native xml export file with the appropriate name and submission ID in your systems has to be placed in the tests folder.
 # You may need to install phpunit in lib/pkp: 'composer.phar require --dev phpunit/phpunit'
 
-    import('lib.pkp.tests.PKPTestCase');
-    import('classes.issue.Issue');
-    import('classes.submission.Submission');
-    import('classes.article.ArticleGalley');
-    import('plugins.importexport.dnb.filter.DNBXmlFilter');
-    import('plugins.importexport.dnb.DNBExportPlugin');
-    import('plugins.importexport.dnb.DNBExportDeployment');
-    import('plugins.importexport.dnb.DNBInfoSender');
-    import('lib.pkp.classes.filter.FilterGroup');
-    import('lib.pkp.classes.plugins.LazyLoadPlugin');
+namespace APP\plugins\importexport\dnb\test\functional;
+
+use PKP\tests\PKPTestCase;
+use APP\core\Application;
+use App\core\PageRouter;
+use PKP\core\Registry;
+use PKP\db\DAORegistry;
+use PKP\core\PKPRequest;
+use PKP\plugins\PluginRegistry;
+use APP\facades\Repo;
+use PKP\submission\SubmissionKeywordDAO;
+use DOMDocument;
+use DOMXPath;
+use APP\plugins\importexport\dnb\filter\DNBXmlFilter;
+use PKP\filter\FilterGroup;
+use APP\plugins\importexport\dnb\DNBExportDeployment;
+use APP\plugins\importexport\dnb\DNBExportPlugin;
+use APP\plugins\importexport\dnb\DNBPluginException;
 
     class FunctionalDNBExportFilterTest extends PKPTestCase {
 
@@ -29,19 +37,17 @@
             // Initialize the request object with a page router
             $application = Application::get();
             $request = $application->getRequest();
-            $journalPath = 'dnb33';
+            $journalPath = 'dja';
     
-            // FIXME: Write and use a CLIRouter here (see classdoc)
             import('classes.core.PageRouter');
             $router = new PageRouter();
             $router->setApplication($application);
             $request->setRouter($router);
 
             Registry::set('request', $request);
-            $router->_contextList = $application->getContextList();
-            $router->_contextPaths = [$journalPath];            
-
-            self::assertTrue($request->getContext() != null);
+            $context = Application::get()->getContextDAO()->getByPath($journalPath);
+            
+            self::assertTrue($context != null);
 
             $contextDao = Application::getContextDAO();
 		    $journalFactory = $contextDao->getAll(true);
@@ -59,7 +65,13 @@
                 PluginRegistry::loadCategory('pubIds', true, $contextId); 
 
                 // find publications to test
-                $submissions = Services::get('submission')->getMany([ 'contextId' => $contextId, 'status' => STATUS_PUBLISHED]);
+                $collector = Repo::submission()
+                    ->getCollector();
+                $collector->searchPhrase(''); // setting searchPhrase to '' is just to prevent a deprecation warning; can be removed once PKP fixed it
+                $submissions = $collector->filterByContextIds([$contextId])
+                    ->getMany([
+                        'status' => STATUS_PUBLISHED
+                    ]);
                 $testPublications = [];
                 foreach ($submissions as $submission) {
                     $publication = $submission->getCurrentPublication();
@@ -90,6 +102,7 @@
         private function exportXML($filename, $publication, $context) {
 
             $submissionId = $publication->getData('submissionId');
+            $subIdInfo = "Submission: ".print_r($submissionId, true)." => \n";
 
             print_r("Testing submission ID: ", $submissionId);
 
@@ -100,11 +113,14 @@
             $xpathNative->registerNamespace("d", "http://pkp.sfu.ca");
 
             // prepare xml export
-            $submissionDao = DAORegistry::getDAO('SubmissionDAO');
-            $submission = $submissionDao->getById($submissionId);
+            $submission = Repo::submission()->get($submissionId);
             self::assertTrue($submission->getId() == $submissionId);
 
-            $xmlFilter = new DNBXmlFilter(new FilterGroup("galley=>dnb-xml"));
+            $filterGroup = new FilterGroup("galley=>dnb-xml");
+            $filterGroup->setData('inputType','class::classes.article.Galley');
+			$filterGroup->setData('outputType','xml::schema(http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd)');
+
+            $xmlFilter = new DNBXmlFilter($filterGroup);
             $xmlFilter->setDeployment(new DNBExportDeployment($context, $plugin = new DNBExportPlugin()));
 
             $plugin->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys);
@@ -126,7 +142,7 @@
                 $access = $access == 0 ? 'b' : $access;
                 $prefix = $this->getTextContent($xpathNative, $publication."//d:prefix");
                 if ($prefix != "") {$prefix = $prefix." ";}
-                $title = strip_tags($prefix) . strip_tags($this->getTextContent($xpathNative, $publication."//d:title[@locale='".$galleyLocale."']"));
+                $title = strip_tags($this->getTextContent($xpathNative, $publication."//d:title[@locale='".$galleyLocale."']"));
                 $subtitle = strip_tags($this->getTextContent($xpathNative, $publication."//d:subtitle[@locale='".$galleyLocale."']"));
                 $fullDatePublished = $xpathNative->query($publication)[0]->getAttribute('date_published');
                 $datePublished = date('Y', strtotime($fullDatePublished));
@@ -156,10 +172,16 @@
 
                 // run xml export
                 try {
+                    if ($submission->getCurrentPublication()->getData('pub-id::other::urn')) {
+                        $this->expectExceptionMessage(MESSAGE_URN_SET);
+                    }
                     $result = $xmlFilter->process($testGalley);
-                } catch (ErrorException $e) {
+                } catch (DNBPluginException $e) {
                     switch($e->getCode()) {
                         case URN_SET_EXCEPTION:
+                            $this->assertSame(MESSAGE_URN_SET, $e->getMessage());
+                            // if the fails edit TestCase.php to allow NULL => public function expectExceptionMessage(?string $message): void
+                            $this->expectExceptionMessage(NULL);
                             return;
                             break;
                         default:
@@ -178,7 +200,7 @@
                 // test publication pubId
                 // the last pubId should be the publication pubId
                 $value = array_pop($DNBXMLFilterPubIds);
-                self::assertTrue($value == $publication_pubId, "Publication DOI/URN was: ".print_r($value, true)."\nValue should have been: ".$publication_pubId);
+                self::assertTrue($value == $publication_pubId, $subIdInfo."Publication DOI/URN was: ".print_r($value, true)."\nValue should have been: ".$publication_pubId);
 
                 // test galley pubIds
                 $nativeXMLGalleyPubIds = array_map(function($i) {return $i->textContent;}, iterator_to_array($galley_pubIds));
@@ -193,15 +215,15 @@
                     "//d:article_galley/d:id[@type='internal'][text() = '".$testGalley->getId().
                     "']/parent::d:article_galley//d:id[@type='doi']"
                     , $publishedGalleys[0]);
-                $value = $testGalley->getData('pub-id::doi');
+                $value = $testGalley->getDoi();
                 
                 if ($nodes->length > 0) {
                     // native XML has a DOI for our galley
                     $nativeXMLDOI = $nodes[0]->textContent;
-                    self::assertTrue($nativeXMLDOI == $value, "DOI was: ".print_r($value, true)."\nValue should have been: ".$nativeXMLDOI);
+                    self::assertTrue($nativeXMLDOI == $value, $subIdInfo."DOI was: ".print_r($value, true)."\nValue should have been: ".$nativeXMLDOI);
                 } else {
                     // there should be no DOI for our galley
-                    self::assertTrue(empty($value), "DOI was: ".print_r($value, true)."\nValue should have been empty");
+                    self::assertTrue(empty($value), $subIdInfo."DOI was: ".print_r($value, true)."\nValue should have been empty");
                 }
 
                 // language
@@ -215,7 +237,7 @@
                 $entries = $xpathDNBFilter->query("//*[@tag='093']/*[@code='b']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == $access, "Author was: ".print_r($value, true)."\nValue should have been: ".$access);
+                    self::assertTrue($value == $access, $subIdInfo."Author was: ".print_r($value, true)."\nValue should have been: ".$access);
                 }
 
                 // author
@@ -225,7 +247,7 @@
                     $value = $entry->textContent;
                     // author names
                     $author = $xpathNative->query($publication."//d:author[".($index+1)."]/d:familyname")[0]->textContent.", ".$xpathNative->query($publication."//d:author[".($index+1)."]/d:givenname")[0]->textContent;
-                    self::assertTrue($value == $author, "Author was: ".print_r($value, true)."\nValue should have been: ".$author);
+                    self::assertTrue($value == $author, $subIdInfo."Author was: ".print_r($value, true)."\nValue should have been: ".$author);
                 }
                 
                 // orcid
@@ -234,44 +256,44 @@
                     $value = $entry->textContent;
                     // orcid numbers
                     $orcid = '(orcid)'.basename($xpathNative->query($publication."//d:author[".($index+1)."]/d:orcid")[0]->textContent);
-                    self::assertTrue($value == $orcid, "Orcid was: ".print_r($value, true)."\nValue should have been: ".$orcid);
+                    self::assertTrue($value == $orcid, $subIdInfo."Orcid was: ".print_r($value, true)."\nValue should have been: ".$orcid);
                 }
 
                 // title and subtitle
                 $entries = $xpathDNBFilter->query("//*[@tag='245']/*[@code='a']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == $title, "Title was: ".print_r($value, true)."\nValue should have been: ".$title);
+                    self::assertTrue($value == $title, $subIdInfo."Title was: ".print_r($value, true)."\nValue should have been: ".$title);
                 }
                 $entries = $xpathDNBFilter->query("//*[@tag='245']/*[@code='b']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == $subtitle, "Subtitle was: ".print_r($value, true)."\nValue should have been: ".$subtitle);
+                    self::assertTrue($value == $subtitle, $subIdInfo."Subtitle was: ".print_r($value, true)."\nValue should have been: ".$subtitle);
                 }
 
                 // date published
                 $entries = $xpathDNBFilter->query("//*[@tag='264']/*[@code='c']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == $datePublished, "Date published was: ".print_r($value, true)."\nValue should have been: ".$datePublished);
+                    self::assertTrue($value == $datePublished, $subIdInfo."Date published was: ".print_r($value, true)."\nValue should have been: ".$datePublished);
                 }
 
                 // supplementary material
                 $entries = $xpathDNBFilter->query("//*[@tag='300']/*[@code='e']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == DNB_MSG_SUPPLEMENTARY, "hasSupplementary was: ".print_r($value, true)."\nValue should have been: ".DNB_MSG_SUPPLEMENTARY);
-                    self::assertTrue(count($supplementaryGenres) > 0, "hasSupplementary was: ".print_r($value, true)."\nValue should have been empty");
+                    self::assertTrue($value == DNB_MSG_SUPPLEMENTARY, $subIdInfo."hasSupplementary was: ".print_r($value, true)."\nValue should have been: ".DNB_MSG_SUPPLEMENTARY);
+                    self::assertTrue(count($supplementaryGenres) > 0, $subIdInfo."hasSupplementary was: ".print_r($value, true)."\nValue should have been empty");
                 } else {
-                    self::assertTrue(count($supplementaryGenres) == 0, "hasSupplementary was: empty\nValue should have been: ".DNB_MSG_SUPPLEMENTARY);                    
+                    self::assertTrue(count($supplementaryGenres) == 0, $subIdInfo."hasSupplementary was: empty\nValue should have been: ".DNB_MSG_SUPPLEMENTARY);                    
                 }
 
                 // additional info field in case supplememtary galleys cannot be unambiguously assigned to the main document galleys
                 $entries = $xpathDNBFilter->query("//*[@tag='500']/*[@code='a']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == DNB_MSG_SUPPLEMENTARY_AMBIGUOUS, "Ambiguous flag value error.");
-                    self::assertTrue(count($supplementaryGenres) > 0, "Ambiguos flag set but no supplementary found.");
+                    self::assertTrue($value == DNB_MSG_SUPPLEMENTARY_AMBIGUOUS, $subIdInfo."Ambiguous flag value error.");
+                    self::assertTrue(count($supplementaryGenres) > 0, $subIdInfo."Ambiguos flag set but no supplementary found.");
                 } else {
                     // not able to test this here
                     // self::assertTrue(count($supplementaryGenres) == 0, "Ambiguos flag not set but supplementary found.");                    
@@ -286,19 +308,19 @@
                         $abstract = mb_substr($abstract, 0, 996,"UTF-8");
                         $abstract .= '...';
                     }
-                    self::assertTrue($value == $abstract, "Abstract was: ".print_r($value, true)."\nValue should have been: ".$abstract);
+                    self::assertTrue($value == $abstract, $subIdInfo."Abstract was: ".print_r($value, true)."\nValue should have been: ".$abstract);
                 }
 
                 // license URL
                 $entries = $xpathDNBFilter->query("//*[@tag='540']/*[@code='u']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == $licenseURL, "License URL was: ".print_r($value, true)."\nValue should have been: ".$licenseURL);
+                    self::assertTrue($value == $licenseURL, $subIdInfo."License URL was: ".print_r($value, true)."\nValue should have been: ".$licenseURL);
                 }
 
                 // keywords
                 $entries = $xpathDNBFilter->query("//*[@tag='653']/*[@code='a']");
-                self::assertTrue($entries->length == $keywords->length, "No of keywords was: ".print_r($entries->length, true)."\nValue should have been: ".$keywords->length);
+                self::assertTrue($entries->length == $keywords->length, $subIdInfo."No of keywords was: ".print_r($entries->length, true)."\nValue should have been: ".$keywords->length);
                 foreach ($entries as $entry) {
                     $value = $entry->textContent;
                     $nativeXMLKeywords = array_map(
@@ -306,24 +328,24 @@
                         iterator_to_array($keywords)
                     );
                     $found = array_search($value,$nativeXMLKeywords);
-                    self::assertTrue($found !== false, "Keywords was: ".print_r($value, true)."\nValue should have been: ".$nativeXMLKeywords[$found]);
+                    self::assertTrue($found !== false, $subIdInfo."Keywords was: ".print_r($value, true)."\nValue should have been: ".$nativeXMLKeywords[$found]);
                 }
 
                 // issue data and article publication date
                 $entries = $xpathDNBFilter->query("//*[@tag='773']/*[@code='g']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == $volume, "Issue Volume was: ".print_r($value, true)."\nValue should have been: ".$volume);
+                    self::assertTrue($value == $volume, $subIdInfo."Issue Volume was: ".print_r($value, true)."\nValue should have been: ".$volume);
                     $value = $entries[1]->textContent;
-                    self::assertTrue($value == $number, "Issue Number was: ".print_r($value, true)."\nValue should have been: ".$number);
+                    self::assertTrue($value == $number, $subIdInfo."Issue Number was: ".print_r($value, true)."\nValue should have been: ".$number);
                     // issue day and month not available in native article XML
                     // $value = $entries[2]->textContent;
-                    // self::assertTrue($value == $day, "Galley publication day was: ".print_r($value, true)."\nValue should have been: ".$day);
+                    // self::assertTrue($value == $day, $subIdInfo."Galley publication day was: ".print_r($value, true)."\nValue should have been: ".$day);
                     // $value = $entries[3]->textContent;
-                    // self::assertTrue($value == $month, "Galley publication month was: ".print_r($value, true)."\nValue should have been: ".$month);
+                    // self::assertTrue($value == $month, $subIdInfo."Galley publication month was: ".print_r($value, true)."\nValue should have been: ".$month);
                     if ($issueYear != "NA") {
                         $value = $entries[2]->textContent;
-                        self::assertTrue($value == $issueYear, "Issue publication year was: ".print_r($value, true)."\nValue should have been: ".$issueYear);
+                        self::assertTrue($value == $issueYear, $subIdInfo."Issue publication year was: ".print_r($value, true)."\nValue should have been: ".$issueYear);
                     }
                 }
 
@@ -339,15 +361,15 @@
                         , $publishedGalleys[0]);
 
                     if ($nodes->length == 0) {
-                        self::assertTrue(strlen($galley->getData('urlRemote')) > 0, "File type not provided.");
+                        self::assertTrue(strlen($galley->getData('urlRemote')) > 0, $subIdInfo."File type not provided.");
                     } else {
-                        self::assertTrue($nodes->length > 0, "File type not provided.");
+                        self::assertTrue($nodes->length > 0, $subIdInfo."File type not provided.");
                     }
                     if ($nodes->length > 0) {
                         $file = $xpathNative->query("//d:submission_file[@id=".$nodes[0]->getAttribute('id')."]/d:file");
                         $filetype = $file[0]->getAttribute('extension');
                         $value = $entries[0]->textContent;
-                        self::assertTrue($value == $filetype, "Filetype was: ".print_r($value, true)."\nValue should have been: ".$filetype);
+                        self::assertTrue($value == $filetype, $subIdInfo."Filetype was: ".print_r($value, true)."\nValue should have been: ".$filetype);
                     }
                 }
             }
@@ -357,5 +379,6 @@
             $node = $xpathNative->query($path);
             return $node->length > 0 ? $node[0]->textContent : '';
         }
+        
     }
 ?>
