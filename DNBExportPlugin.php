@@ -427,15 +427,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 				// show logs for automatic deposit
 				if ($this->getSetting($this->_currentContextId, 'automaticDeposit')) {
-					$logFiles = Services::get('file')->fs->listContents(SCHEDULED_TASK_EXECUTION_LOG_DIR);
-					// filter dnb plugin log files
-					$logFiles = array_filter($logFiles, function($f) {
-						return str_contains($f['filename'],"DNBautomaticdeposittask");
-					});
-					// get latest log file
+					$logFiles = Services::get('file')->fs->listContents(SCHEDULED_TASK_EXECUTION_LOG_DIR)
+						->filter(fn (\League\Flysystem\StorageAttributes $attributes) => str_contains($attributes->path(),"DNBautomaticdeposittask"))
+						->toArray();
+
 					usort($logFiles, function ($f1, $f2) {
-						return $f1['timestamp'] < $f2['timestamp'];
+						return $f1['lastModified'] < $f2['lastModified'];
 					});
+
 					if (count($logFiles) > 0) {
 						// filter context specific messages
 						$latestLogFile = Services::get('file')->fs->read($logFiles[0]['path']);
@@ -857,11 +856,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					}
 					
 					if ($fullyDeposited && $this->_exportAction == EXPORT_ACTION_DEPOSIT) {
-						// update submission status in memory
-						$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
-						// update submission status in database
-						Repo::submission()->edit($submission, [$this->getDepositStatusSettingName() => DNB_STATUS_DEPOSITED]);
-
+						$this->updateSubmissionStatus($submission);
 					}
 				}
 				
@@ -931,6 +926,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			default:
 				return parent::executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation);
 		}
+	}
+
+	function updateSubmissionStatus(Submission $submission) {
+		// update submission status in memory
+		$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
+		// update submission status in database
+		Repo::submission()->edit($submission, [$this->getDepositStatusSettingName() => DNB_STATUS_DEPOSITED]);
 	}
 
 	/**

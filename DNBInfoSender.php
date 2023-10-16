@@ -15,9 +15,11 @@
 
 namespace APP\plugins\importexport\dnb;
 
-use PKP\classes\scheduledTask\ScheduledTask;
-// import('lib.pkp.classes.scheduledTask.ScheduledTask');
-
+use PKP\scheduledTask\ScheduledTask;
+use APP\core\Application;
+use PKP\db\DAORegistry;
+use APP\core\Services;
+use PKP\plugins\PluginRegistry;
 
 class DNBInfoSender extends ScheduledTask {
 	/** @var $_plugin DNBExportPlugin */
@@ -65,7 +67,6 @@ class DNBInfoSender extends ScheduledTask {
 		}
 
 		$filter = $plugin->getSubmissionFilter();
-		$fileManager = new FileManager();
 
 		// get all journals that meet the requirements
 		$journals = $this->_getJournals();
@@ -128,7 +129,7 @@ class DNBInfoSender extends ScheduledTask {
 								$result = $plugin->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation = true, $journal, $journalExportPath, $exportFile, $submissionId);
 								// If errors occured, remove all created directories and log the errors
 								if (is_array($result)) {
-									$fileManager->rmtree($journalExportPath);
+									Services::get('file')->fs->deleteDirectory($journalExportPath);
 									$errors = array_merge($errors, [$result]);
 									$fullyDeposited = false;
 									continue;
@@ -147,15 +148,12 @@ class DNBInfoSender extends ScheduledTask {
 							$errors = array_merge($errors, [$result]);
 						}
 						if ($fullyDeposited) {
-							// Update article status
-							$submissionDao = DAORegistry::getDAO('SubmissionDAO');
-							$submission->setData($plugin->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
-							$submissionDao->updateObject($submission);
+							$plugin->updateSubmissionStatus($submission);
 						}
 					}
 				}
 				// Remove the generated directories
-				$fileManager->rmtree($journalExportPath);
+				Services::get('file')->fs->deleteDirectory($journalExportPath);
 			} else {
 				// there were no articles to deposit
 				$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.noNoArticlesToDeposit')]);

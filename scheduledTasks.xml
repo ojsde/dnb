@@ -16,8 +16,8 @@
 <!DOCTYPE scheduled_tasks SYSTEM "../../../lib/pkp/dtd/scheduledTasks.dtd">
 
 <scheduled_tasks>
-	<task class="plugins.importexport.dnb.DNBInfoSender">
+	<task class="APP\plugins\importexport\dnb\DNBInfoSender">
 		<descr>Deposit article packages to DNB Hotfolder.</descr>
- 		<frequency minute="0"/>
+ 		<!-- <frequency minute="0"/> -->
 	</task>
 </scheduled_tasks>
