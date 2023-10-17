@@ -173,7 +173,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', $yearYY.$month.$day.'s'.$yearYYYY.'||||xx#|||| ||||| ||||| '.$language.'||'));
 		$node->setAttribute('tag', '008');
 
-		// urn
+		// Marc 024 urn
 		$urn = $galley->getStoredPubId('other::urnDNB');
 		if (empty($urn)) $urn = $galley->getStoredPubId('other::urn');
 		if (!empty($urn)) {
@@ -182,7 +182,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$this->createSubfieldNode($doc, $urnDatafield024, '2', 'urn');
 		}
 
-		// DOI
+		// Marc 024 DOI
 		// according the the latest arrangement with DNB both, article and galley DOIs will be submited to the DNB  
 		$galleyDOI = $galley->getStoredPubId('doi');
 		if (!empty($galleyDOI)) {
@@ -197,17 +197,17 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		    $this->createSubfieldNode($doc, $doiDatafield024, '2', 'doi');
 		}
 
-		// plugin version
+		// Marc 040 plugin version
 		$datafield040 = $this->createDatafieldNode($doc, $recordNode, '040', ' ', ' ');
 		$versionDao = DAORegistry::getDAO('VersionDAO'); /* @var $versionDao VersionDAO */
 		$version = $versionDao->getCurrentVersion('plugins.importexport', $plugin->getPluginSettingsPrefix(), true);
 		$this->createSubfieldNode($doc, $datafield040, 'a', "OJS DNB-Export-Plugin Version ".$version->getVersionString());
 
-		// language
+		// Marc 041 language
 		$datafield041 = $this->createDatafieldNode($doc, $recordNode, '041', ' ', ' ');
 		$this->createSubfieldNode($doc, $datafield041, 'a', $language);
 
-		// access to the archived article
+		// Marc 093 access to the archived article
 		$datafield093 = $this->createDatafieldNode($doc, $recordNode, '093', ' ', ' ');
 		if ($openAccess) {
 			$this->createSubfieldNode($doc, $datafield093, 'b', 'b');
@@ -215,7 +215,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$this->createSubfieldNode($doc, $datafield093, 'b', $archiveAccess);
 		}
 
-		// first author
+		// Marc 100 first author
 		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
 		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false,true));
 		if (!empty($firstAuthor->getData('orcidAccessToken'))) {
@@ -223,6 +223,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
     	}
 		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
 
+		// Marc 254 title
 		// title
 		$title = $submission->getTitle($galley->getLocale());
 		if (empty($title)) $title = $submission->getTitle($submission->getLocale());
@@ -241,10 +242,11 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$this->createSubfieldNode($doc, $datafield245, 'b', $subTitle);
 		}
 
-		// date published
+		// Marc 264 date published
 		$datafield264 = $this->createDatafieldNode($doc, $recordNode, '264', ' ', '1');
 		$this->createSubfieldNode($doc, $datafield264, 'c', $yearYYYY);
 
+		// Marc 300 Supplementary
 		// this package will be delivered including supplementary material
 		if ($submission->getData('hasSupplementary')) {
 			// !!! Do not change this message without consultation of the DNB !!!
@@ -252,7 +254,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$this->createSubfieldNode($doc, $datafield300, 'e', DNB_MSG_SUPPLEMENTARY);
 		}
 
-		// article level URN (only if galley level URN does not exist)
+		// Marc 500 article level URN (only if galley level URN does not exist)
 		if (empty($urn)) {
 			$submissionURN = $submission->getStoredPubId('other::urnDNB');
 			if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
@@ -262,6 +264,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			}
 		}
 
+		// Marc 500 additional information
 		// additional info field in case supplememtary galleys cannot be unambiguously assigned to the main document galleys
 		if ($submission->getData('supplementaryNotAssignable')) {
 			// !!! Do not change this message without consultation of the DNB !!!
@@ -269,7 +272,16 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$this->createSubfieldNode($doc, $supplementaryDatafield500, 'a', DNB_MSG_SUPPLEMENTARY_AMBIGUOUS);
 		}
 
-		// abstract
+		// Marc 506 Access Status
+		if ($openAccess) {
+			$datafield506 = $this->createDatafieldNode($doc, $recordNode, '506', '0', ' ');
+			$this->createSubfieldNode($doc, $datafield506, 'a', 'open-access');
+		} else {
+			$datafield506 = $this->createDatafieldNode($doc, $recordNode, '506', '1', ' ');
+			$this->createSubfieldNode($doc, $datafield506, 'a', 'closed-access');
+		}
+
+		// Marc 520 abstract
 		$abstract = $submission->getAbstract($galley->getLocale());
 		if (empty($abstract)) $abstract = $submission->getAbstract($submission->getLocale());
 		if (!empty($abstract)) {
@@ -286,7 +298,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$this->createSubfieldNode($doc, $datafield520, 'u', $abstractURL);
 		}
 
-		// license URL
+		// Marc 540 license URL
 		$licenseURL = $submission->getLicenseURL();
 		if (empty($licenseURL)) {
 			// copyright notice
@@ -300,9 +312,23 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		if (!empty($licenseURL)) {
 			$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
 			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
+			$ccLicenseBadge = Application::get()->getCCLicenseBadge($publication->getData('licenseUrl'), $galley->getLocale());
+			// only if there is a cc-Badge we know a predefined cc license was selected, otherwise its a custom license Url
+			if ($ccLicenseBadge) {
+				$this->createSubfieldNode($doc, $datafield540, '2', 'cc');
+				if (preg_match('#\d+\.\d+#',$licenseURL, $matchesVersion) && preg_match('#by(-\w{2})*#',$licenseURL, $matchesCode)) {
+					$ccVersion = $matchesVersion[0];
+					$ccCode = $matchesCode[0];
+					$this->createSubfieldNode($doc, $datafield540, 'f', 'cc-'.$ccCode.'.'.$ccVersion);
+				}
+				preg_match('#">(\w.*)<\/a#', $ccLicenseBadge, $matches);
+				if ($matches) {
+					$this->createSubfieldNode($doc, $datafield540, 'a', $matches[1]);
+				}
+			}
 		}
 
-		// keywords
+		// Marc 563 keywords
 		$submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
 		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getCurrentPublication()->getId(), array($galley->getLocale()));
 		if (!empty($controlledVocabulary[$galley->getLocale()])) {
@@ -312,6 +338,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			}
 		}
 
+		// Marc 700 contributers
 		// other authors
 		foreach ((array) $authors as $author) {
 			$datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
@@ -332,7 +359,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		    $this->createSubfieldNode($doc, $datafield700, '4', 'trl');
 		}
 		
-		// issue data
+		// Marc 773 journal and issue data
 		// at least the year has to be provided
 		// 17.2.2022
 		//   - provide issue year if available, if not year of publication date of the issue
@@ -357,7 +384,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		$journalDatafield773 = $this->createDatafieldNode($doc, $recordNode, '773', '1', '8');
 		$this->createSubfieldNode($doc, $journalDatafield773, 'x', $issn);
 
-		// file data
+		// Marc 856 file data
 		$galleyURL = $request->url($journal->getPath(), 'article', 'view', array($submissionId, $galley->getId()));
 		$datafield856 = $this->createDatafieldNode($doc, $recordNode, '856', '4', ' ');
 		$this->createSubfieldNode($doc, $datafield856, 'u', $galleyURL);
@@ -371,7 +398,6 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		    $fileSize = $galley->getData('fileSize');
 		}
 		if ($fileSize > 0) $this->createSubfieldNode($doc, $datafield856, 's', Services::get('file')->getNiceFileSize($fileSize));
-		if ($openAccess) $this->createSubfieldNode($doc, $datafield856, 'z', 'Open Access');
 
 		return $doc;
 	}

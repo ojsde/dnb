@@ -89,18 +89,29 @@ Feld | tag | ind1 | ind2 | code | Inhalt/Beschreibung
 -----|:---:|:----:|:----:|:----:|------------------
 datafield | 500 |  |  | a | 'Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht'<br/><br/>Wenn diesem Artikel mehr als eine Dokumentfahne und mindestens eine Begleitmaterialfahne zugeordnet ist.
 
+Open Access Status
+---
+Feld | tag | ind1 | ind2 | code | Inhalt/Beschreibung
+-----|:---:|:----:|:----:|:----:|------------------
+datafield | 506 | 0 |  | a | open-access
+datafield | 506 | 1 |  | a | closed-access
+
+
 Abstract
 ---
 Feld | tag | ind1 | ind2 | code | Inhalt/Beschreibung
 -----|:---:|:----:|:----:|:----:|------------------
 datafield | 520 | 3 |  | a | Abstract
-datafiles | 520 | 3 |  | u | URL zum Abstract
+datafield | 520 | 3 |  | u | URL zum Abstract
 
 Lizenz-URL oder Copyright-Hinweis
 ---
 Feld | tag | ind1 | ind2 | code | Inhalt/Beschreibung
 -----|:---:|:----:|:----:|:----:|------------------
+datafield | 540 |  |  | a | cc Lizenzbezeichnung (lokalisiert, nur bei cc-Lizenzen)
+datafield | 540 |  |  | f | cc Lizenzcode (nur bei cc-Lizenzen)
 datafield | 540 |  |  | u | Lizenz-URL wenn vorhanden, ansonsten Copyright-Hinweis
+datafield | 540 |  |  | 2 | 'cc' (nur bei cc-Lizenzen)
 
 Schlagwörter
 ---
@@ -146,4 +157,4 @@ Feld | tag | ind1 | ind2 | code | Inhalt/Beschreibung
 datafield | 856 | 4 |  | u | URL zur Dokumentfahne
 datafield | 856 | 4 |  | q | Dateityp
 datafield | 856 | 4 |  | s | Dateigröße
-datafield | 856 | 4 |  | z | 'Open Access'
+
