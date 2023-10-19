@@ -72,47 +72,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	}
 	
 	/**
-	 * @copydoc Plugin::register()
-	 */
-	function register($category, $path, $mainContextId = null) {
-		if (!parent::register($category, $path, $mainContextId)) {
-			// TODO @RS temporary fix, this should be handled in PubObjectsExportPlugin
-			if (!Application::isUnderMaintenance()) {
-				return false;
-			}
-		}
-
-		Hook::add('Schema::get::submission', array($this, 'addToSchema'));
-
-		// TODO @RS hook doesn't exist anymore
-		// Hook::add('Submission::getBackendListProperties::properties', array($this, 'addBackendProperties'));
-
-		return true;
-	}	
-
-	public function addToSchema($hookName, $params) {
-		if ($hookName == 'Schema::get::submission') {
-			$schema =& $params[0];
-			$schema->properties->{$this->getPluginSettingsPrefix().'::status'} = (object) [
-				'type' => 'string',
-				'apiSummary' => true,
-				'validation' => ['nullable'],
-			];
-		}
-		return false;
-	}
-
-	function addBackendProperties($hookName, $params) {
-		switch ($hookName){
-			case "Submission::getBackendListProperties::properties":
-				$props = &$params[0];
-				$props = array_merge($props, [$this->getPluginSettingsPrefix().'::status']);
-				return true;
-				break;
-		};
-	}
-
-	/**
 	 * @copydoc Plugin::getName()
 	 */
 	function setSettingsForm($form) {
