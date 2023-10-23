@@ -18,6 +18,7 @@ use APP\core\Application;
 use \PKP\components\forms\FormComponent;
 use \PKP\components\forms\FieldText;
 use \PKP\components\forms\FieldOptions;
+use PKP\validation\ValidatorFactory;
 
 define('FORM_DNB_SETTINGS', 'dnbsettingsform');
 

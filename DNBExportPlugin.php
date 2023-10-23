@@ -26,8 +26,6 @@ use PKP\config\Config;
 use PKP\db\DAORegistry;
 use APP\submission\Submission;
 use PKP\core\APIResponse;
-// use PKP\filter\FilterDAO;
-// use PKP\notification\PKPNotification;
 use APP\components\forms\FieldSelectIssues;
 use DNBSettingsForm;
 use APP\plugins\importexport\dnb\DNBExportDeployment;
@@ -766,7 +764,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						}
 					} catch (DNBPluginException $e) {
 						// convert DNBPluginException to error messages that will be shown to the user
-						$result = $this->hanndleExceptions($e);
+						$result = $this->handleExceptions($e);
 						$errors = array_merge($errors, [$result]);
 					}
 					
@@ -936,7 +934,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$metadataXML = $this->exportXML($galley, $filter, $journal, $noValidation);
 		} catch (DNBPluginException $e) {
             // we don't remove these automatically because user has to be aware of these issues
-		    return $this->hanndleExceptions($e);
+		    return $this->handleExceptions($e);
 		}
 
 		// Write the metadata XML to the file.
@@ -956,13 +954,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		return true;
 	}
 
-	function hanndleExceptions($e) {
+	function handleExceptions($e) {
 		switch ($e->getCode()) {
 			case XML_NON_VALID_CHARCTERS_EXCEPTION:
 				$param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $submissionId, 'node' => $e->getMessage()));		       
 				return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
 			case URN_SET_EXCEPTION:
-				return array('plugins.importexport.dnb.export.error.urnSet');
+				return ['plugins.importexport.dnb.export.error.urnSet.description', $e->getMessage()];
 			case FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION:
 				$param = __('plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));		       
 				return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
@@ -1065,7 +1063,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// }
 
 		// remove temporary file
-		if (!empty($temporaryFilename))	Services::get('file')->fs->deleteDir($temporaryFilename);
+		if (!empty($temporaryFilename))	Services::get('file')->fs->deleteDirectory($temporaryFilename);
 		return realpath(Config::getVar('files', 'files_dir') . '/' . $targetGalleyFilePath);
 	}
 

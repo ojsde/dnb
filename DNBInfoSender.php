@@ -142,9 +142,9 @@ class DNBInfoSender extends ScheduledTask {
 									$fullyDeposited = false;
 								}
 							}
-						} catch (ErrorException $e) {
+						} catch (DNBPluginException | ErrorException $e) {
 							// convert ErrorException to error messages that will be logged below
-							$result = $plugin->hanndleExceptions($e);
+							$result = $plugin->handleExceptions($e);
 							$errors = array_merge($errors, [$result]);
 						}
 						if ($fullyDeposited) {

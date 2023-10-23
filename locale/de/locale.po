@@ -160,7 +160,10 @@ msgid "plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid"
 msgstr "Mime type der Galley mit der ID {$param} nicht akzeptiert. Export abgebrochen!"
 
 msgid "plugins.importexport.dnb.export.error.urnSet"
-msgstr "Das DNB Export Plugin exportiert keine Artikel mit URNs auf Artikelebene. Bitte wenden Sie sich an die Deutsche Nationalbibliothek für mehr Informationen. "
+msgstr "Eine URN wurde gesetzt für den Artikel mit der ID {$submissionId}."
+
+msgid "plugins.importexport.dnb.export.error.urnSet.description"
+msgstr "{$param} Das DNB Export Plugin exportiert keine Artikel mit URNs auf Artikelebene. Bitte wenden Sie sich an die Deutsche Nationalbibliothek für mehr Informationen."
 
 msgid "plugins.importexport.dnb.export.error.galleyFileNotFound"
 msgstr "Die Fahnendatei {$param} konnte nicht gefunden werden."

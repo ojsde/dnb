@@ -28,7 +28,6 @@ use APP\plugins\importexport\dnb\DNBPluginException;
 define('XML_NON_VALID_CHARCTERS_EXCEPTION', 100);
 define('FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
 define('URN_SET_EXCEPTION', 101);
-define('MESSAGE_URN_SET','An URN has been set.'); // @RS refine
 
 define('DNB_MSG_SUPPLEMENTARY','Begleitmaterial');
 define('DNB_MSG_SUPPLEMENTARY_AMBIGUOUS','Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht');
@@ -100,7 +99,8 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
 		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
 		if (!empty($submissionURN)) {
-		    throw new DNBPluginException(MESSAGE_URN_SET, URN_SET_EXCEPTION);
+			$msg = __('plugins.importexport.dnb.export.error.urnSet', array('submissionId' => $submissionId, 'urn' => $submissionURN));
+		    throw new DNBPluginException($msg, URN_SET_EXCEPTION);
 		};
 		
 		// Data we will need later

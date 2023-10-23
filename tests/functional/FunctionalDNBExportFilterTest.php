@@ -22,6 +22,7 @@ use PKP\filter\FilterGroup;
 use APP\plugins\importexport\dnb\DNBExportDeployment;
 use APP\plugins\importexport\dnb\DNBExportPlugin;
 use APP\plugins\importexport\dnb\DNBPluginException;
+use PKP\facades\Locale;
 
     class FunctionalDNBExportFilterTest extends PKPTestCase {
 
@@ -48,6 +49,8 @@ use APP\plugins\importexport\dnb\DNBPluginException;
             $context = Application::get()->getContextDAO()->getByPath($journalPath);
             
             self::assertTrue($context != null);
+
+            Locale::registerPath(BASE_SYS_DIR . '/plugins/importexport/dnb/locale');
 
             $contextDao = Application::getContextDAO();
 		    $journalFactory = $contextDao->getAll(true);
@@ -139,7 +142,13 @@ use APP\plugins\importexport\dnb\DNBPluginException;
                 //$language = $xpathNative->query("//submission_file ???? ")[0]->getAttribute('locale'); // not clear where this information is stored in native xml
                 $author = $this->getTextContent($xpathNative, $publication."//d:author[1]/d:familyname").", ".$this->getTextContent($xpathNative, $publication."//d:author[1]/d:givenname");
                 $access = $xpathNative->query($publication)[0]->getAttribute('access_status');
-                $access = $access == 0 ? 'b' : $access;
+                // we have to distinguish publication access status and issue access status
+                // OJS looks for issue access status if publication access status is not set
+                // native XML export only provides publication access status which will be set to "0" == "closed" if value was not set for this publication => issue value should be used
+                $access = $access == 0 ? $issue->getData('accessStatus'): $access;
+                $access = $access == 1 ? 'b' : $access;
+                $access = $access == 2 ? 'd' : $access;
+                
                 $prefix = $this->getTextContent($xpathNative, $publication."//d:prefix");
                 if ($prefix != "") {$prefix = $prefix." ";}
                 $title = strip_tags($this->getTextContent($xpathNative, $publication."//d:title[@locale='".$galleyLocale."']"));
@@ -173,14 +182,16 @@ use APP\plugins\importexport\dnb\DNBPluginException;
                 // run xml export
                 try {
                     if ($submission->getCurrentPublication()->getData('pub-id::other::urn')) {
-                        $this->expectExceptionMessage(MESSAGE_URN_SET);
+                        $submissionURN = $submission->getStoredPubId('other::urnDNB');
+                        $msg = __('plugins.importexport.dnb.export.error.urnSet', array('submissionId' => $submissionId, 'urn' => $submissionURN));
+                        $this->expectExceptionMessage($msg);
                     }
                     $result = $xmlFilter->process($testGalley);
                 } catch (DNBPluginException $e) {
                     switch($e->getCode()) {
                         case URN_SET_EXCEPTION:
-                            $this->assertSame(MESSAGE_URN_SET, $e->getMessage());
-                            // if the fails edit TestCase.php to allow NULL => public function expectExceptionMessage(?string $message): void
+                            $this->assertSame($msg, $e->getMessage());
+                            // if the test fails edit TestCase.php to allow NULL => public function expectExceptionMessage(?string $message): void
                             $this->expectExceptionMessage(NULL);
                             return;
                             break;
@@ -237,7 +248,7 @@ use APP\plugins\importexport\dnb\DNBPluginException;
                 $entries = $xpathDNBFilter->query("//*[@tag='093']/*[@code='b']");
                 if ($entries->length > 0) {
                     $value = $entries[0]->textContent;
-                    self::assertTrue($value == $access, $subIdInfo."Author was: ".print_r($value, true)."\nValue should have been: ".$access);
+                    self::assertTrue($value == $access, $subIdInfo."Access status was: ".print_r($value, true)."\nValue should have been: ".$access);
                 }
 
                 // author

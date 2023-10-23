@@ -160,7 +160,10 @@ msgid "plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid"
 msgstr "Mime type of remote galley file with ID {$param} not valid. No articles exported!"
 
 msgid "plugins.importexport.dnb.export.error.urnSet"
-msgstr "The DNB Export Plugin does not export articles with URNs for article objects. Please contact the Deutsche Nationalbibliothek for more information."
+msgstr "An URN was set for the article with the ID {$submissionId}."
+
+msgid "plugins.importexport.dnb.export.error.urnSet.description"
+msgstr "{$param} The DNB Export Plugin does not export articles with URNs for article objects. Please contact the Deutsche Nationalbibliothek for more information."
 
 msgid "plugins.importexport.dnb.export.error.galleyFileNotFound"
 msgstr "The galley file {$param} could not be found."
