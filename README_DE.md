@@ -1,9 +1,9 @@
 # OJS DNB-Export-Plug-In
-**Version: 1.5**
+**Version: 1.6**
 
 **Autor: Bozana Bokan, Ronald Steffen**
 
-**Letzte Änderung: 4. Mai 2022**
+**Letzte Änderung: 25. Oktober 2023**
 
 ---
 
@@ -21,9 +21,9 @@ Das Plug-In ist unter GNU General Public License v3 lizenziert. Sehen Sie die Da
 Systemanforderungen
 -------------------
 Dieses Plug-In Verison ist kompatibel mit...
- - OJS 3.3.0
+ - OJS 3.4.0-4
 
-TAR-Programm wird benötigt und es muss in der Datei config.inc.php konfiguriert werden.
+Das Programm `tar` wird benötigt und muss in der Datei config.inc.php konfiguriert werden.
 
 Um Artikel direkt in den Hotfolder der DNB abzuliefern muss der Server SFTP über das PHP-Paket libcurl unterstützen. Bitte achten Sie darauf, dass das installierte libcurl-Paket das SFTP-Protokoll unterstützt. 
 
@@ -37,6 +37,7 @@ Installation über die OJS-Benutzeroberfläche:
    | ----------- | ----------------- |
    | 3.2         | 1.4.x             |
    | 3.3         | 1.5.x             |
+   | 3.4         | 1.6.x             |
 
  - Installation des Plugins im Managementbereich von OJS (Einstellungen -> Website -> Plugins -> „Ein neues Plugin hochladen“ -> dnb-[Version].tar.gz hochladen)
 
@@ -60,7 +61,7 @@ Hinzufügen des DNB SFTP-Servers zu den SSH known_hosts (nur bei Erstinstallatio
 
 Damit das DNB-Plugin Transferpakete an die DNB übertragen kann muss eine SSH-Verbindung aufgebaut werden. Dazu muss der DNB-Server zur known_hosts-Datei Ihres Webserver-Accounts hinzugefügt werden. Eine einfache Methode dies zu erreichen ist, einmalig eine Verbindung zum DNB-Server über die Kommandozeile Ihres OJS-Servers herzustellen. Benutzen Sie dazu folgenden Befehl (Debian):
 
- - sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>
+`sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>`
 
 Ersetzen Sie <username> und <folder ID> durch die Ihnen von der DNB mitgeteilen Login-Daten.
 

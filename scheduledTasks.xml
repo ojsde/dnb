@@ -18,6 +18,6 @@
 <scheduled_tasks>
 	<task class="APP\plugins\importexport\dnb\DNBInfoSender">
 		<descr>Deposit article packages to DNB Hotfolder.</descr>
- 		<!-- <frequency minute="0"/> TODO @RS --> 
+ 		<frequency minute="0"/>
 	</task>
 </scheduled_tasks>

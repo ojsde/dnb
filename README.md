@@ -1,9 +1,9 @@
 # OJS DNB Export Plugin
-**Version: 1.5**
+**Version: 1.6**
 
 **Author: Bozana Bokan, Ronald Steffen**
 
-**Last update: May 4, 2022**
+**Last update: October 10, 2023**
 
 ---
 
@@ -21,9 +21,9 @@ This plugin is licensed under the GNU General Public License v3. See the file LI
 System Requirements
 -------------------
 This plugin version is compatible with...
- - OJS 3.3.0
+ - OJS 3.4.0-4
  
-TAR executable is required and it has to be configured in config.inc.php.
+The `tar` executable is required and has to be configured in config.inc.php.
 
 For the depositing articles directly to the DNB Hofolder your server has to support SFTP via the PHP libcurl library. Please make sure the libcurl library installed on your server supports the SFTP protocol.
 
@@ -37,6 +37,7 @@ Installalion via OJS GUI:
    | ----------- | ----------------- |
    | 3.2         | 1.4.x             |
    | 3.3         | 1.5.x             |
+   | 3.4         | 1.6.x             |
 
  - install plugin in OJS (Settings -> Website -> plugins -> „Upload a New Plugin“ -> upload dnb-[version].tar.gz)
 
@@ -58,7 +59,7 @@ Adding the DNB SFTP server to SSH known_hosts (only on first installation on a s
 
 To enable the DNB-Plugin to deposit transfer packages on the DNB server an SSH connection has to be initiated. To this end, the DNB server has to be added to the known_hosts file of your web server account. An easy way to achieve this is to once establish a connection to the DNB server via the command line of your web server. On a Debian system you can use the following command:
 
- - sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>
+`sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>`
 
 Please replace <username> and <folder ID> by the login credentials you received from the DNB.
 
