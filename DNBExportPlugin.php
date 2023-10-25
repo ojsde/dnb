@@ -671,6 +671,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($curlCh, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
 
+		// additional curl options as set in config.inc.php
+		if ($value = Config::getVar('dnb-plugin', 'CURLOPT_SSH_HOST_PUBLIC_KEY_MD5')) {
+			curl_setopt($curlCh, CURLOPT_SSH_HOST_PUBLIC_KEY_MD5, $value);
+		}
+		if ($value = Config::getVar('dnb-plugin', 'CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256')) {
+			curl_setopt($curlCh, CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256, $value);
+		}
+		if ($value = Config::getVar('dnb-plugin', 'CURLOPT_SSH_PUBLIC_KEYFILE')) {
+			curl_setopt($curlCh, CURLOPT_SSH_PUBLIC_KEYFILE, $value);
+		}
+
 		$username = $this->getSetting($context->getId(), 'username');
 		$password = $this->getSetting($context->getId(), 'password');
 		$folderId = $this->getSetting($context->getId(), 'folderId');

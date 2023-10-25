@@ -62,6 +62,19 @@ To enable the DNB-Plugin to deposit transfer packages on the DNB server an SSH c
 
 Please replace <username> and <folder ID> by the login credentials you received from the DNB.
 
+Advanced settings for your SSH connection can be configured in the config.inc.php file. Create a section [dnb-plugin] at the end of the file. The following additional settings are supported:
+
+CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
+CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
+CURLOPT_SSH_PUBLIC_KEYFILE
+
+Example:
+```
+[dnb-plugin]
+CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256='<put the public key here>'
+```
+
+
 Export
 ------------
 The plugin settings can be found at:

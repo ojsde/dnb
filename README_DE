@@ -64,6 +64,18 @@ Damit das DNB-Plugin Transferpakete an die DNB übertragen kann muss eine SSH-Ve
 
 Ersetzen Sie <username> und <folder ID> durch die Ihnen von der DNB mitgeteilen Login-Daten.
 
+Erweiterte Einstellungen zur SSH-Verbindung können in der config.inc.php definiert werden. Erstellen Sie dazu einen Abschnitt [dnb-plugin] am Ende der Datei. Folgende zusätzliche Parameter werden unterstützt:
+
+CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
+CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
+CURLOPT_SSH_PUBLIC_KEYFILE
+
+Beispiel:
+```
+[dnb-plugin]
+CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256='<put the public key here>'
+```
+
 Export
 ------------
 Die Plug-In-Einstellungen sind hier zu finden:
@@ -81,6 +93,6 @@ Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Kl
 Kontakt/Support
 ---------------
 
-Bitte beachten Sie auch die Dokumentation im Ordner `docs` oder unter https://ojs-de.net/support/anleitungen/dnb-plugin.
+Bitte beachten Sie auch die Dokumentation im Ordner `docs`.
 
 Dokumentation, Fehlerauflistung und Updates können auf dieser Plug-Ins-Startseite gefunden werden <http://github.com/ojsde/dnb>.
