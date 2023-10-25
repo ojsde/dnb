@@ -40,17 +40,17 @@ use PKP\core\JSONMessage;
 define('DEBUG', true);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
-define('ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
-define('EXPORT_ACTION_MARKEXCLUDED','exclude');
-define('EXPORT_STATUS_MARKEXCLUDED','markExcluded');
-define('REMOTE_IP_NOT_ALLOWED_EXCEPTION', 103);
+define('DNB_ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
+define('DNB_EXPORT_ACTION_MARKEXCLUDED','exclude');
+define('DNB_EXPORT_STATUS_MARKEXCLUDED','markExcluded');
+define('DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION', 103);
 
 if (!DEBUG) {
-	define('SFTP_SERVER','sftp://@hotfolder.dnb.de/');
-	define('SFTP_PORT', 22122);
+	define('DNB_SFTP_SERVER','sftp://@hotfolder.dnb.de/');
+	define('DNB_SFTP_PORT', 22122);
 } else {
-	define('SFTP_SERVER','sftp://ojs@sftp/');
-	define('SFTP_PORT', 22);
+	define('DNB_SFTP_SERVER','sftp://ojs@sftp/');
+	define('DNB_SFTP_PORT', 22);
 }
 
 class DNBExportPlugin extends PubObjectsExportPlugin {
@@ -159,8 +159,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$this->_exportAction = EXPORT_ACTION_MARKREGISTERED;
 					$request->_requestVars[EXPORT_ACTION_MARKREGISTERED] = true;
 					break;
-				case EXPORT_ACTION_MARKEXCLUDED:
-					$this->_exportAction = EXPORT_ACTION_MARKEXCLUDED;
+				case DNB_EXPORT_ACTION_MARKEXCLUDED:
+					$this->_exportAction = DNB_EXPORT_ACTION_MARKEXCLUDED;
 					break;
 			}
 			$args[0] = 'exportSubmissions';
@@ -204,13 +204,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				);
 
 				// instantinate SubmissionListPanel
-
-				// TODO @RS
-				// It would be nice to have the issue title in the SubmissionListPanel title field.
-				// But currently the SubmissionListPanel title cannot be updated on filter requests and cannot render HTML -> no linking possible.
-				// For now we continue to use these values as item parameters (see below).
-				// $issue = Repo::issue()->get($issues[1]->getId());
-
 				$submissionsListPanel = new \APP\components\listPanels\SubmissionsListPanel(
 					'submissions',
 					__('common.publications'),
@@ -239,14 +232,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					->filterByStatus([Submission::STATUS_PUBLISHED])
 					->getMany()
 					->toArray();
-
-				// OJS 3.3
-				// $publishedSubmissions = Services::get('submission')->getMany([
-				// 	'contextId' => $context->getId(),
-				// 	'status' => STATUS_PUBLISHED,
-				// 	// we cannot filter by issue id because the data collected here cannot be updated by the vue ListPanel
-				// 	//'issueIds' => [$issue->getId()]
-				// ]);
 
 				$dnbStatus = [];
 				$nNotRegistered = 0;
@@ -302,8 +287,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 							],
 							[
 								'param' => $this->getPluginSettingsPrefix().'::status',
-								'value' => EXPORT_STATUS_MARKEXCLUDED,
-								'title' => $this->getStatusNames()[EXPORT_STATUS_MARKEXCLUDED]
+								'value' => DNB_EXPORT_STATUS_MARKEXCLUDED,
+								'title' => $this->getStatusNames()[DNB_EXPORT_STATUS_MARKEXCLUDED]
 							],
 						],
 					];
@@ -319,7 +304,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$templateMgr->assign([
 					'pageComponent' => 'ImportExportPage',
 					'baseurl' => $request->getBaseUrl(),
-					'debugModeWarning' => __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => SFTP_SERVER, 'port' => SFTP_PORT]),
+					'debugModeWarning' => __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_SFTP_SERVER, 'port' => DNB_SFTP_PORT]),
 					'nNotRegistered' => $nNotRegistered,
 					'remoteEnabled' => $this->getSetting($context->getId(), 'exportRemoteGalleys') ? "Remote On" : "",
 					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') === "none" ? "Supplementary Off" : ""
@@ -436,15 +421,23 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					'sectionIds' => isset($args['sectionIds'])?$args['sectionIds']:NULL,
 				]);
 
+				// get default submission list properties;
 				$userGroups = Repo::userGroup()->getCollector()->filterByContextIds([$context->getId()])->getMany();
+				$genreDao = DAORegistry::getDAO('GenreDAO');
+				$genres = $genreDao->getByContextId($context->getId())->toArray();
+				$mappedItems = Repo::submission()->getSchemaMap()
+					->mapManyToSubmissionsList($submissionsIterator, $userGroups, $genres)
+					->toArray();
+
+				// add additional properties
 				$items = [];
 				foreach ($submissionsIterator as $submission) {
+
+					$item = $mappedItems[$submission->getId()];
 					
 					$issue = Repo::issue()->get($submission->getCurrentPublication()->getData('issueId'));
 					$item['issueTitle'] = $issue->getLocalizedTitle();
 
-					// TODO @RS
-					// $issueUrl = Repo::issue()->getProperties($issue,['publishedUrl'],['request' => $request])['publishedUrl'];
 					$item['issueUrl'] = $request->getDispatcher()->url(
                         $request,
                         Application::ROUTE_PAGE,
@@ -458,12 +451,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					try {
 						$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys); 
 					} catch (DNBPluginException $e) {
-						// currently this only throws REMOTE_IP_NOT_ALLOWED_EXCEPTION
+						// currently this only throws DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION
 						// we handle this during export
 					}
+
+					// create warning message in case issues are detected with supplementary files
 					$msg = "";
 					if ($submission->getData('supplementaryNotAssignable')) {
-						$plural = AppLocale::getLocale() == "de_DE" ? "n" : "s";
+						$plural = Locale::getLocale() == "de_DE" ? "n" : "s";
 						$msg = __('plugins.importexport.dnb.warning.supplementaryNotAssignable',
 							array(
 								'nDoc' => count($documentGalleys),
@@ -473,7 +468,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					}
 					$item['supplementariesNotAssignable'] = $msg;
 
-					$item['id'] = $submission->getData('id');
 					$currentPublication = $submission->getCurrentPublication();
 					$item['publication']['id'] = $currentPublication->getData('id');
 					$item['sectionIds'] = $currentPublication->getData('sectionId');
@@ -509,7 +503,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$data['items'] = array_values(array_slice($items,$args['offset'],$itemsPerPage));
 
 				$response = new APIResponse();
-
 				$app = new \Slim\App();
 				$app->respond($response->withStatus(200)->withJson($data));
 				exit();
@@ -570,7 +563,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			EXPORT_STATUS_NOT_DEPOSITED => __('plugins.importexport.dnb.status.notDeposited'),
 			DNB_STATUS_DEPOSITED => __('plugins.importexport.dnb.status.deposited'),
 			EXPORT_STATUS_MARKEDREGISTERED => __('plugins.importexport.common.status.markedRegistered'),
-			EXPORT_STATUS_MARKEXCLUDED => __('plugins.importexport.dnb.status.excluded')
+			DNB_EXPORT_STATUS_MARKEXCLUDED => __('plugins.importexport.dnb.status.excluded')
 		);
 	}
 
@@ -580,7 +573,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function getExportActionNames() {
 		return array_merge(parent::getExportActionNames(), array(
 			EXPORT_ACTION_DEPOSIT => __('plugins.importexport.dnb.deposit'),
-			EXPORT_ACTION_MARKEXCLUDED => __('plugins.importexport.dnb.exclude')
+			DNB_EXPORT_ACTION_MARKEXCLUDED => __('plugins.importexport.dnb.exclude')
 		));
 	}
 
@@ -620,7 +613,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @copydoc PubObjectsExportPlugin::getExportActions()
 	 */
 	function getExportActions($context) {
-		return array(EXPORT_ACTION_DEPOSIT, EXPORT_ACTION_EXPORT, EXPORT_ACTION_MARKREGISTERED, EXPORT_ACTION_MARKEXCLUDED);
+		return array(EXPORT_ACTION_DEPOSIT, EXPORT_ACTION_EXPORT, EXPORT_ACTION_MARKREGISTERED, DNB_EXPORT_ACTION_MARKEXCLUDED);
 	}
 
 	/**
@@ -687,10 +680,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		assert(is_readable($filename));
 		$fh = fopen($filename, 'rb');
 
-		curl_setopt($curlCh, CURLOPT_URL, SFTP_SERVER.$folderId.'/'.basename($filename));
-		curl_setopt($curlCh, CURLOPT_PORT, SFTP_PORT);
+		curl_setopt($curlCh, CURLOPT_URL, DNB_SFTP_SERVER.$folderId.'/'.basename($filename));
+		curl_setopt($curlCh, CURLOPT_PORT, DNB_SFTP_PORT);
 		curl_setopt($curlCh, CURLOPT_USERPWD, "$username:$password");
-		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename)); // TODO @RS Config::getVar('files', 'files_dir') . '/' .
+		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename));
 		curl_setopt($curlCh, CURLOPT_INFILE, $fh);
 
 		$response = curl_exec($curlCh);
@@ -745,9 +738,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				$journalExportPath = $result;
 
 				$errors = $exportFilesNames = [];
-				// TODO @RS
-				// $submissionDao = DAORegistry::getDAO('SubmissionDAO');
-				$genreDao = DAORegistry::getDAO('GenreDAO');
 
 				// For each selected article
 				foreach ($submissions as $submission) {
@@ -864,14 +854,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$request->redirect(null, null, null, $path, null, $tab);
 				}
 				break;
-			case EXPORT_ACTION_MARKEXCLUDED:
+			case DNB_EXPORT_ACTION_MARKEXCLUDED:
 					foreach ($submissions as $object) {
 						switch($object->getData($this->getDepositStatusSettingName())) {
 							case EXPORT_STATUS_NOT_DEPOSITED:
 							case NULL:
-								$object->setData($this->getDepositStatusSettingName(), EXPORT_STATUS_MARKEXCLUDED);
+								$object->setData($this->getDepositStatusSettingName(), DNB_EXPORT_STATUS_MARKEXCLUDED);
 								break;
-							case EXPORT_STATUS_MARKEXCLUDED:
+							case DNB_EXPORT_STATUS_MARKEXCLUDED:
 								$object->setData($this->getDepositStatusSettingName(), NULL);
 								break;
 						}
@@ -955,16 +945,18 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	}
 
 	function handleExceptions($e) {
+		// Import constants
+		import('plugins.importexport.dnb.filter.DNBXmlFilter');
 		switch ($e->getCode()) {
-			case XML_NON_VALID_CHARCTERS_EXCEPTION:
+			case \DNB_XML_NON_VALID_CHARCTERS_EXCEPTION:
 				$param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $submissionId, 'node' => $e->getMessage()));		       
 				return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
-			case URN_SET_EXCEPTION:
+			case \DNB_URN_SET_EXCEPTION:
 				return ['plugins.importexport.dnb.export.error.urnSet.description', $e->getMessage()];
-			case FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION:
+			case \DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION:
 				$param = __('plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));		       
 				return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
-			case REMOTE_IP_NOT_ALLOWED_EXCEPTION:
+			case \DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION:
 				return array('plugins.importexport.dnb.export.error.exception', $e->getMessage());
 		}
 	}
@@ -1118,15 +1110,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$issue = Repo::issue()->getBySubmissionId($submission->getId());
 		$issueId = $issue->getId();
 
-		// TODO @RS we used to cache this -> still necessary ?
-
-		// if ($cache->isCached('issues', $issueId)) {
-		// 	$issue = $cache->get('issues', $issueId);
-		// } else {
-		// 	$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
-		// 	$issue = $issueDao->getById($issueId, $submission->getContextId());
-		// 	if ($issue) $cache->add($issue, null);
-		// }
 		assert(is_a($issue, 'Issue'));
 		if (!$issue->getPublished()) return false;
 
@@ -1281,7 +1264,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// Should the result file be GZip compressed.
 		$tarOptions = $gzip ? ' -czf ' : ' -cf ';
 		// Construct the tar command: path to tar, options, target archive file name
-		$tarCommand .= Config::getVar('cli', 'tar'). " " . ADDITIONAL_PACKAGE_OPTIONS . $tarOptions . escapeshellarg($targetFile);
+		$tarCommand .= Config::getVar('cli', 'tar'). " " . DNB_ADDITIONAL_PACKAGE_OPTIONS . $tarOptions . escapeshellarg($targetFile);
 
 		// Do not reveal our webserver user by forcing root as owner.
 		$tarCommand .= ' --owner 0 --group 0 --';
@@ -1431,7 +1414,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		if ($isAllowed) {
 			return true;
 		} else {
-			throw new DNBPluginException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), REMOTE_IP_NOT_ALLOWED_EXCEPTION);
+			throw new DNBPluginException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION);
 			return false;
 		}
 	}
@@ -1454,7 +1437,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function getPublishedSubmissions($submissionIds, $context) {
 		$submissions = parent::getPublishedSubmissions($submissionIds, $context);
-		if ($this->_exportAction != EXPORT_ACTION_MARKEXCLUDED)
+		if ($this->_exportAction != DNB_EXPORT_ACTION_MARKEXCLUDED)
 		{
 			return array_filter($submissions, array($this, 'filterMarkExcluded'));
 		}
@@ -1462,7 +1445,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	}
 
 	function filterMarkExcluded($submission) {
-		return ($submission->getData($this->getDepositStatusSettingName()) !== EXPORT_STATUS_MARKEXCLUDED);
+		return ($submission->getData($this->getDepositStatusSettingName()) !== DNB_EXPORT_STATUS_MARKEXCLUDED);
 	}
 
 }

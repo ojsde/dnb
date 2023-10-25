@@ -35,7 +35,7 @@ class DNBInfoSender extends ScheduledTask {
 		
 		$this->_plugin = $plugin;
 
-		if (is_a($plugin, 'DNBExportPlugin')) {
+		if (is_a($plugin, 'APP\plugins\importexport\dnb\DNBExportPlugin')) {
 			$plugin->addLocaleData();
 		}
 		

@@ -137,7 +137,7 @@
                         <pkp-button id="dnb_mark" onclick="$('#dnb_mark').closest('form').attr('action', '{plugin_url path=$smarty.const.EXPORT_ACTION_MARKREGISTERED}');submit('#exportXmlForm')">
                             {translate key="plugins.importexport.common.status.markedRegistered"}
                         </pkp-button>
-                        <pkp-button id="dnb_mark_exclude" onclick="$('#dnb_mark_exclude').closest('form').attr('action', '{plugin_url path=$smarty.const.EXPORT_ACTION_MARKEXCLUDED}');submit('#exportXmlForm')">
+                        <pkp-button id="dnb_mark_exclude" onclick="$('#dnb_mark_exclude').closest('form').attr('action', '{plugin_url path=$smarty.const.DNB_EXPORT_ACTION_MARKEXCLUDED}');submit('#exportXmlForm')">
                             {translate key="plugins.importexport.dnb.exclude"}
                         </pkp-button>
                         <pkp-button :disabled="!components.submissions.itemsMax" @click="toggleSelectAll">

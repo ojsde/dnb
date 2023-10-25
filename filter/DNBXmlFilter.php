@@ -16,18 +16,18 @@
 namespace APP\plugins\importexport\dnb\filter;
 
 use APP\core\Application;
+use APP\core\Services;
 use APP\facades\Repo;
 use PKP\i18n\LocaleConversion;
 use PKP\db\DAORegistry;
 use PKP\filter\PersistableFilter;
 use PKP\plugins\importexport\native\filter\NativeExportFilter;
-use PKP\core\PKPString;
-use APP\core\Services;
 use APP\plugins\importexport\dnb\DNBPluginException;
+use PKP\core\PKPString;
 
-define('XML_NON_VALID_CHARCTERS_EXCEPTION', 100);
-define('FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
-define('URN_SET_EXCEPTION', 101);
+define('DNB_XML_NON_VALID_CHARCTERS_EXCEPTION', 100);
+define('DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
+define('DNB_URN_SET_EXCEPTION', 101);
 
 define('DNB_MSG_SUPPLEMENTARY','Begleitmaterial');
 define('DNB_MSG_SUPPLEMENTARY_AMBIGUOUS','Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht');
@@ -84,23 +84,16 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$submission = Repo::submission()->get($submissionId);
 			if ($submission) $cache->add($submission, null);
 		}
-		
-		// TODO @RS verify caching
+
 		$issue = Repo::issue()->getBySubmissionId($submission->getId());
 		$issueId = $issue->getId();
-
-		if ($cache->isCached('issues', $issueId)) {
-			$issue = $cache->get('issues', $issueId);
-		} else {
-			if ($issue) $cache->add($issue, null);
-		}
 
 		// abort export in case any URN is set on the submission/article level, this is a special case that has to be discussed with DNB and implemented differently in each case
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
 		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
 		if (!empty($submissionURN)) {
 			$msg = __('plugins.importexport.dnb.export.error.urnSet', array('submissionId' => $submissionId, 'urn' => $submissionURN));
-		    throw new DNBPluginException($msg, URN_SET_EXCEPTION);
+		    throw new DNBPluginException($msg, DNB_URN_SET_EXCEPTION);
 		};
 		
 		// Data we will need later
@@ -133,7 +126,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			$firstAuthor = array_shift($authors);
 		}
 		if (!$firstAuthor) {
-			throw new DNBPluginException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
+			throw new DNBPluginException("DNBXmlFilter Error: ", DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
 		}
 		
 		// is open access
@@ -452,7 +445,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
     	if ($res != 0) {
 		    // libxml will strip input at the first occurance of an non-allowed character, subsequent character will be lost
 		    // we don't remove these characters automatically because user has to be aware of the issue
-    	    throw new DNBPluginException("Character code ".ord($matches[0][0][0])." found at position ".$matches[0][0][1]." in MARC21 datafield node ".$datafieldNode->getAttribute('tag')." code ".$code, XML_NON_VALID_CHARCTERS_EXCEPTION);
+    	    throw new DNBPluginException("Character code ".ord($matches[0][0][0])." found at position ".$matches[0][0][1]." in MARC21 datafield node ".$datafieldNode->getAttribute('tag')." code ".$code, DNB_XML_NON_VALID_CHARCTERS_EXCEPTION);
 		}
 
 		$node->appendChild($doc->createTextNode($value));

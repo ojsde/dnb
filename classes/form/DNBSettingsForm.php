@@ -15,10 +15,11 @@
 namespace APP\plugins\importexport\dnb\classes\form;
 
 use APP\core\Application;
-use \PKP\components\forms\FormComponent;
-use \PKP\components\forms\FieldText;
-use \PKP\components\forms\FieldOptions;
+use PKP\components\forms\FormComponent;
+use PKP\components\forms\FieldText;
+use PKP\components\forms\FieldOptions;
 use PKP\validation\ValidatorFactory;
+use PKP\core\APIResponse;
 
 define('FORM_DNB_SETTINGS', 'dnbsettingsform');
 
@@ -161,8 +162,6 @@ class DNBSettingsForm extends FormComponent {
 	function validate() {
 		$request = Application::get()->getRequest();
 
-		import('lib.pkp.classes.validation.ValidatorFactory');
-
 		if ($request->getUserVar('exportRemoteGalleys') == "true") {
 			$props = ['allowedRemoteIPs' => $request->getUserVar('allowedRemoteIPs')];
 			$rules = ['allowedRemoteIPs' => ['regex:/^[0-9\.\|]+$/', 'required_unless:exportRemoteGalleys,false']];
@@ -170,15 +169,14 @@ class DNBSettingsForm extends FormComponent {
 				'regex' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.error'),
 				'required_unless' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired')
 			];
-			$validator = ValidatorFactory::make($props, $rules, $messages);
+			$validator = \PKP\validation\ValidatorFactory::make($props, $rules, $messages);
 
 			if ($validator->fails()) {
 				$errors = $validator->errors()->getMessages();
 
 				if (!empty($errors['allowedRemoteIPs'])) {
 					if (!empty($errors)) {
-						import('lib.pkp.classes.core.APIResponse');
-						$response = new APIResponse();
+						$response = new \PKP\core\APIResponse();
 
 						$app = new \Slim\App();
 						$app->respond($response->withStatus(400)->withJson($errors));

@@ -40,8 +40,7 @@ use PKP\facades\Locale;
             $request = $application->getRequest();
             $journalPath = 'dja';
     
-            import('classes.core.PageRouter');
-            $router = new PageRouter();
+        $router = new \APP\core\PageRouter();
             $router->setApplication($application);
             $request->setRouter($router);
 
@@ -189,7 +188,7 @@ use PKP\facades\Locale;
                     $result = $xmlFilter->process($testGalley);
                 } catch (DNBPluginException $e) {
                     switch($e->getCode()) {
-                        case URN_SET_EXCEPTION:
+                        case DNB_URN_SET_EXCEPTION:
                             $this->assertSame($msg, $e->getMessage());
                             // if the test fails edit TestCase.php to allow NULL => public function expectExceptionMessage(?string $message): void
                             $this->expectExceptionMessage(NULL);
