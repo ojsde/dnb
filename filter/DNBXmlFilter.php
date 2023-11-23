@@ -161,7 +161,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		// control fields: 001, 007 and 008
 		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', $galley->getId()));
 		$node->setAttribute('tag', '001');
-		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', ' cr |||||||||||'));
+		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', 'cr |||||||||||'));
 		$node->setAttribute('tag', '007');
 		$recordNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'controlfield', $yearYY.$month.$day.'s'.$yearYYYY.'||||xx#|||| ||||| ||||| '.$language.'||'));
 		$node->setAttribute('tag', '008');
