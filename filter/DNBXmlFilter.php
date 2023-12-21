@@ -18,6 +18,7 @@ namespace APP\plugins\importexport\dnb\filter;
 use APP\core\Application;
 use APP\core\Services;
 use APP\facades\Repo;
+use PKP\facades\Locale;
 use PKP\i18n\LocaleConversion;
 use PKP\db\DAORegistry;
 use PKP\filter\PersistableFilter;
@@ -76,6 +77,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		// Get all required data objects
 		$issue = $submission = $galleyFile = null;
 		$galley = $pubObject;
+		$galleyLocale = $galley->getLocale();
 
 		$submissionId = $galley->getData('submissionId');
 		if ($cache->isCached('articles', $submissionId)) {
@@ -97,7 +99,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		};
 		
 		// Data we will need later
-		$language = LocaleConversion::get3LetterIsoFromLocale($galley->getLocale());
+		$language = LocaleConversion::get3LetterIsoFromLocale($galleyLocale);
 		$datePublished = $submission->getDatePublished();
 		if (!$datePublished) $datePublished = $issue->getDatePublished();
 		assert(!empty($datePublished));
@@ -210,29 +212,30 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 
 		// Marc 100 first author
 		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
-		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false,true));
+		$locale = $firstAuthor->getFamilyName($galleyLocale)?$galleyLocale:Locale::getLocale();
+		$this->createSubfieldNode($doc, $datafield100, 'a', trim($firstAuthor->getFamilyName($locale)).', '.trim($firstAuthor->getGivenName($locale)));
 		if (!empty($firstAuthor->getData('orcidAccessToken'))) {
-            $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename($firstAuthor->getOrcid()));
+            $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename(trim($firstAuthor->getOrcid())));
     	}
 		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
 
 		// Marc 254 title
 		// title
-		$title = $submission->getTitle($galley->getLocale());
+		$title = $submission->getTitle($galleyLocale);
 		if (empty($title)) $title = $submission->getTitle($submission->getLocale());
 		assert(!empty($title));
 		//remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
 		$title = preg_replace("#[\s\n\r]+#",' ',$title);
 		$datafield245 = $this->createDatafieldNode($doc, $recordNode, '245', '0', '0');
-		$this->createSubfieldNode($doc, $datafield245, 'a', $title);
+		$this->createSubfieldNode($doc, $datafield245, 'a', trim($title));
 
 		// subtitle
-		$subTitle = $submission->getSubtitle($galley->getLocale());
+		$subTitle = $submission->getSubtitle($galleyLocale);
 		if (empty($subTitle)) $subTitle = $submission->getSubtitle($submission->getLocale());
 		if (!empty($subTitle)) {
 		    //remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
 		    $subTitle = preg_replace("#[\s\n\r]+#",' ',$subTitle); 
-			$this->createSubfieldNode($doc, $datafield245, 'b', $subTitle);
+			$this->createSubfieldNode($doc, $datafield245, 'b', trim($subTitle));
 		}
 
 		// Marc 264 date published
@@ -275,7 +278,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		}
 
 		// Marc 520 abstract
-		$abstract = $submission->getAbstract($galley->getLocale());
+		$abstract = $submission->getAbstract($galleyLocale);
 		if (empty($abstract)) $abstract = $submission->getAbstract($submission->getLocale());
 		if (!empty($abstract)) {
 			$abstract = trim(PKPString::html2text($abstract));
@@ -287,7 +290,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			}
 			$abstractURL = $request->url($journal->getPath(), 'article', 'view', array($submissionId));
 			$datafield520 = $this->createDatafieldNode($doc, $recordNode, '520', '3', ' ');
-			$this->createSubfieldNode($doc, $datafield520, 'a', $abstract);
+			$this->createSubfieldNode($doc, $datafield520, 'a', trim($abstract));
 			$this->createSubfieldNode($doc, $datafield520, 'u', $abstractURL);
 		}
 
@@ -295,7 +298,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		$licenseURL = $submission->getLicenseURL();
 		if (empty($licenseURL)) {
 			// copyright notice
-			$copyrightNotice = $journal->getSetting('copyrightNotice', $galley->getLocale());
+			$copyrightNotice = $journal->getSetting('copyrightNotice', $galleyLocale);
 			if (empty($copyrightNotice)) $copyrightNotice = $journal->getSetting('copyrightNotice', $journal->getPrimaryLocale());
 			if (!empty($copyrightNotice)) {
 				// link to the article view page where the copyright notice can be found
@@ -305,7 +308,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		if (!empty($licenseURL)) {
 			$datafield540 = $this->createDatafieldNode($doc, $recordNode, '540', ' ', ' ');
 			$this->createSubfieldNode($doc, $datafield540, 'u', $licenseURL);
-			$ccLicenseBadge = Application::get()->getCCLicenseBadge($publication->getData('licenseUrl'), $galley->getLocale());
+			$ccLicenseBadge = Application::get()->getCCLicenseBadge($publication->getData('licenseUrl'), $galleyLocale);
 			// only if there is a cc-Badge we know a predefined cc license was selected, otherwise its a custom license Url
 			if ($ccLicenseBadge) {
 				$this->createSubfieldNode($doc, $datafield540, '2', 'cc');
@@ -323,10 +326,10 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 
 		// Marc 563 keywords
 		$submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
-		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getCurrentPublication()->getId(), array($galley->getLocale()));
-		if (!empty($controlledVocabulary[$galley->getLocale()])) {
+		$controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getCurrentPublication()->getId(), array($galleyLocale));
+		if (!empty($controlledVocabulary[$galleyLocale])) {
 			$datafield653 = $this->createDatafieldNode($doc, $recordNode, '653', ' ', ' ');
-			foreach ($controlledVocabulary[$galley->getLocale()] as $controlledVocabularyItem) {
+			foreach ($controlledVocabulary[$galleyLocale] as $controlledVocabularyItem) {
 				$this->createSubfieldNode($doc, $datafield653, 'a', $controlledVocabularyItem);
 			}
 		}
@@ -335,9 +338,10 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		// other authors
 		foreach ((array) $authors as $author) {
 			$datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-			$this->createSubfieldNode($doc, $datafield700, 'a', $author->getFullName(false,true));
+			$locale = $author->getFamilyName($galleyLocale)?$galleyLocale:Locale::getLocale();
+			$this->createSubfieldNode($doc, $datafield700, 'a', trim($author->getFamilyName($locale)).', '.trim($author->getGivenName($locale)));
 			if (!empty($author->getData('orcidAccessToken'))) {
-				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename($author->getOrcid()));
+				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename(trim($author->getOrcid())));
 			}
 			$this->createSubfieldNode($doc, $datafield700, '4', 'aut');
 		}
@@ -345,9 +349,10 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		// translators
 		foreach ((array) $translators as $translator) {
 		    $datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-		    $this->createSubfieldNode($doc, $datafield700, 'a', $translator->getFullName(false,true));
+			$locale = $author->getFamilyName($galleyLocale)?$galleyLocale:Locale::getLocale();
+		    $this->createSubfieldNode($doc, $datafield700, 'a', trim($translator->getFamilyName($locale)).', '.trim($translator->getGivenName($locale)));
 			if (!empty($translator->getData('orcidAccessToken'))) {
-				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename($translator->getOrcid()));
+				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename(trim($translator->getOrcid())));
 			}
 		    $this->createSubfieldNode($doc, $datafield700, '4', 'trl');
 		}
