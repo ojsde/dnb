@@ -27,7 +27,7 @@ use PKP\db\DAORegistry;
 use APP\submission\Submission;
 use PKP\core\APIResponse;
 use APP\components\forms\FieldSelectIssues;
-use DNBSettingsForm;
+// use DNBSettingsForm;
 use APP\plugins\importexport\dnb\DNBExportDeployment;
 use PKP\plugins\importexport\PKPImportExportDeployment;
 use APP\plugins\importexport\dnb\filter\DNBXmlFilter;
@@ -35,6 +35,10 @@ use PKP\core\PKPString;
 use ErrorException;
 use PKP\facades\Locale;
 use PKP\core\JSONMessage;
+use DOMDocument;
+use DOMXPath;
+// use SimpleXMLElement;
+use DNBCatalogInfoProvider;
 
 
 define('DEBUG', true);
@@ -390,6 +394,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$templateMgr->assign('latestLogFile', $latestLogFile);
 				}
 
+				// query dnb catalog
+				if ($this->getSetting($this->_currentContextId, 'dnbCatalog')) {
+
+					$dbnCatalogInfoProvider = new classes\DNBCatalogInfoProvider();
+					$dnbCatalogInfo = $dbnCatalogInfoProvider->getCatalogInfo($context, Config::getVar('files', 'files_dir').'/'.$this->getPluginSettingsPrefix());
+					$templateMgr->assign('dnbCatalogInfo', $dnbCatalogInfo);
+				}
+
 				$templateMgr->display($this->getTemplateResource('index.tpl'));
 				break;
 		}
@@ -657,15 +669,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			return $errors;
 		}
 
-		$curlCh = curl_init();
-		if ($httpProxyHost = Config::getVar('proxy', 'http_host')) {
-			curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
-			curl_setopt($curlCh, CURLOPT_HTTPPROXYTUNNEL, 1);
-			curl_setopt($curlCh, CURLOPT_PROXYPORT, Config::getVar('proxy', 'http_port', '80'));
-			if ($username = Config::getVar('proxy', 'username')) {
-				curl_setopt($curlCh, CURLOPT_PROXYUSERPWD, $username . ':' . Config::getVar('proxy', 'password'));
-			}
-		}
+		$curlCh = $this->curl_init();
+
 		curl_setopt($curlCh, CURLOPT_UPLOAD, true);
 		curl_setopt($curlCh, CURLOPT_HEADER, true);
 		curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, true);
@@ -710,6 +715,19 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 		if (!empty($errors)) return $errors;
 		return true;
+	}
+
+	private function curl_init() {
+		$curlCh = curl_init();
+		if ($httpProxyHost = Config::getVar('proxy', 'http_host')) {
+			curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
+			curl_setopt($curlCh, CURLOPT_HTTPPROXYTUNNEL, 1);
+			curl_setopt($curlCh, CURLOPT_PROXYPORT, Config::getVar('proxy', 'http_port', '80'));
+			if ($username = Config::getVar('proxy', 'username')) {
+				curl_setopt($curlCh, CURLOPT_PROXYUSERPWD, $username . ':' . Config::getVar('proxy', 'password'));
+			}
+		}
+		return $curlCh;
 	}
 
 	/**
@@ -1114,7 +1132,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = []) {
 		$cache = $this->getCache();
-		if (!$cache->isCached('articles', $submission->getId())) {
+		if (!$cache->isCached('Anzahl Artikel', $submission->getId())) {
 			$cache->add($submission, null);
 		}
 		
@@ -1334,7 +1352,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @param $errors array
 	 */
 	function errorNotification($request, $errors) {
-		foreach($errors as $error) {		    
+		foreach($errors as $error) {
 			assert(is_array($error) && count($error) >= 1);
 			$this->_sendNotification(
 				$request->getUser(),
@@ -1459,6 +1477,20 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		return ($submission->getData($this->getDepositStatusSettingName()) !== DNB_EXPORT_STATUS_MARKEXCLUDED);
 	}
 
+	function array_keys_multi(array $array)
+	{
+		$keys = array();
+
+		foreach ($array as $key => $value) {
+			$keys[] = $key;
+
+			if (is_array($value)) {
+				$keys = array_merge($keys, $this->array_keys_multi($value));
+			}
+		}
+
+		return $keys;
+	}
 }
 
 class DNBPluginException extends \ErrorException {

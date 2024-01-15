@@ -69,6 +69,7 @@
                 </div>
 
                 <form id="exportXmlForm" class="pkp_form dnb_form" action="" method="post">
+                
                     <submissions-list-panel
                         v-bind="components.submissions"
                         @set="set"
@@ -153,6 +154,14 @@
                 <badge>{translate key="plugins.importexport.dnb.deposit.notice"}</badge>
             </tab>
         {/if}
+
+        {if $dnbCatalogInfo}
+            <tab id="dnb-catalog-tab" label="{translate key="plugins.importexport.dnb.dnbCataloTabTitle"}">
+                <badge>{translate key="plugins.importexport.dnb.dnbCatalogTabInfo"}</badge>
+                {include file="../plugins/importexport/dnb/templates/dnbCatalogTab.tpl"}
+            </tab>
+        {/if}
+
         {if $latestLogFile}
             <tab id="logfile-tab" label="{translate key="plugins.importexport.dnb.logFileTabTitle"}">
                 <h4>{translate key="plugins.importexport.dnb.logFileTabInfo"}</h4>

@@ -275,3 +275,30 @@ msgstr "Keine Artikel zur Ablieferung gefunden."
 
 msgid "plugins.importexport.dnb.deposit.error.noIssuesPublished"
 msgstr "Keine publizierten Ausgaben gefunden. Das DNB Export Plugin kann nur publizierte Ausgaben exportieren."
+
+msgid "plugins.importexport.dnb.settings.form.experimentalFeatures.title"
+msgstr "Experimentelle Funktionen"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.label"
+msgstr "Überprüfung der Ablieferungen über DNB-Katalogabfrage"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.description"
+msgstr "Diese Funktion fragt die zur ISSN dieser Zeitschrift im DNB-Katalog verfübaren Einträge ab und zeigt Informationen dazu an."
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel"
+msgstr "DNB-Katalogabfrage aktivieren"
+
+msgid "plugins.importexport.dnb.curl.error.dnbCatalog"
+msgstr "Fehler beim Verbindungsaufbau zum DNB-Katalog: {$param}"
+
+msgid "plugins.importexport.dnb.dnbCataloTabTitle"
+msgstr "DNB Katalog Info"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.catalogInfo.issnNotFound"
+msgstr "Die ISSN dieser Zeitschrift wurde im DNB-Katalog nicht gefunden."
+
+msgid "plugins.importexport.dnb.dnbCatalogTabInfo"
+msgstr "Die hier dargestellten Informationen aus dem DNB-Katalog basieren auch einer Suche nach der für diese Zeitschrift angegebenen ISSN.<br>Dies ist eine experimentelle Funkltion. Es wird keine Garantie für die Vollständigkeit der Ergebnisse übernommen."
+
+msgid "plugins.importexport.dnb.dnbCatalogInfo.ISSNTableCaption"
+msgstr "Für diese Zeitschrift gefundene ISSNs"
