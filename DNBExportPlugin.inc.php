@@ -403,6 +403,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$templateMgr->assign('latestLogFile', $latestLogFile);
 				}
 
+				// query dnb catalog
+				if ($this->getSetting($this->_currentContextId, 'dnbCatalog')) {
+
+					$this->import("classes.DNBCatalogInfoProvider");
+					$dbnCatalogInfoProvider = new DNBCatalogInfoProvider();
+					$dnbCatalogInfo = $dbnCatalogInfoProvider->getCatalogInfo($context, Config::getVar('files', 'files_dir').'/'.$this->getPluginSettingsPrefix());
+					$templateMgr->assign('dnbCatalogInfo', $dnbCatalogInfo);
+				}
+
 				$templateMgr->display($this->getTemplateResource('index.tpl'));
 				break;
 		}

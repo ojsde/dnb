@@ -272,3 +272,27 @@ msgstr "No articles found to deliver."
 
 msgid "plugins.importexport.dnb.deposit.error.noIssuesPublished"
 msgstr "No published issues found. DNB Export Plugin can only export published issues."
+
+msgid "plugins.importexport.dnb.settings.form.experimentalFeatures.title"
+msgstr "Experimentel features"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.label"
+msgstr "Verification of article deposits by querying the DNB catalog"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.description"
+msgstr "This features queries the DNB catalog for entries belonging to the ISSN of this journal and displays relevant information."
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel"
+msgstr "Enable DNB catalog queries"
+
+msgid "plugins.importexport.dnb.dnbCataloTabTitle"
+msgstr "DNB Catalog Info"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.catalogInfo.issnNotFound"
+msgstr "The ISSN for the journals was not found in the DNB catalog."
+
+msgid "plugins.importexport.dnb.dnbCatalogTabInfo"
+msgstr "The information from the DNB catalog displayed here is based on the ISSN provided for this journal.<br>This is an experimental feature. The information displayed here might be incomplete."
+
+msgid "plugins.importexport.dnb.dnbCatalogInfo.ISSNTableCaption"
+msgstr "ISSNs found for this journal"

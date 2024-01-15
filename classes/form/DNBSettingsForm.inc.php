@@ -146,6 +146,21 @@ class DNBSettingsForm extends FormComponent {
 				'tooltip' => __('plugins.importexport.dnb.settings.form.archiveAccess.description'),
 			]));
 		}
+
+		// group experimental features
+		$this->addGroup([
+			'id' => 'experimentalFeatures',
+			'label' => __('plugins.importexport.dnb.settings.form.experimentalFeatures.title'),
+		])->addField(new FieldOptions('dnbCatalog', [
+				'label' => __('plugins.importexport.dnb.settings.form.dnbCatalog.label'),
+				'description' => __('plugins.importexport.dnb.settings.form.dnbCatalog.description'),
+				'groupId' => 'experimentalFeatures',
+				'options' => [
+					['value' => true, 'label' => __('plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel')],
+				],
+				'default' => false,
+				'value' => (bool)$plugin->getSetting($contextId, 'dnbCatalog'),
+		]));
 	}
 
 	// not used anymore, only for backwards compatability (called by PubObjectsExportPlugin)
@@ -214,7 +229,8 @@ class DNBSettingsForm extends FormComponent {
 			'automaticDeposit' => 'bool',
 			'submitSupplementaryMode' => 'string',
 			'exportRemoteGalleys' => 'bool',
-			'allowedRemoteIPs' => 'string'
+			'allowedRemoteIPs' => 'string',
+			'dnbCatalog' => 'bool'
 		);
 	}
 
@@ -224,7 +240,7 @@ class DNBSettingsForm extends FormComponent {
 	 * @return boolean
 	 */
 	function isOptional($settingName) {
-		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit','submitSupplementaryMode','exportRemoteGalleys','allowedRemoteIPs'));
+		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit','submitSupplementaryMode','exportRemoteGalleys','allowedRemoteIPs','dnbCatalog'));
 	}
 
 	/**
