@@ -18,7 +18,6 @@ namespace APP\plugins\importexport\dnb\filter;
 use APP\core\Application;
 use APP\core\Services;
 use APP\facades\Repo;
-use PKP\facades\Locale;
 use PKP\i18n\LocaleConversion;
 use PKP\db\DAORegistry;
 use PKP\filter\PersistableFilter;
@@ -212,7 +211,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 
 		// Marc 100 first author
 		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
-		$locale = $firstAuthor->getFamilyName($galleyLocale)?$galleyLocale:Locale::getLocale();
+		$locale = $firstAuthor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getLocale();
 		$this->createSubfieldNode($doc, $datafield100, 'a', trim($firstAuthor->getFamilyName($locale)).', '.trim($firstAuthor->getGivenName($locale)));
 		if (!empty($firstAuthor->getData('orcidAccessToken'))) {
             $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename(trim($firstAuthor->getOrcid())));
@@ -338,7 +337,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		// other authors
 		foreach ((array) $authors as $author) {
 			$datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-			$locale = $author->getFamilyName($galleyLocale)?$galleyLocale:Locale::getLocale();
+			$locale = $author->getFamilyName($galleyLocale)?$galleyLocale:$submission->getLocale();
 			$this->createSubfieldNode($doc, $datafield700, 'a', trim($author->getFamilyName($locale)).', '.trim($author->getGivenName($locale)));
 			if (!empty($author->getData('orcidAccessToken'))) {
 				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename(trim($author->getOrcid())));
@@ -349,7 +348,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		// translators
 		foreach ((array) $translators as $translator) {
 		    $datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-			$locale = $author->getFamilyName($galleyLocale)?$galleyLocale:Locale::getLocale();
+			$locale = $author->getFamilyName($galleyLocale)?$galleyLocale:$submission->getLocale();
 		    $this->createSubfieldNode($doc, $datafield700, 'a', trim($translator->getFamilyName($locale)).', '.trim($translator->getGivenName($locale)));
 			if (!empty($translator->getData('orcidAccessToken'))) {
 				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename(trim($translator->getOrcid())));

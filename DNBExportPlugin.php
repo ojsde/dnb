@@ -41,7 +41,7 @@ use DOMXPath;
 use DNBCatalogInfoProvider;
 
 
-define('DEBUG', true);
+define('DEBUG', false);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 define('DNB_ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
