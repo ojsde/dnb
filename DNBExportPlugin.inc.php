@@ -14,6 +14,7 @@
  */
 
 import('classes.plugins.PubObjectsExportPlugin');
+import('lib.pkp.classes.scheduledTask.ScheduledTaskHelper');
 
 use APP\components\forms\FieldSelectIssues;
 
