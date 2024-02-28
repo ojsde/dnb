@@ -3,7 +3,7 @@
 
 **Autor: Bozana Bokan, Ronald Steffen**
 
-**Letzte Änderung: 25. Oktober 2023**
+**Letzte Änderung: 28. Februar 2024**
 
 ---
 
@@ -67,9 +67,9 @@ Ersetzen Sie <username> und <folder ID> durch die Ihnen von der DNB mitgeteilen 
 
 Erweiterte Einstellungen zur SSH-Verbindung können in der config.inc.php definiert werden. Erstellen Sie dazu einen Abschnitt [dnb-plugin] am Ende der Datei. Folgende zusätzliche Parameter werden unterstützt:
 
-CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
-CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
-CURLOPT_SSH_PUBLIC_KEYFILE
+- CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
+- CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
+- CURLOPT_SSH_PUBLIC_KEYFILE
 
 Beispiel:
 ```

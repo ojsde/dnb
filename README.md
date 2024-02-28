@@ -3,7 +3,7 @@
 
 **Author: Bozana Bokan, Ronald Steffen**
 
-**Last update: October 10, 2023**
+**Last update: February 28, 2024**
 
 ---
 
@@ -65,9 +65,9 @@ Please replace <username> and <folder ID> by the login credentials you received 
 
 Advanced settings for your SSH connection can be configured in the config.inc.php file. Create a section [dnb-plugin] at the end of the file. The following additional settings are supported:
 
-CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
-CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
-CURLOPT_SSH_PUBLIC_KEYFILE
+- CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
+- CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
+- CURLOPT_SSH_PUBLIC_KEYFILE
 
 Example:
 ```
