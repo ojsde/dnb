@@ -39,6 +39,7 @@ use DOMDocument;
 use DOMXPath;
 // use SimpleXMLElement;
 use DNBCatalogInfoProvider;
+use PKP\scheduledTask\ScheduledTaskHelper;
 
 
 define('DEBUG', false);
