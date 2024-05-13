@@ -55,11 +55,12 @@ Installation with Git:
  - cd [my_ojs_installation]
  - php tools/upgrade.php upgrade or php tools/installPluginVersion.php plugins/importexport/dnb/version.xml
 
-Adding the DNB SFTP server to SSH known_hosts (only on first installation on a server):
+Adding the DNB SFTP server to SSH known_hosts (only on first installation on a server)
+-----
 
-To enable the DNB-Plugin to deposit transfer packages on the DNB server an SSH connection has to be initiated. To this end, the DNB server has to be added to the known_hosts file of your web server account. An easy way to achieve this is to once establish a connection to the DNB server via the command line of your web server. On a Debian system you can use the following command:
+To enable the DNB-Plugin to deposit transfer packages on the DNB server an SSH connection has to be initiated. To this end, the DNB server has to be added to the known_hosts file of your web server account. An easy way to achieve this is to once establish a connection to the DNB server via the command line of your web server. Depending on your system you can use one of the following commands:
 
-`sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>`
+`sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>` or `sftp -oPort=22122 <username>@hotfolder.dnb.de:<folder ID>`
 
 Please replace <username> and <folder ID> by the login credentials you received from the DNB.
 
