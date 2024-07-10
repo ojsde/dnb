@@ -130,7 +130,7 @@ msgid "plugins.importexport.dnb.deselectAll"
 msgstr "Alle abwählen"
 
 msgid "plugins.importexport.dnb.export.error.articleCannotBeExported"
-msgstr "Der Artikel {$param} kann nicht exportiert werden, weil er keine PDF- oder EPUB-Fahne hat."
+msgstr "Der Artikel {$param} (oder eine der seiner Zusatzdateien) kann nicht exportiert werden, weil er nicht als Dokumentfahne markiert wurde oder der Dateityp der Fahne oder Zusatzdatei nicht PDF oder EPUB ist."
 
 msgid "plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters"
 msgstr "Die XML-Datei mit der Einreichungs-ID {$param} Es wurden keine Artikel exportiert!"

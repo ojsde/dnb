@@ -130,7 +130,7 @@ msgid "plugins.importexport.dnb.deselectAll"
 msgstr "Deselect All"
 
 msgid "plugins.importexport.dnb.export.error.articleCannotBeExported"
-msgstr "The article {$param} cannot be exported because it does not have a PDF or an EPUB galley."
+msgstr "The article {$param} (or one of its supplementary galleys) cannot be exported because it has no galley file labeled as document or the file type of the galley or supplementary galley is not PDF or EPUB."
 
 msgid "plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters"
 msgstr "Error writing XML file for the article with submission ID {$param} No articles exported!"
