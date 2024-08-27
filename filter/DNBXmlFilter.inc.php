@@ -125,7 +125,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			if ($issue->getAccessStatus() == 0 || $issue->getAccessStatus() == ISSUE_ACCESS_OPEN) {
 				$openAccess = true;
 			} else if ($issue->getAccessStatus() == ISSUE_ACCESS_SUBSCRIPTION) {
-				if ($submission->getAccessStatus() == ARTICLE_ACCESS_OPEN) {
+				if ($submission->getCurrentPublication()->getData('accessStatus') == ARTICLE_ACCESS_OPEN) {
 					$openAccess = true;
 				}
 			}
