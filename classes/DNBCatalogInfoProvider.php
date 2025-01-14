@@ -157,13 +157,16 @@ class DNBCatalogInfoProvider {
 				$tag022 = $xpathFilter->query('//*[@tag="022"]/*[@code="l"]'); //ISSN-L = (ISSN-Linking) ist die übergeordnete Identifikationsnummer, die für alle Erscheinungsformen des gleichen Titels gilt
 				$tag776 = $xpathFilter->query('//*[@tag="776"]/*[@code!="w" and @code!="i" and @code!="x"]');
 				$tag776ISSNs = $xpathFilter->query('//*[@tag="776"]/*[@code="x"]');
-				$tag776Name = $xpathFilter->query('//*[@tag="776"]/*[@code="i"]')['firstElemetChild'];
+				$tag776Name = $xpathFilter->query('//*[@tag="776"]/*[@code="i"]')->item(0);
+				$tag777d = $xpathFilter->query('//*[@tag="776"]/*[@code="d"]')->item(0);
 				$tag780 = $xpathFilter->query('//*[@tag="780"]/*[@code!="w" and @code!="i" and @code!="x"]');
 				$tag780ISSNs = $xpathFilter->query('//*[@tag="780"]/*[@code="x"]');
-				$tag780Name = $xpathFilter->query('//*[@tag="780"]/*[@code="i"]')['firstElemetChild'];
+				$tag780Name = $xpathFilter->query('//*[@tag="780"]/*[@code="i"]')->item(0);
+				$tag780d = $xpathFilter->query('//*[@tag="780"]/*[@code="d"]')->item(0);
 				$tag785 = $xpathFilter->query('//*[@tag="785"]/*[@code!="w" and @code!="i" and @code!="x"]');
 				$tag785ISSNs = $xpathFilter->query('//*[@tag="785"]/*[@code="x"]');
-				$tag785Name = $xpathFilter->query('//*[@tag="785"]/*[@code="i"]')['firstElemetChild'];
+				$tag785Name = $xpathFilter->query('//*[@tag="785"]/*[@code="i"]')->item(0);
+				$tag785d = $xpathFilter->query('//*[@tag="785"]/*[@code="d"]')->item(0);
 
 				$issns = [];
 				foreach ($xpathFilter->query('//*[@tag="776" or @tag="780" or @tag="785"]/*[@code="x"]') as $issn) {
