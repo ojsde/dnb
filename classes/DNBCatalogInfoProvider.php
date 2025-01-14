@@ -128,13 +128,14 @@ class DNBCatalogInfoProvider {
 
 					// Write the urls to a csv file.
 					$fileName =  $this->pluginFilesDir . '/isPrimaryTopicOf.csv';
-					$fh = fopen($fileName, 'wt');
-					//Add BOM (byte order mark) to fix UTF-8 in Excel
-					fprintf($fh, chr(0xEF) . chr(0xBB) . chr(0xBF));
-					foreach ($exportData as $row) {
-						fputcsv($fh, [$row]);
+					if ($fh = fopen($fileName, 'wt')) {
+						//Add BOM (byte order mark) to fix UTF-8 in Excel
+						fprintf($fh, chr(0xEF) . chr(0xBB) . chr(0xBF));
+						foreach ($exportData as $row) {
+							fputcsv($fh, [$row]);
+						}
+						fclose($fh);
 					}
-					fclose($fh);
 
 					// summarize unique urls for better display
 					$uniqueUrls = array_unique(array_column($isPrimaryTopicOf,'host'));
