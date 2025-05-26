@@ -263,7 +263,7 @@ class DNBCatalogInfoProvider {
 			// write response to file for debugging purposes
 			if (true) {
 				file_put_contents(
-					'/var/www/html/files/dnb/response_'.$debugFileId.'.xml',$response
+					Config::getVar('files', 'files_dir').'/dnb/response_'.$debugFileId.'.xml',$response
 				);
 			}
 
