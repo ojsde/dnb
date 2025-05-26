@@ -16,6 +16,7 @@
 namespace APP\plugins\importexport\dnb\classes;
 
 use APP\core\Services;
+use PKP\config\Config;
 use DOMDocument;
 use DOMXPath;
 

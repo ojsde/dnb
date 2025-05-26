@@ -740,6 +740,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$journal = $request->getContext();
 		$path = array('plugin', $this->getName());
 		$tab = "exportSubmissions-tab";
+		$basedir = Config::getVar('files', 'files_dir');
 		
 		switch ($this->_exportAction) {
 			case EXPORT_ACTION_EXPORT:
@@ -816,7 +817,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						}
 						if ($this->_exportAction == EXPORT_ACTION_EXPORT) {
 							// Add the galley package to the list of all exported files
-							$exportFilesNames[] = $exportFile;
+							$exportFilesNames[] = $basedir . '/' . $exportFile;
 						} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
 							// Deposit the galley
 							// $exportfile will be empty if XML file could not be created
@@ -856,7 +857,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						// However, this function exits execution after dowload not allowing for clean up of the intermediate zip file
 						// We therfore copied the appropriate functions from OJS 3.2 FileManager
 						// It was suggested (Alec) to use OJS-queues for clean up which are supposed to come with OJS 3.4 
-						$finalExportFileName = Config::getVar('files', 'files_dir') . '/' . $finalExportFileName;
+						$finalExportFileName = $basedir . '/' . $finalExportFileName;
 						$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
 					}
 					// Remove the generated directories
@@ -1003,6 +1004,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function copyGalleyFile($galley, $exportPath) {
 	    //galley->getFile() can only be null for remote galleys
 		$galleyFile = $galley->getFile();
+		$basedir = Config::getVar('files', 'files_dir');
 	    if ($galleyFile == null) {
 	        if ($this->exportRemote()) {
 	            
@@ -1047,7 +1049,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
     	        }
     	        
 				// temporarily store downloaded file
-    	        $temporaryFilename = tempnam(Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix(), 'dnb');
+    	        $temporaryFilename = tempnam($basedir . '/' . $this->getPluginSettingsPrefix(), 'dnb');
     	        
     	        $file = fopen($temporaryFilename, "w+");
     	        if (!$file) {
@@ -1086,7 +1088,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 		// remove temporary file
 		if (!empty($temporaryFilename))	Services::get('file')->fs->deleteDirectory($temporaryFilename);
-		return realpath(Config::getVar('files', 'files_dir') . '/' . $targetGalleyFilePath);
+		return realpath($basedir . '/' . $targetGalleyFilePath);
 	}
 
 	/**
@@ -1287,30 +1289,37 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$targetFile = $basedir . $targetFile;
 
 		$tarCommand = '';
-		// Change directory to the target path, to be able to use
-		// relative paths i.e. only file names and *
-		$tarCommand .= 'cd ' . escapeshellarg($targetPath) . ' && ';
-
 		// Should the result file be GZip compressed.
 		$tarOptions = $gzip ? ' -czf ' : ' -cf ';
 		// Construct the tar command: path to tar, options, target archive file name
-		$tarCommand .= Config::getVar('cli', 'tar'). " " . DNB_ADDITIONAL_PACKAGE_OPTIONS . $tarOptions . escapeshellarg($targetFile);
+		$tarCommand .= Config::getVar('cli', 'tar'). ' -C ' . escapeshellarg($targetPath) . ' ' . DNB_ADDITIONAL_PACKAGE_OPTIONS . $tarOptions . escapeshellarg($targetFile);
 
 		// Do not reveal our webserver user by forcing root as owner.
 		$tarCommand .= ' --owner 0 --group 0 --';
 
+		// Get individual files for the tar command. (Adding all via '*' will not work with relative paths.)
 		if (!$sourceFiles) {
-			// Add everything
-			$tarCommand .= ' *';
-		} else {
-			// Add each file individually so that other files in the directory
-			// will not be included.
-			foreach($sourceFiles as $sourceFile) {
-				assert($basedir . dirname($sourceFile) . '/' === $targetPath);
-				if ($basedir . dirname($sourceFile) . '/' !== $targetPath) continue;
-				$tarCommand .= ' ' . escapeshellarg(basename($sourceFile));
+			// This means we package a single article. If $sourceFiles is not NULL we package multiple prepared tar files into one tar for download
+			$sourceFiles = array_map(
+				function($file) use ($targetPath) {
+					return rtrim($targetPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file;
+				},
+				array_diff(scandir($targetPath), array('.', '..'))
+			);
+			if (empty($sourceFiles)) {
+				// No files to archive
+				// This should not happen at this point
+				return;
 			}
+		} 
+
+		// Add each file individually
+		foreach($sourceFiles as $sourceFile) {
+			assert(dirname($sourceFile) . '/' === $targetPath);
+			if (dirname($sourceFile) . '/' !== $targetPath) continue;
+			$tarCommand .= ' ' . escapeshellarg(basename($sourceFile));
 		}
+		
 		// Execute the command.
 		exec($tarCommand);
 	}
