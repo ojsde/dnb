@@ -47,7 +47,7 @@ class DNBCatalogInfoProvider {
 		$dnbCatalogInfo = array_map(
 			function ($i) use ($heading) {
 				// link ISSN
-				$i['ISSN'] = '<a href="https://d-nb.info/'.$i['dnb_id'].'" target="_blank">'.$i['ISSN'].'</a>';
+				$i['ISSN'] = '<a href="https://d-nb.info/'.$i['dnb_id'].'" target="_blank">ISSN: '.$i['ISSN'].' / DNB-ID: '.$i['dnb_id'].'</a>';
 				unset($i['dnb_id']);
 				//set column headers
 				if ($i['otherColName']) {
@@ -88,6 +88,7 @@ class DNBCatalogInfoProvider {
 					$dnbCatalogInfo[]['ISSN'] = $context->getData('onlineIssn');
 				}
 				$dnbCatalogQueryUrl = 'https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=num%3D'.$dnbCatalogInfo[count($dnbCatalogInfo)-1]['ISSN'];
+				// https://zdb-katalog.de/title.xhtml?idn=012687510&view=full
 				break;
 			case 'dnb_id':
 				$dnbCatalogQueryUrl = 'https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=partOfat%3D'.$dnbCatalogInfo[count($dnbCatalogInfo)-1]['dnb_id'];
