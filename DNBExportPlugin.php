@@ -766,7 +766,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					// redirect back to the right tab
 					$request->redirect(null, null, null, $path, null, $tab);
 				}
-				$journalExportPath = $result;
+				$exportPath = $result;
+				$journalExportPath = $basedir . '/' . $result;
 
 				$errors = $exportFilesNames = [];
 
@@ -804,7 +805,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 							if ($galley->getRemoteURL() == null) continue;
 						}
 						
-						$exportPath = $journalExportPath;
 						$exportFile = '';
 						// Get the TAR package for the galley
 						$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
@@ -817,7 +817,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						}
 						if ($this->_exportAction == EXPORT_ACTION_EXPORT) {
 							// Add the galley package to the list of all exported files
-							$exportFilesNames[] = $basedir . '/' . $exportFile;
+							$exportFilesNames[] = $exportFile;
 						} elseif ($this->_exportAction == EXPORT_ACTION_DEPOSIT) {
 							// Deposit the galley
 							// $exportfile will be empty if XML file could not be created
@@ -846,7 +846,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						// If there is more than one export package, package them all in a single .tar.gz
 						assert(count($exportFilesNames) >= 1);
 						if (count($exportFilesNames) > 1) {
-							$finalExportFileName = $basedir . '/' . $journalExportPath . $this->getPluginSettingsPrefix() . '-export.tar.gz';
+							$finalExportFileName = $journalExportPath . $this->getPluginSettingsPrefix() . '-export.tar.gz';
 							$this->tarFiles($journalExportPath, $finalExportFileName, $exportFilesNames, true);
 						} else {
 							$finalExportFileName = reset($exportFilesNames);
@@ -924,7 +924,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 *
 	 * @return boolean|array True for success or an array of error messages.
 	 */
-	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $journalExportPath, &$exportPackageName, $submissionId) {
+	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, &$exportPackageName, $submissionId) {
 
 		if (DEBUG) $noValidation = false;
 
@@ -934,7 +934,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		
 		$exportContentDir = $journal->getId() . '-' . $submissionId . '-' . ($galley->getId());
 	
-		$result = $this->getExportPath($journal->getId(), $journalExportPath, $exportContentDir);
+		$result = $this->getExportPath($journal->getId(), $exportPathBase, $exportContentDir);
 		if (is_array($result)) return $result;
 		$exportPath = $result;
 		
@@ -968,8 +968,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			Services::get('file')->fs->deleteDirectory($exportPath . 'content/supplementary');
 		}
 		// The package file name will be then <journalId>-<articleId>-<galleyId>.tar
-		$exportPackageName = $journalExportPath . $exportContentDir . '.tar';
-		$this->tarFiles($exportPath, $exportPackageName);
+		$exportPackageName = Config::getVar('files', 'files_dir') . '/' . $exportPathBase . $exportContentDir . '.tar';
+		$this->tarFiles(Config::getVar('files', 'files_dir') . '/' . $exportPath, $exportPackageName);
 
 		return true;
 	}
@@ -1079,11 +1079,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy.param', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
 			return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
 		}
-		
-		// if (!Services::get('file')->fs->copy($sourceGalleyFilePath, $targetGalleyFilePath)) {
-		// 	$param = __('plugins.importexport.dnb.export.error.galleyFileNoCopy.param', array('sourceGalleyFilePath' => $sourceGalleyFilePath, 'targetGalleyFilePath' => $targetGalleyFilePath));
-		// 	return array('plugins.importexport.dnb.export.error.galleyFileNoCopy', $param);
-		// }
 
 		// remove temporary file
 		if (!empty($temporaryFilename))	Services::get('file')->fs->deleteDirectory($temporaryFilename);
@@ -1282,11 +1277,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	function tarFiles($targetPath, $targetFile, $sourceFiles = null, $gzip = false) {
 		assert($this->_checkedForTar);
 
-		$basedir = Config::getVar('files', 'files_dir') . '/';
-
-		$targetPath = $basedir . $targetPath;
-		$targetFile = $basedir . $targetFile;
-
 		$tarCommand = '';
 		// Should the result file be GZip compressed.
 		$tarOptions = $gzip ? ' -czf ' : ' -cf ';
@@ -1303,11 +1293,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				function($file) use ($targetPath) {
 					return rtrim($targetPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file;
 				},
-				array_diff(scandir($targetPath), array('.', '..'))
+				scandir($targetPath)?array_diff(scandir($targetPath), array('.', '..')):[]
 			);
 			if (empty($sourceFiles)) {
 				// No files to archive
-				// This should not happen at this point
+				// This should not happen at this point, might happen if $targetPath is not a directory
 				return;
 			}
 		} 
