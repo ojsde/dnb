@@ -846,7 +846,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						// If there is more than one export package, package them all in a single .tar.gz
 						assert(count($exportFilesNames) >= 1);
 						if (count($exportFilesNames) > 1) {
-							$finalExportFileName = $journalExportPath . $this->getPluginSettingsPrefix() . '-export.tar.gz';
+							$finalExportFileName = $basedir . '/' . $journalExportPath . $this->getPluginSettingsPrefix() . '-export.tar.gz';
 							$this->tarFiles($journalExportPath, $finalExportFileName, $exportFilesNames, true);
 						} else {
 							$finalExportFileName = reset($exportFilesNames);
@@ -857,7 +857,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						// However, this function exits execution after dowload not allowing for clean up of the intermediate zip file
 						// We therfore copied the appropriate functions from OJS 3.2 FileManager
 						// It was suggested (Alec) to use OJS-queues for clean up which are supposed to come with OJS 3.4 
-						$finalExportFileName = $basedir . '/' . $finalExportFileName;
 						$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
 					}
 					// Remove the generated directories
