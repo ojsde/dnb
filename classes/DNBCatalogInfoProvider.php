@@ -264,7 +264,7 @@ class DNBCatalogInfoProvider {
 			// write response to file for debugging purposes
 			if (true) {
 				file_put_contents(
-					Config::getVar('files', 'files_dir').'/dnb/response_'.$debugFileId.'.xml',$response
+					$this->pluginFilesDir .'/response_' . $debugFileId . '.xml', $response
 				);
 			}
 

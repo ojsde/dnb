@@ -68,6 +68,21 @@ class DNBSettingsForm extends FormComponent {
 			'value' => $plugin->getSetting($contextId, 'folderId'),
 		]));
 
+		//connection type
+		$this->addGroup([
+			'id' => 'connectionType',
+			'label' => __('plugins.importexport.dnb.settings.form.connectionType.title'),
+		])->addField(new FieldOptions('connectionType', [
+			'label' => __('plugins.importexport.dnb.settings.form.connectionType'),
+			'description' => __('plugins.importexport.dnb.settings.form.connectionType.description'),
+			'groupId' => 'connectionType',
+			'options' => [
+				['value' => false, 'label' => __('plugins.importexport.dnb.settings.form.connectionType.checkBoxLabel')],
+			],
+			'default' => false,
+			'value' => $plugin->getSetting($contextId, 'connectionType') ? $plugin->getSetting($contextId, 'connectionType') : false,
+		]));
+
 		//automatic deposit
 		$this->addGroup([
 			'id' => 'automaticDeposit',
@@ -233,7 +248,8 @@ class DNBSettingsForm extends FormComponent {
 			'submitSupplementaryMode' => 'string',
 			'exportRemoteGalleys' => 'bool',
 			'allowedRemoteIPs' => 'string',
-			'dnbCatalog' => 'bool'
+			'dnbCatalog' => 'bool',
+			'connectionType' => 'bool',
 		);
 	}
 
@@ -243,7 +259,7 @@ class DNBSettingsForm extends FormComponent {
 	 * @return boolean
 	 */
 	function isOptional($settingName) {
-		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit','submitSupplementaryMode','exportRemoteGalleys','allowedRemoteIPs','dnbCatalog'));
+		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit','submitSupplementaryMode','exportRemoteGalleys','allowedRemoteIPs','dnbCatalog', 'connectionType'));
 	}
 
 	/**

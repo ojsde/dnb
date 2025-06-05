@@ -93,6 +93,18 @@ msgstr "OJS prüft regelmäßig, ob es Artikel gibt, die noch nicht an die DNB a
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel"
 msgstr "Ja, ich möchte Fahnen automatisch abliefern"
 
+msgid "plugins.importexport.dnb.settings.form.connectionType.title"
+msgstr "Verbindungstyp"
+
+msgid "plugins.importexport.dnb.settings.form.connectionType"
+msgstr "Art der Verbindung zum DNB Server (SFTP oder WebDAV)"
+
+msgid "plugins.importexport.dnb.settings.form.connectionType.description"
+msgstr "Im Normalfall wird zur Ablieferung eine SFTP-Verbindung über Port 22122 hergestellt. Falls Ihre Institution diesen Port nicht erlaubt aktivieren Sie hier die Ablieferung über WebDAV (Port 443)."
+
+msgid "plugins.importexport.dnb.settings.form.connectionType.checkBoxLabel"
+msgstr "WebDAV statt SFTP zu Ablieferung der Artikel benutzen."
+
 msgid "plugins.importexport.dnb.status.notDeposited"
 msgstr "Nicht abgeliefert"
 
@@ -283,7 +295,7 @@ msgid "plugins.importexport.dnb.settings.form.dnbCatalog.label"
 msgstr "Überprüfung der Ablieferungen über DNB-Katalogabfrage"
 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.description"
-msgstr "Diese Funktion fragt die zur ISSN dieser Zeitschrift im DNB-Katalog verfübaren Einträge ab und zeigt Informationen dazu an."
+msgstr "Diese Funktion fragt die zur ISSN dieser Zeitschrift im DNB-Katalog verfübaren Einträge ab und zeigt Informationen dazu an. Dies kann eventuell zu längeren Ladezeiten führen."
 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel"
 msgstr "DNB-Katalogabfrage aktivieren"
@@ -298,7 +310,13 @@ msgid "plugins.importexport.dnb.settings.form.dnbCatalog.catalogInfo.issnNotFoun
 msgstr "Die ISSN dieser Zeitschrift wurde im DNB-Katalog nicht gefunden."
 
 msgid "plugins.importexport.dnb.dnbCatalogTabInfo"
-msgstr "Die hier dargestellten Informationen aus dem DNB-Katalog basieren auch einer Suche nach der für diese Zeitschrift angegebenen ISSN.<br>Dies ist eine experimentelle Funkltion. Es wird keine Garantie für die Vollständigkeit der Ergebnisse übernommen."
+msgstr "Die hier dargestellten Informationen aus dem DNB-Katalog basieren auf einer Suche nach der für diese Zeitschrift angegebenen ISSN.<br>Dies ist eine experimentelle Funkltion. Es wird keine Garantie für die Vollständigkeit der Ergebnisse übernommen."
 
 msgid "plugins.importexport.dnb.dnbCatalogInfo.ISSNTableCaption"
 msgstr "Für diese Zeitschrift gefundene ISSNs"
+
+msgid "plugins.importexport.dnb.error.catalogQueryFailed"
+msgstr "DNB-Katalogabfrage erzeugte den Fehler: {$param}"
+
+msgid "plugins.importexport.dnb.error.catalogQueryFailed.param"
+msgstr "{$error}"

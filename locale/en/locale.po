@@ -93,6 +93,18 @@ msgstr "OJS regularly checks if there are articles not yet deposited (that is, a
 msgid "plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel"
 msgstr "Yes, I want to deposit galley files automatically"
 
+msgid "plugins.importexport.dnb.settings.form.connectionType.title"
+msgstr "Connection type"
+
+msgid "plugins.importexport.dnb.settings.form.connectionType"
+msgstr "Type of connection to DNB Server (SFTP oder WebDAV)"
+
+msgid "plugins.importexport.dnb.settings.form.connectionType.description"
+msgstr "Normally, an SFTP connection is established for delivery via port 22122. If your institution does not allow this port, enable delivery via WebDAV (port 443) here."
+
+msgid "plugins.importexport.dnb.settings.form.connectionType.checkBoxLabel"
+msgstr "Use WebDAV instead of SFTP to deposit articles."
+
 msgid "plugins.importexport.dnb.status.notDeposited"
 msgstr "Not deposited"
 

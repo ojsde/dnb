@@ -58,6 +58,9 @@ if (!DEBUG) {
 	define('DNB_SFTP_PORT', 22);
 }
 
+define('DNB_WEBDAV_SERVER','https://@hotfolder.dnb.de/');
+define('DNB_WEBDAV_PORT', 443);
+
 class DNBExportPlugin extends PubObjectsExportPlugin {
 
 	private $_settingsForm;
@@ -398,9 +401,20 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				// query dnb catalog
 				if ($this->getSetting($this->_currentContextId, 'dnbCatalog')) {
 
-					$dbnCatalogInfoProvider = new classes\DNBCatalogInfoProvider();
-					$dnbCatalogInfo = $dbnCatalogInfoProvider->getCatalogInfo($context, Config::getVar('files', 'files_dir').'/'.$this->getPluginSettingsPrefix());
-					$templateMgr->assign('dnbCatalogInfo', $dnbCatalogInfo);
+					try {
+						$dbnCatalogInfoProvider = new classes\DNBCatalogInfoProvider();
+						$dnbCatalogInfo = $dbnCatalogInfoProvider->getCatalogInfo($context, Config::getVar('files', 'files_dir').'/'.$this->getPluginSettingsPrefix());
+						$templateMgr->assign('dnbCatalogInfo', $dnbCatalogInfo);
+					} catch (\Throwable $e) {
+						error_log($e->getMessage());
+						$param = __('plugins.importexport.dnb.error.catalogQueryFailed.param', array('error' => $e->getMessage()));
+						$this->errorNotification(
+							$request,
+							array(array('plugins.importexport.dnb.error.catalogQueryFailed', $param))
+						);
+					}
+
+
 				}
 
 				$templateMgr->display($this->getTemplateResource('index.tpl'));
@@ -655,7 +669,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 */
 	function depositXML($object, $context, $filename) {   
 		$errors = [];
-		$filename = Config::getVar('files', 'files_dir') . '/' .  $filename;
 
 		if (!($this->getSetting($context->getId(), 'username') &&
 			$this->getSetting($context->getId(), 'password') &&
@@ -675,7 +688,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_UPLOAD, true);
 		curl_setopt($curlCh, CURLOPT_HEADER, true);
 		curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($curlCh, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
+		curl_setopt($curlCh, CURLOPT_PROTOCOLS, CURLPROTO_SFTP | CURLPROTO_HTTPS);
 
 		// additional curl options as set in config.inc.php
 		if ($value = Config::getVar('dnb-plugin', 'CURLOPT_SSH_HOST_PUBLIC_KEY_MD5')) {
@@ -697,8 +710,16 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		assert(is_readable($filename));
 		$fh = fopen($filename, 'rb');
 
-		curl_setopt($curlCh, CURLOPT_URL, DNB_SFTP_SERVER.$folderId.'/'.basename($filename));
-		curl_setopt($curlCh, CURLOPT_PORT, DNB_SFTP_PORT);
+		$server = DNB_SFTP_SERVER;
+		$port = DNB_SFTP_PORT;
+
+		if ($this->getSetting($context->getId(), 'connectionType')) {
+			$server = DNB_WEBDAV_SERVER;
+			$port = DNB_WEBDAV_PORT;
+		}
+
+		curl_setopt($curlCh, CURLOPT_URL, $server.$folderId.'/'.basename($filename));
+		curl_setopt($curlCh, CURLOPT_PORT, $port);
 		curl_setopt($curlCh, CURLOPT_USERPWD, "$username:$password");
 		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename));
 		curl_setopt($curlCh, CURLOPT_INFILE, $fh);
