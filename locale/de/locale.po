@@ -320,3 +320,6 @@ msgstr "DNB-Katalogabfrage erzeugte den Fehler: {$param}"
 
 msgid "plugins.importexport.dnb.error.catalogQueryFailed.param"
 msgstr "{$error}"
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.curlInfoErrorMessage"
+msgstr "Curl erzeugte den Rückgabewert False ohne eine HTTP-Fehlermeldung! Dies kann z.B. bei Problemen mit dem Zertifikat bei der Verbindungsherstellung auftreten. Bitte schauen Sie in das PHP Fehler Log für mehr Informationen"

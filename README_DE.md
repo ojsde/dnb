@@ -1,9 +1,9 @@
 # OJS DNB-Export-Plug-In
-**Version: 1.6**
+**Version: 1.6.2**
 
 **Autor: Bozana Bokan, Ronald Steffen**
 
-**Letzte Änderung: 28. Februar 2024**
+**Letzte Änderung: 23. Juni 2025**
 
 ---
 
@@ -65,11 +65,12 @@ Damit das DNB-Plugin Transferpakete an die DNB übertragen kann muss eine SSH-Ve
 
 Ersetzen Sie <username> und <folder ID> durch die Ihnen von der DNB mitgeteilen Login-Daten.
 
-Erweiterte Einstellungen zur SSH-Verbindung können in der config.inc.php definiert werden. Erstellen Sie dazu einen Abschnitt [dnb-plugin] am Ende der Datei. Folgende zusätzliche Parameter werden unterstützt:
+Erweiterte Einstellungen zur curl-Verbindungen können in der config.inc.php definiert werden. Erstellen Sie dazu einen Abschnitt [dnb-plugin] am Ende der Datei. Folgende zusätzliche Parameter werden unterstützt:
 
 - CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
 - CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
 - CURLOPT_SSH_PUBLIC_KEYFILE
+- CURLOPT_HTTPPROXYTUNNEL
 
 Beispiel:
 ```

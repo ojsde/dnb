@@ -727,12 +727,21 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$response = curl_exec($curlCh);
 		
 		$curlError = curl_error($curlCh);
-		
-		if ($curlError) {
+
+		if ($curlError || $response === false) {
 			// error occured
-			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getData('submissionId'), 'error' => $curlError));
+			if ($curlError) {
+				$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getData('submissionId'), 'error' => $curlError));
+			} else {
+				// curl_exec returned false, but no error message, we print curl info to the error log
+				$curlInfo = curl_getinfo($curlCh);
+				error_log('DNB plugin:curlInfo: '.print_r($curlInfo, true));
+				$curlInfoErrorMessage = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.curlInfoErrorMessage');
+				$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.param', array('package' => basename($filename), 'articleId' => $object->getData('submissionId'), 'error' => $curlInfoErrorMessage));
+			}
 			$errors[] = array('plugins.importexport.dnb.deposit.error.fileUploadFailed', $param);
 		}
+		
 		curl_close($curlCh);
 
 		if (!empty($errors)) return $errors;
@@ -741,10 +750,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 	private function curl_init() {
 		$curlCh = curl_init();
-		if ($httpProxyHost = Config::getVar('proxy', 'http_host')) {
+		$httpProxyHost = Config::getVar('proxy', 'https_proxy')?:Config::getVar('proxy', 'http_proxy');
+		if ($httpProxyHost) {
 			curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
-			curl_setopt($curlCh, CURLOPT_HTTPPROXYTUNNEL, 1);
-			curl_setopt($curlCh, CURLOPT_PROXYPORT, Config::getVar('proxy', 'http_port', '80'));
+			if ($curlProxyTunnel = Config::getVar('dnb-plugin', 'CURLOPT_HTTPPROXYTUNNEL')) {
+				curl_setopt($curlCh, CURLOPT_HTTPPROXYTUNNEL, $curlProxyTunnel);
+			}
 			if ($username = Config::getVar('proxy', 'username')) {
 				curl_setopt($curlCh, CURLOPT_PROXYUSERPWD, $username . ':' . Config::getVar('proxy', 'password'));
 			}

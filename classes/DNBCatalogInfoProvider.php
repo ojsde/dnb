@@ -268,26 +268,34 @@ class DNBCatalogInfoProvider {
 				);
 			}
 
-			$xmlResponse = new DOMDocument();
-			$res = $xmlResponse->loadXML($response, LIBXML_PARSEHUGE);
-			$xpathFilter = $this->getDOMXPath($xmlResponse);
+			if ($response) {
+				$xmlResponse = new DOMDocument();
+				$res = $xmlResponse->loadXML($response, LIBXML_PARSEHUGE);
+				$xpathFilter = $this->getDOMXPath($xmlResponse);
 
-			// post process response to detect pagination
-			switch ($mode) {
-				case 'dnb_id':
-					if (!isset($buffer)) {
-						$buffer = new DOMDocument();
-					}
-					$buffer = $this->mergeRDFNodes($buffer, $xmlResponse);
-					if ($nextPosition = $xpathFilter->query('//xmlns:nextRecordPosition')->item(0)) {
-						$startRecord = $nextPosition->textContent;
-					} else {
+
+				// post process response to detect pagination
+				switch ($mode) {
+					case 'dnb_id':
+						if (!isset($buffer)) {
+							$buffer = new DOMDocument();
+						}
+						$buffer = $this->mergeRDFNodes($buffer, $xmlResponse);
+						if ($nextPosition = $xpathFilter->query('//xmlns:nextRecordPosition')->item(0)) {
+							$startRecord = $nextPosition->textContent;
+						} else {
+							$exit = true;
+							$xpathFilter = $this->getDOMXPath($buffer);
+						}
+						break;
+					default:
 						$exit = true;
-						$xpathFilter = $this->getDOMXPath($buffer);
-					}
-					break;
-				default:
-					$exit = true;
+				}
+			} else {
+				// if we did not get a response, we exit the loop
+				$exit = true;
+				$xpathFilter = new DOMXPath(new DOMDocument());
+				// and return an empty xpathFilter
 			}
 
 		} while (!$exit);

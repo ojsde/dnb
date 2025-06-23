@@ -1,9 +1,9 @@
 # OJS DNB Export Plugin
-**Version: 1.6**
+**Version: 1.6.2**
 
 **Author: Bozana Bokan, Ronald Steffen**
 
-**Last update: February 28, 2024**
+**Last update: June 23, 2025**
 
 ---
 
@@ -64,11 +64,12 @@ To enable the DNB-Plugin to deposit transfer packages on the DNB server an SSH c
 
 Please replace <username> and <folder ID> by the login credentials you received from the DNB.
 
-Advanced settings for your SSH connection can be configured in the config.inc.php file. Create a section [dnb-plugin] at the end of the file. The following additional settings are supported:
+Advanced settings for your curl connection can be configured in the config.inc.php file. Create a section [dnb-plugin] at the end of the file. The following additional settings are supported:
 
 - CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
 - CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
 - CURLOPT_SSH_PUBLIC_KEYFILE
+- CURLOPT_HTTPPROXYTUNNEL
 
 Example:
 ```
