@@ -724,6 +724,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		curl_setopt($curlCh, CURLOPT_INFILESIZE, filesize($filename));
 		curl_setopt($curlCh, CURLOPT_INFILE, $fh);
 
+		# create curl log file
+		curl_setopt($curlCh, CURLOPT_VERBOSE, true);
+        $verbose = fopen(Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix() .'/curl.log', 'w+');
+        curl_setopt($curlCh, CURLOPT_STDERR, $verbose);
+
+		# run curl request
 		$response = curl_exec($curlCh);
 		
 		$curlError = curl_error($curlCh);

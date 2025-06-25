@@ -25,7 +25,8 @@ This plugin version is compatible with...
  
 The `tar` executable is required and has to be configured in config.inc.php.
 
-For the depositing articles directly to the DNB Hofolder your server has to support SFTP via the PHP libcurl library. Please make sure the libcurl library installed on your server supports the SFTP protocol.
+For the depositing articles directly to the DNB Hofolder vis SFTP your server has to support SFTP via the PHP libcurl library. Please make sure the libcurl library installed on your server supports the SFTP protocol.
+Alternatively you can use the WebDav (port 443) protocol. Please see plugin settings.
 
 Installation
 ------------
@@ -58,7 +59,7 @@ Installation with Git:
 Adding the DNB SFTP server to SSH known_hosts (only on first installation on a server)
 -----
 
-To enable the DNB-Plugin to deposit transfer packages on the DNB server an SSH connection has to be initiated. To this end, the DNB server has to be added to the known_hosts file of your web server account. An easy way to achieve this is to once establish a connection to the DNB server via the command line of your web server. Depending on your system you can use one of the following commands:
+To enable the DNB-Plugin to deposit transfer packages on the DNB server via SFTP an SSH connection has to be initiated. To this end, the DNB server has to be added to the known_hosts file of your web server account. An easy way to achieve this is to once establish a connection to the DNB server via the command line of your web server. Depending on your system you can use one of the following commands:
 
 `sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>` or `sftp -oPort=22122 <username>@hotfolder.dnb.de:<folder ID>`
 
@@ -79,7 +80,7 @@ CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256='<put the public key here>'
 
 
 Export
-------------
+--------------
 The plugin settings can be found at:
 Tools > Import/Export > DNB Export Plugin > Settings
 
@@ -87,10 +88,19 @@ The plugin export interface can be found at:
 Tools > Import/Export > DNB Export Plugin > Articles
 
 Note
----------
+--------------
 In order to deposit articles to DNB from within OJS you will have to enter your username, password and subfolder ID in the plugin settings. 
 If you do not enter this information you'll still be able to export the DNB packages but you cannot deposit them from within OJS.
 Please note, that the password will be saved as plain text, i.e. not encrypted, due to DNB service requirements.
+
+Troubleshooting
+---------------
+
+1) A `curl.log` file is available inside the `files/dnb` folder 
+2) Try to establish a SFTP connection as described above
+3) Try to desposit a file to the DNB hotfolder with curl via the command line:
+
+    `curl -v -T <path to your test file> sftp://<username>:<password>@hotfolder.dnb.de:22122/<folder ID>/`
 
 Contact/Support
 ---------------

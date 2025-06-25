@@ -25,7 +25,8 @@ Dieses Plug-In Verison ist kompatibel mit...
 
 Das Programm `tar` wird benötigt und muss in der Datei config.inc.php konfiguriert werden.
 
-Um Artikel direkt in den Hotfolder der DNB abzuliefern muss der Server SFTP über das PHP-Paket libcurl unterstützen. Bitte achten Sie darauf, dass das installierte libcurl-Paket das SFTP-Protokoll unterstützt. 
+Um Artikel über SFTP direkt in den Hotfolder der DNB abzuliefern muss der Server SFTP über das PHP-Paket libcurl unterstützen. Bitte achten Sie darauf, dass das installierte libcurl-Paket das SFTP-Protokoll unterstützt.
+Alternativ können Sie das WebDav-Protokoll (über Port 443) verwenden. Das Verbindungsprotokoll kann in den Plugin-Einstellungen ausgewählt werden.
 
 Installation
 ------------
@@ -59,7 +60,7 @@ Installation über die Kommandozeile mit Git:
 
 Hinzufügen des DNB SFTP-Servers zu den SSH known_hosts (nur bei Erstinstallation auf einem Server):
 
-Damit das DNB-Plugin Transferpakete an die DNB übertragen kann muss eine SSH-Verbindung aufgebaut werden. Dazu muss der DNB-Server zur known_hosts-Datei Ihres Webserver-Accounts hinzugefügt werden. Eine einfache Methode dies zu erreichen ist, einmalig eine Verbindung zum DNB-Server über die Kommandozeile Ihres OJS-Servers herzustellen. Benutzen Sie dazu folgenden Befehl (Debian):
+Damit das DNB-Plugin Transferpakete über SFTP an die DNB übertragen kann muss eine SSH-Verbindung aufgebaut werden. Dazu muss der DNB-Server zur known_hosts-Datei Ihres Webserver-Accounts hinzugefügt werden. Eine einfache Methode dies zu erreichen ist, einmalig eine Verbindung zum DNB-Server über die Kommandozeile Ihres OJS-Servers herzustellen. Benutzen Sie dazu folgenden Befehl (Debian):
 
 `sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>`
 
@@ -79,7 +80,7 @@ CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256='<put the public key here>'
 ```
 
 Export
-------------
+--------------
 Die Plug-In-Einstellungen sind hier zu finden:
 Werkzeuge > Import/Export > DNB-Export-Plug-In > Einstellungen
 
@@ -87,10 +88,20 @@ Die Plug-In-Export-Schnittstelle ist hier zu finden:
 Werkzeuge > Import/Export > DNB-Export-Plug-In > Artikel
 
 Hinweis
----------
+--------------
 Wenn Sie Artikel direkt aus OJS heraus abliefern möchten, müssen Sie Ihren Benutzernamen, Ihr Passwort und Ihre Unterordner-ID in die Plug-In-Einstellungen eintragen.
 Exportieren können Sie die DNB-Pakete aber auch ohne die Zugangsdaten eingetragen zu haben.
-Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Klartext, d.h. unverschlüsselt, gespeichert werden wird. 
+Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Klartext, d.h. unverschlüsselt, gespeichert werden wird.
+
+Fehleranalyse
+---------------
+
+1) Informationen zum Verbingungsaufbau finden Sie in der Datei `curl.log` im Ordner `files/dnb`.
+2) Veruschen Sie, wie oben beschrieben, eine Verbindung via SFTP aufzubauen.
+3) Versuchen Sie eine Testdatei via curl über die Kommandozeile abzuliefern:
+
+    `curl -v -T <path to your test file> sftp://<username>:<password>@hotfolder.dnb.de:22122/<folder ID>/`
+
 
 Kontakt/Support
 ---------------
