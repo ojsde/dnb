@@ -348,7 +348,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		// translators
 		foreach ((array) $translators as $translator) {
 		    $datafield700 = $this->createDatafieldNode($doc, $recordNode, '700', '1', ' ');
-			$locale = $author->getFamilyName($galleyLocale)?$galleyLocale:$submission->getLocale();
+			$locale = $translator->getFamilyName($galleyLocale)?$galleyLocale:$submission->getLocale();
 		    $this->createSubfieldNode($doc, $datafield700, 'a', trim($translator->getFamilyName($locale)).', '.trim($translator->getGivenName($locale)));
 			if (!empty($translator->getData('orcidAccessToken'))) {
 				$this->createSubfieldNode($doc, $datafield700, '0', '(orcid)'.basename(trim($translator->getOrcid())));
