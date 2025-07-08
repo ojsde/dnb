@@ -1002,8 +1002,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		// TAR the metadata and files.
 		// tar supplementary files
 		if (Services::get('file')->fs->has($exportPath . 'content/supplementary')) {
-			$this->tarFiles($exportPath . '/content/supplementary', $exportPath . '/content/supplementary.tar');
-			Services::get('file')->fs->deleteDirectory($exportPath . 'content/supplementary');
+			$this->tarFiles(Config::getVar('files', 'files_dir') . '/' . $exportPath . '/content/supplementary/', Config::getVar('files', 'files_dir') . '/' . $exportPath . '/content/supplementary.tar');
+			Services::get('file')->fs->deleteDirectory($exportPath . 'content/supplementary/');
 		}
 		// The package file name will be then <journalId>-<articleId>-<galleyId>.tar
 		$exportPackageName = Config::getVar('files', 'files_dir') . '/' . $exportPathBase . $exportContentDir . '.tar';
@@ -1335,7 +1335,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			);
 			if (empty($sourceFiles)) {
 				// No files to archive
-				// This should not happen at this point, might happen if $targetPath is not a directory
+				// This should not happen at this point; might happen if $targetPath is not set properly
+				error_log('DNBExportPlugin::tarFiles: No files to archive in ' . $targetPath);
 				return;
 			}
 		} 
