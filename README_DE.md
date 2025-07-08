@@ -79,6 +79,13 @@ Beispiel:
 CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256='<put the public key here>'
 ```
 
+Plugin-Einstellungen
+--------------
+
+Der folgende Screenshot zeigt die Einstellungen des DNB-Export-Plugins in der Version 1.6.2. Eine detaillierte Beschreibung der Einstellungen steht in der [Dokumentation](docs/manual/de/settings.md) zur Verfügung.
+
+![Screenshot der Einstellungen des DNB-Export-Plugins](<docs/manual/de/DNB-Export-Plugin-Setting_v1.6.2.png>)
+
 Export
 --------------
 Die Plug-In-Einstellungen sind hier zu finden:

@@ -1,10 +1,12 @@
 # Einstellungen
 
 1. [Zugangsdaten DNB-Hotfolder](settings#credetials)
-2. [Automatische Ablieferung](settings#autodeposit)
-3. [Ablieferung von Begleitmaterial](settings#supplementary)
-4. [Fahnen die an einem externen Ort bereitgestellt werden (Remote Galleys) abliefern](settings#remote)
-5. [Archivzugriff](settings#archive)
+2. [Verbindungstyp](settings#connectionType)
+3. [Automatische Ablieferung](settings#autodeposit)
+4. [Ablieferung von Begleitmaterial](settings#supplementary)
+5. [Fahnen die an einem externen Ort bereitgestellt werden (Remote Galleys) abliefern](settings#remote)
+6. [Archivzugriff](settings#archive)
+7. [Experimentelle Funktionen](settings#experimental)
 
 Bitte bachten Sie:
 
@@ -37,7 +39,7 @@ Ab Version 3.3 des DNB Export Plugins können auch Fahnen die an einem externen 
 
 Es stehen die Optionen 
 
-- Beschränkter Zugriif an speziellen Rechnern der Lesesäle der DNB
+- Beschränkter Zugriff an speziellen Rechnern der Lesesäle der DNB
 - Uneingeschränkter Zugriff für alle
 - Zugriff für registrierte Nutzer/innen auch außerhalb der DNB
 
