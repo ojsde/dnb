@@ -13,9 +13,13 @@ Bitte bachten Sie:
 
 ## <a name="credetials"></a>Zugangsdaten DNB-Hotfolder
 
-Falls eine direkte Ablieferung der Artikel in Ihren DNB-Hotfolder gewünscht wird, tragen Sie Ihre DNB-Kontodaten (Benutzer/innennamen, Passwort, Unterordner-ID des Hotfolders) im Abschintt *Zugangsdaten DNB Hotfolder* in die entsprechenden Felder ein. Für eine direkte Ablieferung muss ausserdem SFTP auf Ihrem Server konfiguriert sein. Sollte dies nicht der Fall sein erhalten Sie eine Fehlermeldung. Bitte kontaktieren Sie dazu Ihren Systemadministrator.
+Falls eine direkte Ablieferung der Artikel in Ihren DNB-Hotfolder gewünscht wird, tragen Sie Ihre DNB-Kontodaten (Benutzer/innennamen, Passwort, Unterordner-ID des Hotfolders) im Abschintt *Zugangsdaten DNB Hotfolder* in die entsprechenden Felder ein. Falls Sie für eine direkte Ablieferung an die DNB eine SFTP-Verbindung nutzen wollen, muss ausserdem SFTP auf Ihrem Server konfiguriert sein. Sollte dies nicht der Fall sein erhalten Sie eine Fehlermeldung. Bitte kontaktieren Sie dazu Ihren Systemadministrator oder ändern Sie den Verbindungstyp auf WebDav (siehe unten).
 
-Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Klartext, d.h. unverschlüsselt, gespeichert wird. 
+Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Klartext, d.h. unverschlüsselt, gespeichert wird.
+
+## <a name="connectionType"></a>Verbindungstyp
+
+Bestimmt die Art der Verbindung zum DNB Server (SFTP oder WebDAV). Im Normalfall wird zur Ablieferung eine SFTP-Verbindung über Port 22122 hergestellt. Falls Ihre Institution diesen Port nicht erlaubt oder es Probleme mit dem SSL-Zertifikat gibt aktivieren Sie hier die Ablieferung über WebDAV (Port 443).
 
 ## <a name="autodeposit"></a>Automatische Ablieferung 
 
@@ -38,3 +42,11 @@ Es stehen die Optionen
 - Zugriff für registrierte Nutzer/innen auch außerhalb der DNB
 
 zur Verfügung. Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch "Uneingeschränkt für alle". Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen. Bitte beachten Sie, dass auf Ausgaben oder Artikelebene vergebene Zugriffsrechte vorgang von den hier gesetzten Zugriffrechten haben.
+
+## <a name="experimental"></a>Experimentelle Funktionen
+
+In diesem Abschnitt werden eventuell Funktionen zur Verfügung gestellt, die sich in der Entwicklungspahse befinden. Diese Funktionen sind in der Regel nicht ausgebiegig getestet und können eventuell Probleme verursachen.
+
+### Überprüfung der Ablieferungen über DNB-Katalogabfrage
+
+Diese Funktion versucht, über eine ISSN-Abfrage des DNB-Katalogs, zu ermitteln welche Artikel der Zeitschrift bereits im DNB-Katalog verfügbar sind. Die Funktion zeigt zusätzlich alle mit der aktuellen ISSN der Zeitschrift vernküpften ISSNs an.
