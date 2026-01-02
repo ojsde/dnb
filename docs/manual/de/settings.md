@@ -1,0 +1,54 @@
+# Einstellungen
+
+1. [Zugangsdaten DNB-Hotfolder](settings#credetials)
+2. [Verbindungstyp](settings#connectionType)
+3. [Automatische Ablieferung](settings#autodeposit)
+4. [Ablieferung von Begleitmaterial](settings#supplementary)
+5. [Fahnen die an einem externen Ort bereitgestellt werden (Remote Galleys) abliefern](settings#remote)
+6. [Archivzugriff](settings#archive)
+7. [Experimentelle Funktionen](settings#experimental)
+
+Bitte bachten Sie:
+
+1. Falls Ihre Zeitschrift keine Open-Access-Zeitschrift ist, müssen Sie als erstes im Abschnitt *Archivzugriff* der Registerkarte die Zugriffsrechte für die bei der DNB archivierten Exemplare Ihrer Artikel angeben.
+2. Die Konfiguration der Zugangsdaten für den *Hotfolder* wird nur benötigt wenn Sie direkt an die DNB abliefern wollen.
+
+## <a name="credetials"></a>Zugangsdaten DNB-Hotfolder
+
+Falls eine direkte Ablieferung der Artikel in Ihren DNB-Hotfolder gewünscht wird, tragen Sie Ihre DNB-Kontodaten (Benutzer/innennamen, Passwort, Unterordner-ID des Hotfolders) im Abschintt *Zugangsdaten DNB Hotfolder* in die entsprechenden Felder ein. Falls Sie für eine direkte Ablieferung an die DNB eine SFTP-Verbindung nutzen wollen, muss ausserdem SFTP auf Ihrem Server konfiguriert sein. Sollte dies nicht der Fall sein erhalten Sie eine Fehlermeldung. Bitte kontaktieren Sie dazu Ihren Systemadministrator oder ändern Sie den Verbindungstyp auf WebDav (siehe unten).
+
+Bitte beachten Sie, dass das Passwort wegen Anforderungen des DNB-Dienstes im Klartext, d.h. unverschlüsselt, gespeichert wird.
+
+## <a name="connectionType"></a>Verbindungstyp
+
+Bestimmt die Art der Verbindung zum DNB Server (SFTP oder WebDAV). Im Normalfall wird zur Ablieferung eine SFTP-Verbindung über Port 22122 hergestellt. Falls Ihre Institution diesen Port nicht erlaubt oder es Probleme mit dem SSL-Zertifikat gibt aktivieren Sie hier die Ablieferung über WebDAV (Port 443).
+
+## <a name="autodeposit"></a>Automatische Ablieferung 
+
+Wenn Sie die automatische Ablieferung aktivieren werden neue, nicht abgelieferte Artikel mittels eines von Ihrem Systemadminstrator konfigurieten Cronjobs in regelmäßigen Abständen automatisch in den *DNB-Hotfolder* übertragen. Wenn diese Option aktiv ist wird außerdem ein zusätzlicher Reiter mit dem letzten Ablieferungsprotokoll angezeigt.
+
+## <a name="supplementary"></a>Ablieferung von Begleitmaterial
+
+Auch das Begleitmaterial Ihrer Artikel ist ablieferungspflichtig. Ab Version 3.3 liefert das DNB Export Plugin mit jeder Dokumentfahne automatisch das gesamte Begleitmaterial eines Artikels ab. Falls technische Probleme die Ablieferung des Begleitmaterials verhinden, steht eine Option zur Deaktivierung dieser Funktion zur Verfüfgung. Bitte deaktivieren Sie diese Funktion nur in Rücksprache mit der DNB.
+
+## <a name="remote"></a>Fahnen die an einem externen Ort bereitgestellt werden (Remote Galleys) abliefern
+
+Ab Version 3.3 des DNB Export Plugins können auch Fahnen die an einem externen Ort bereitgestellt werden (Remote Galleys) abliefert werden. Bitte beachten Sie, dass in OJS nur Dokumentfahnen (also nicht das Begleitmaterial) als Remote Galleys behandelt werden. Aus Sicherheitsgründen muss bei Aktivierung dieser Funktion auch eine (oder mehrere) feste IP-Adressen angegeben werden, von denen Remote Galleys akzeptieren werden dürfen. Weiterhin werden nur nicht-ausführbare Remote Galleys an die DNB abgelifert. 
+
+## <a name="archive"></a>Archivzugriff
+
+Es stehen die Optionen 
+
+- Beschränkter Zugriff an speziellen Rechnern der Lesesäle der DNB
+- Uneingeschränkter Zugriff für alle
+- Zugriff für registrierte Nutzer/innen auch außerhalb der DNB
+
+zur Verfügung. Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch "Uneingeschränkt für alle". Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen. Bitte beachten Sie, dass auf Ausgaben oder Artikelebene vergebene Zugriffsrechte vorgang von den hier gesetzten Zugriffrechten haben.
+
+## <a name="experimental"></a>Experimentelle Funktionen
+
+In diesem Abschnitt werden eventuell Funktionen zur Verfügung gestellt, die sich in der Entwicklungspahse befinden. Diese Funktionen sind in der Regel nicht ausgebiegig getestet und können eventuell Probleme verursachen.
+
+### Überprüfung der Ablieferungen über DNB-Katalogabfrage
+
+Diese Funktion versucht, über eine ISSN-Abfrage des DNB-Katalogs, zu ermitteln welche Artikel der Zeitschrift bereits im DNB-Katalog verfügbar sind. Die Funktion zeigt zusätzlich alle mit der aktuellen ISSN der Zeitschrift vernküpften ISSNs an.

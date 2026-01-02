@@ -1,0 +1,1161 @@
+<?php
+
+/**
+ * @file plugins/generic/dnb/DNBExportPlugin.php
+ *
+ * Copyright (c) 2021 Center for Digital Systems (CeDiS), Universitätsbibliothek Freie Universität Berlin
+ * Distributed under the GNU GPL v3. For full terms see the plugin file LICENSE.
+ * Author: Bozana Bokan, Ronald Steffen
+ *
+ * @class DNBExportPlugin
+ * @ingroup plugins_generic_dnb
+ *
+ * @brief DNB export plugin
+ */
+
+namespace APP\plugins\generic\dnb;
+
+use APP\core\Application;
+use APP\plugins\PubObjectsExportPlugin;
+use PKP\plugins\Hook;
+use APP\core\Services;
+use PKP\i18n\LocaleConversion;
+use APP\facades\Repo;
+use APP\template\TemplateManager;
+use PKP\config\Config;
+use PKP\db\DAORegistry;
+use APP\submission\Submission;
+use APP\components\forms\FieldSelectIssues;
+use APP\plugins\generic\dnb\DNBExportDeployment;
+use APP\plugins\generic\dnb\classes\components\DNBSubmissionsList;
+use PKP\plugins\generic\PKPImportExportDeployment;
+use APP\plugins\generic\dnb\filter\DNBXmlFilter;
+use PKP\plugins\GenericPlugin;
+use PKP\core\PKPString;
+use ErrorException;
+use PKP\submission\Genre;
+use PKP\facades\Locale;
+use PKP\core\JSONMessage;
+use DOMDocument;
+use DOMXPath;
+use DNBCatalogInfoProvider;
+use PKP\scheduledTask\ScheduledTaskHelper as PKPScheduledTaskHelper;
+use PKP\userGroup\UserGroup;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use PKP\security\Role;
+use PKP\notification\Notification;
+use League\Flysystem\FilesystemException;
+use League\Flysystem\UnableToCopyFile;
+
+// Import new service classes
+use APP\plugins\generic\dnb\classes\api\DNBHelpApiHandler;
+use APP\plugins\generic\dnb\classes\api\DNBSubmissionsApiHandler;
+use APP\plugins\generic\dnb\classes\deposit\DNBDepositService;
+use APP\plugins\generic\dnb\classes\export\DNBPackageBuilder;
+use APP\plugins\generic\dnb\classes\export\DNBFileManager;
+use APP\plugins\generic\dnb\classes\export\DNBExportValidator;
+use APP\plugins\generic\dnb\classes\filter\GalleyFilter;
+
+
+define('DEBUG', true);
+
+define('DNB_STATUS_DEPOSITED', 'deposited');
+define('DNB_ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
+define('DNB_EXPORT_ACTION_MARKEXCLUDED','exclude');
+define('DNB_EXPORT_STATUS_MARKEXCLUDED','markExcluded');
+define('DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION', 103);
+
+if (!DEBUG) {
+	define('DNB_SFTP_SERVER','sftp://@hotfolder.dnb.de/');
+	define('DNB_SFTP_PORT', 22122);
+} else {
+	define('DNB_SFTP_SERVER','sftp://ojs@sftp/');
+	define('DNB_SFTP_PORT', 22);
+}
+
+define('DNB_WEBDAV_SERVER','https://@hotfolder.dnb.de/');
+define('DNB_WEBDAV_PORT', 443);
+
+class DNBExportPlugin extends PubObjectsExportPlugin {
+
+	private $_settingsForm;
+	private $_settingsFormURL;
+	private $_currentContextId;
+	private string $_exportAction = '';
+	private bool $_checkedForTar = false;
+	
+	// Service instances
+	private ?DNBHelpApiHandler $helpApiHandler = null;
+	private ?DNBSubmissionsApiHandler $submissionsApiHandler = null;
+	private ?DNBDepositService $depositService = null;
+	private ?DNBPackageBuilder $packageBuilder = null;
+	private ?DNBFileManager $fileManager = null;
+	private ?DNBExportValidator $validator = null;
+	private ?GalleyFilter $galleyFilter = null;
+	
+	/**
+	 * Constructor
+	 * @param GenericPlugin $parentPlugin The parent generic plugin
+	 */
+	public function __construct(protected GenericPlugin $parentPlugin) {
+		parent::__construct();
+		$this->pluginPath = $parentPlugin->getPluginPath();
+		
+		// Initialize services
+		$this->initializeServices();
+		
+		$request = Application::get()->getRequest();
+		$context = $request->getContext();
+
+		if (isset($context))
+		{
+			$this->setContextId($context->getId());
+			// settings form action url (needs to be set before parent::display initiliazes the settings form)
+			$this->_settingsFormURL = $request->getDispatcher()->url(
+				$request,
+				Application::ROUTE_COMPONENT,
+				null,
+				'grid.settings.plugins.settingsPluginGridHandler',
+				'manage',
+				null,
+				array(
+					'plugin' => $this->getName(),
+					'category' => 'importexport',
+					'verb' => 'save')
+			);
+		}
+	}
+	
+	/**
+	 * Initialize service instances
+	 */
+	private function initializeServices(): void {
+		$this->galleyFilter = new GalleyFilter();
+		$this->fileManager = new DNBFileManager($this);
+		$this->validator = new DNBExportValidator($this, $this->galleyFilter);
+		$this->packageBuilder = new DNBPackageBuilder($this, $this->fileManager);
+		$this->depositService = new DNBDepositService($this);
+		$this->helpApiHandler = new DNBHelpApiHandler($this->getHelpPath());
+		$this->submissionsApiHandler = new DNBSubmissionsApiHandler($this);
+	}
+
+	/**
+	 * @copydoc Plugin::register()
+	 */
+	public function register($category, $path, $mainContextId = null) {
+		$success = parent::register($category, $path, $mainContextId);
+		
+		if ($success) {
+			// Register API endpoints if this is an API request
+			$request = Application::get()->getRequest();
+			$router = $request->getRouter();
+			
+			if ($router instanceof \PKP\core\APIRouter) {
+				Hook::add("APIHandler::endpoints::{$router->getEntity()}", 
+					[$this, 'setupAPIEndpoints']);
+			}
+		}
+		
+		return $success;
+	}
+
+	/**
+	 * Register API endpoints for this plugin
+	 */
+	public function setupAPIEndpoints($hook, $controller, $apiHandler) {
+		$request = Application::get()->getRequest();
+		$router = $request->getRouter();
+		$context = $request->getContext();
+		
+		// Only register for 'contexts' entity endpoint
+		if ($hook !== 'APIHandler::endpoints::contexts' || !$context) {
+			return Hook::CONTINUE;
+		}
+		
+		// GET /contexts/{contextId}/_plugins/generic/dnb/submissions - List submissions with DNB status
+		$apiHandler->addRoute(
+			'GET',
+			$context->getId() . '/_plugins/generic/dnb/submissions',
+			function (Request $illuminateRequest) use ($request): JsonResponse {
+				return $this->getSubmissionsForExport($illuminateRequest, $request);
+			},
+			'dnb.submissions.list',
+			[Role::ROLE_ID_MANAGER, Role::ROLE_ID_SITE_ADMIN]
+		);
+		
+		// GET /contexts/{contextId}/_plugins/generic/dnb/help?lang={lang}&topic={topic} - Help documentation
+		$apiHandler->addRoute(
+			'GET',
+			$context->getId() . '/_plugins/generic/dnb/help',
+			function (Request $illuminateRequest) use ($request): JsonResponse {
+				$lang = $illuminateRequest->query('lang');
+				$topic = $illuminateRequest->query('topic');
+				return $this->getHelpContent($lang, $topic, $request);
+			},
+			'dnb.help.get',
+			[Role::ROLE_ID_MANAGER, Role::ROLE_ID_SITE_ADMIN]
+		);
+		
+		return Hook::CONTINUE;
+	}
+	
+	/**
+	 * @copydoc Plugin::getName()
+	 */
+	function setSettingsForm($form) {
+		$this->_settingsForm = $form;
+	}
+
+	/**
+	 * @copydoc Plugin::getName()
+	 */
+	function getSettingsFormActionURL() {
+		return $this->_settingsFormURL;
+	}
+
+	/**
+	 * @copydoc Plugin::getName()
+	 */
+	function getName() {
+		return 'DNBExportPlugin';
+	}
+
+	/**
+	 * @copydoc Plugin::getDisplayName()
+	 */
+	function getDisplayName() {
+		return __('plugins.importexport.dnb.displayName');
+	}
+
+	/**
+	 * @copydoc Plugin::getDescription()
+	 */
+	function getDescription() {
+		return __('plugins.importexport.dnb.description');
+	}
+
+	/**
+	 * @copydoc setContextId()
+	 */
+	function setContextId($Id) {
+		$this->_currentContextId = $Id;
+	}
+
+	/**
+	 * @copydoc ImportExportPlugin::display()
+	 */
+	function display($args, $request) {
+		$context = $request->getContext();
+		$currentLocale = $request->getSession()->get('currentLocale') ?? $context->getPrimaryLocale();
+
+		// if no issue is published go back to tools 
+		// get all published submissions in the context
+		$issues = Repo::issue()
+			->getCollector()
+			->filterByContextIds([$context->getId()])
+			->filterByPublished(true)
+			->getMany()
+			->toArray();
+		if (count($issues) < 1) {
+			//show error
+			$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noIssuesPublished')));
+			// redirect back to exportSubmissions-tab
+			$path = array('plugin', $this->getName());
+			$request->redirectUrl($request->getRouter()->url($request, null, 'management', 'tools'));
+			return;
+		}
+		
+		// if no object is selected go back to export submission tab
+		if (!empty($args)) {
+			if ((($args[0] == 'exportSubmissions') ||
+				($args[0] == self::EXPORT_ACTION_EXPORT) || 
+				($args[0] == self::EXPORT_ACTION_DEPOSIT) || 
+				($args[0] == self::EXPORT_ACTION_MARKREGISTERED)) &&
+				empty((array) $request->getUserVar('selectedSubmissions'))) {
+				
+				//show error
+				$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noObjectsSelected')));
+				// redirect back to exportSubmissions-tab
+				$path = array('plugin', $this->getName());
+				$request->redirect(null, null, null, $path, null, 'exportSubmissions-tab');
+				return;
+			}
+
+			// handle parent export actions
+			switch ($args[0]) {
+				case self::EXPORT_ACTION_EXPORT:
+					$this->_exportAction = self::EXPORT_ACTION_EXPORT;
+					break;
+				case self::EXPORT_ACTION_DEPOSIT:
+					$this->_exportAction = self::EXPORT_ACTION_DEPOSIT;
+					break;
+				case self::EXPORT_ACTION_MARKREGISTERED:
+					$this->_exportAction = self::EXPORT_ACTION_MARKREGISTERED;
+					$request->_requestVars[self::EXPORT_ACTION_MARKREGISTERED] = true;
+					break;
+				case DNB_EXPORT_ACTION_MARKEXCLUDED:
+					$this->_exportAction = DNB_EXPORT_ACTION_MARKEXCLUDED;
+					break;
+			}
+			$args[0] = 'exportSubmissions';
+		}
+
+		parent::display($args, $request);
+		
+		switch (array_shift($args)) {
+			case 'index':
+			case '':			
+				// settings form
+				$settingsFormConfig = $this->_settingsForm->getConfig();
+				$settingsFormConfig['fields'][1]['inputType'] = "password";
+				
+				// Use API endpoint for submissions list
+				$apiUrl = $request->getDispatcher()->url(
+					$request,
+					Application::ROUTE_API,
+					$context->getPath(),
+					"contexts/" . $context->getId() . "/_plugins/generic/dnb/submissions"
+				);
+
+				// Get published submissions
+				$publishedSubmissions = Repo::submission()
+					->getCollector()
+					->filterByContextIds([$context->getId()])
+					->filterByStatus([Submission::STATUS_PUBLISHED])
+					->getMany()
+					->toArray();
+
+				// Cache frequently used values outside the loop
+				$contextPath = $context->getPath();
+				$statusNames = $this->getStatusNames();
+				$authorUserGroups = UserGroup::withContextIds([$context->getId()])
+					->withRoleIds([Role::ROLE_ID_AUTHOR])
+					->get();
+				
+				// Collect all unique issue IDs for bulk fetching
+				$issueIds = array_unique(array_filter(array_map(function($submission) {
+					return $submission->getCurrentPublication()->getData('issueId');
+				}, $publishedSubmissions)));
+				
+				// Fetch all issues
+				$issues = [];
+				if (!empty($issueIds)) {
+					$issueCollection = Repo::issue()
+						->getCollector()
+						->filterByContextIds([$context->getId()])
+						->filterByIssueIds($issueIds)
+						->getMany();
+					foreach ($issueCollection as $issue) {
+						$issues[$issue->getId()] = $issue;
+					}
+				}
+
+				// Prepare submission data for table
+				$submissionItems = [];
+				$nNotRegistered = 0;
+				foreach ($publishedSubmissions as $submission) {
+					$publication = $submission->getCurrentPublication();
+					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
+					if (empty($status)) $nNotRegistered++;
+					
+					// Get issue information from cached data
+					$issueTitle = '';
+					$issueUrl = '';
+					$issueId = $publication->getData('issueId');
+					$issue = null;
+					if ($issueId && isset($issues[$issueId])) {
+						$issue = $issues[$issueId];
+						$issueTitle = $issue->getIssueIdentification();
+						$issueUrl = $request->getDispatcher()->url(
+							$request,
+							Application::ROUTE_PAGE,
+							$contextPath,
+							'issue',
+							'view',
+							[$issue->getBestIssueId()]
+						);
+					}
+
+					// Create warning message if issues detected with supplementary files
+					$documentGalleys = $supplementaryGalleys = [];
+					$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys);
+					$msg = "";
+					if ($submission->getData('supplementaryNotAssignable')) {
+						$plural = $currentLocale == "de" ? "n" : "s";
+						$msg = __('plugins.importexport.dnb.warning.supplementaryNotAssignable',
+							array(
+								'nDoc' => count($documentGalleys),
+								'nSupp' => count($supplementaryGalleys),
+								'pSupp' => count($supplementaryGalleys) > 1 ? $plural : ""
+							));
+					}
+					
+					$submissionItems[] = [
+						'id' => $submission->getId(),
+						'urlWorkflow' => $request->getDispatcher()->url(
+							$request,
+							Application::ROUTE_PAGE,
+							$contextPath,
+							'workflow',
+							'access',
+							[$submission->getId()]
+						),
+						'publication' => [
+							'authorsString' => $publication->getAuthorString($authorUserGroups),
+							'fullTitle' => $publication->getLocalizedFullTitle(),
+						],
+						'issueTitle' => $issueTitle,
+						'issueUrl' => $issueUrl,
+						'dnbStatus' => $statusNames[$status] ?? $statusNames[self::EXPORT_STATUS_NOT_DEPOSITED],
+						'dnbStatusConst' => $status ?: self::EXPORT_STATUS_NOT_DEPOSITED,
+						'supplementariesNotAssignable' => $msg !== "" ? $msg : false,
+					];
+				}
+
+				// Instantiate DNBSubmissionsList
+				$dnbSubmissionsList = new DNBSubmissionsList(
+					$apiUrl,
+					$submissionItems,
+					$context
+				);
+
+				// Get config for Vue component
+				$submissionsConfig = $dnbSubmissionsList->getConfig();
+
+				// set properties
+				$templateMgr = TemplateManager::getManager($request);
+
+				$checkForTarResult = $this->checkForTar();
+				$templateMgr->assign('checkFilter', !is_array($this->checkForExportFilter()));
+				$templateMgr->assign('checkTar', !is_array($checkForTarResult));
+				$templateMgr->assign('checkSettings', $this->checkPluginSettings($context));
+				// Build help API URL
+				$helpApiUrl = $request->getDispatcher()->url(
+					$request,
+					Application::ROUTE_API,
+					$context->getPath(),
+					"contexts/" . $context->getId() . "/_plugins/generic/dnb/help"
+				);
+				
+				$templateMgr->assign([
+					'pageComponent' => 'ImportExportPage',
+					'baseurl' => $request->getBaseUrl(),
+					'debugModeWarning' => __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_SFTP_SERVER, 'port' => DNB_SFTP_PORT]),
+					'nNotRegistered' => $nNotRegistered,
+					'remoteEnabled' => $this->getSetting($context->getId(), 'exportRemoteGalleys') ? "Remote On" : "",
+					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') === "none" ? "Supplementary Off" : "",
+					'helpApiUrl' => $helpApiUrl,
+					'currentLocale' => $currentLocale
+				]);
+
+				$templateMgr->setConstants([
+					'FORM_DNB_SETTINGS',
+					'DNB_SUBMISSIONS_LIST',
+				]);
+
+				$state = [
+					'components' => [
+						FORM_DNB_SETTINGS => $settingsFormConfig,
+						DNB_SUBMISSIONS_LIST => $submissionsConfig
+					],
+				];		
+				$templateMgr->setState($state);
+
+				$templateMgr->addStyleSheet(
+					'dnbexportplugin',
+					$request->getBaseUrl() . '/' . $this->getStyleSheet(),
+					array(
+						'contexts' =>  ['backend']
+					)
+				);
+
+				$templateMgr->addJavaScript(
+					'dnbexportplugin',
+					$request->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'DNBSettingsFormHandler.js',
+					array(
+						'inline' => false,
+						'contexts' => ['backend'],
+					)
+				);
+
+				// Add Vue component JavaScript
+				$templateMgr->addJavaScript(
+					'dnbPluginVue',
+					"{$request->getBaseUrl()}/{$this->getPluginPath()}/build/dnb.iife.js",
+					[
+						'inline' => false,
+						'contexts' => ['backend'],
+						'priority' => TemplateManager::STYLE_SEQUENCE_LAST
+					]
+				);
+
+				// Add Vue component CSS
+				$templateMgr->addStyleSheet(
+					'dnbPluginVueStyles',
+					"{$request->getBaseUrl()}/{$this->getPluginPath()}/build/dnb-plugin.css",
+					[
+						'contexts' => ['backend']
+					]
+				);
+
+				$helpUrl = $request->getDispatcher()->url(
+					$request,
+					Application::ROUTE_API,
+					$context->getPath(),
+					"contexts/" . $context->getId() . "/_plugins/generic/dnb/help"
+				);
+
+				$script_data = [
+					'helpUrl' => $helpUrl
+				];
+
+				// provide url for help pages
+				$templateMgr->addJavaScript(
+					'dnbexportpluginData',
+					'$.pkp.plugins.importexport = $.pkp.plugins.importexport || {};' .
+						'$.pkp.plugins.importexport.' . strtolower($this->getName()) . ' = ' . json_encode($script_data) . ';',
+					[
+						'inline' => true,
+						'contexts' => 'backend',
+					]
+				);
+
+				// show logs for automatic deposit
+				if ($this->getSetting($this->_currentContextId, 'automaticDeposit')) {
+					$logFiles = Services::get('file')->fs->listContents(PKPScheduledTaskHelper::SCHEDULED_TASK_EXECUTION_LOG_DIR)
+						->filter(fn (\League\Flysystem\StorageAttributes $attributes) => str_contains($attributes->path(),"DNBautomaticdeposittask"))
+						->toArray();
+
+					usort($logFiles, function ($f1, $f2) {
+						return $f1['lastModified'] < $f2['lastModified'];
+					});
+
+					$latestLogFile = [];
+					if (count($logFiles) > 0) {
+						// filter context specific messages
+						$latestLogFile = Services::get('file')->fs->read($logFiles[0]['path']);
+						$latestLogFile = preg_split("/\r\n|\n|\r/", $latestLogFile, 0, PREG_SPLIT_NO_EMPTY);
+						$lastIndex = count($latestLogFile) - 1;
+						$latestLogFile = array_filter($latestLogFile, function ($line, $index) use ($context, $lastIndex) {
+							return (bool) preg_match('#\['.$context->getData('urlPath').'\]#', $line) || ($index == 1) || ($index == $lastIndex);
+						},
+						ARRAY_FILTER_USE_BOTH);
+					}
+					$templateMgr->assign('latestLogFile', $latestLogFile);
+				}
+
+				// query dnb catalog
+				if ($this->getSetting($this->_currentContextId, 'dnbCatalog')) {
+
+					try {
+						$dbnCatalogInfoProvider = new classes\DNBCatalogInfoProvider();
+						$dnbCatalogInfo = $dbnCatalogInfoProvider->getCatalogInfo($context, Config::getVar('files', 'files_dir').'/'.$this->getPluginSettingsPrefix());
+						$templateMgr->assign('dnbCatalogInfo', $dnbCatalogInfo);
+					} catch (\Throwable $e) {
+						error_log($e->getMessage());
+						$param = __('plugins.importexport.dnb.error.catalogQueryFailed.param', array('error' => $e->getMessage()));
+						$this->errorNotification(
+							$request,
+							array(array('plugins.importexport.dnb.error.catalogQueryFailed', $param))
+						);
+					}
+
+
+				}
+
+				$templateMgr->display($this->getTemplateResource('index.tpl'));
+				break;
+		}
+	}
+
+	/**
+	 * Get submissions list for export with DNB status
+	 * API endpoint handler
+	 */
+	protected function getSubmissionsForExport(Request $illuminateRequest, $request): JsonResponse {
+		return $this->submissionsApiHandler->handle($illuminateRequest, $request);
+	}
+	
+
+
+	/**
+	 * Get help content for documentation
+	 * API endpoint handler
+	 */
+	protected function getHelpContent($lang, $topic, $request): JsonResponse {
+		return $this->helpApiHandler->handle($lang, $topic);
+	}
+
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::getStatusNames()
+	 */
+	function getStatusNames() {
+		return array(
+			self::EXPORT_STATUS_ANY => __('plugins.importexport.dnb.status.notDeposited'),
+			self::EXPORT_STATUS_NOT_DEPOSITED => __('plugins.importexport.dnb.status.notDeposited'),
+			DNB_STATUS_DEPOSITED => __('plugins.importexport.dnb.status.deposited'),
+			self::EXPORT_STATUS_MARKEDREGISTERED => __('plugins.importexport.common.status.markedRegistered'),
+			DNB_EXPORT_STATUS_MARKEXCLUDED => __('plugins.importexport.dnb.status.excluded')
+		);
+	}
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::getExportActionNames()
+	 */
+	function getExportActionNames() {
+		return array_merge(parent::getExportActionNames(), array(
+			self::EXPORT_ACTION_DEPOSIT => __('plugins.importexport.dnb.deposit'),
+			DNB_EXPORT_ACTION_MARKEXCLUDED => __('plugins.importexport.dnb.exclude')
+		));
+	}
+
+	/**
+	 * @copydoc ImportExportPlugin::getPluginSettingsPrefix()
+	 */
+	function getPluginSettingsPrefix() {
+		return 'dnb';
+	}
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::getSubmissionFilter()
+	 */
+	function getSubmissionFilter() {
+		return 'galley=>dnb-xml';
+	}
+
+	/**
+	 * Return the location of the plugin's CSS file
+	 *
+	 * @return string
+	 */
+	function getStyleSheet() {
+		return $this->getPluginPath() . '/css/dnbplugin.css';
+	}
+
+	/**
+	 * Return the location of the help files
+	 *
+	 * @return string
+	 */
+	function getHelpPath() {
+		return $this->getPluginPath() . '/docs/manual/';
+	}
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::getExportActions()
+	 */
+	function getExportActions($context) {
+		return array(self::EXPORT_ACTION_DEPOSIT, self::EXPORT_ACTION_EXPORT, self::EXPORT_ACTION_MARKREGISTERED, DNB_EXPORT_ACTION_MARKEXCLUDED);
+	}
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::getExportDeploymentClassName()
+	 */
+	function getExportDeploymentClassName() {
+		return '\APP\plugins\generic\dnb\DNBExportDeployment';
+	}
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::getSettingsFormClassName()
+	 */
+	function getSettingsFormClassName() {
+		return '\APP\plugins\generic\dnb\classes\form\DNBSettingsForm';
+	}
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::getDepositSuccessNotificationMessageKey()
+	 */
+	function getDepositSuccessNotificationMessageKey() {
+		return 'plugins.importexport.dnb.deposited.success';
+	}
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::depositXML()
+	 */
+	function depositXML($object, $context, $filename) {
+		return $this->depositService->deposit($object, $context, $filename);
+	}
+
+
+	/**
+	 * @copydoc PubObjectsExportPlugin::executeExportAction()
+	 */
+
+	public function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null, $shouldRedirect = true)
+    {
+		$journal = $request->getContext();
+		$path = array('plugin', $this->getName());
+		$tab = "exportSubmissions-tab";
+		$basedir = Config::getVar('files', 'files_dir');
+		
+		switch ($this->_exportAction) {
+			case self::EXPORT_ACTION_EXPORT:
+			case self::EXPORT_ACTION_DEPOSIT:
+
+				assert($filter != null);
+
+				// The tar tool for packaging is needed. Check this
+				// early on to avoid unnecessary export processing.
+				$result = $this->checkForTar();
+				if (is_array($result)) {
+					$this->errorNotification($request, $result);
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
+				}
+
+				// Get the journal target export directory.
+				// The data will be exported in this structure:
+				// dnb/<journalId>-<dateTime>/
+				$result = $this->getExportPath($journal->getId());
+				if (is_array($result)) {
+					$this->errorNotification($request, $result);
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
+				}
+				$exportPath = $result;
+				$journalExportPath = $basedir . '/' . $result;
+
+				$errors = $exportFilesNames = [];
+
+				// For each selected article
+				foreach ($submissions as $submission) {
+					$issue = null;
+					$galleys = [];
+					$supplementaryGalleys = [];
+					// Get issue and galleys, and check if the article can be exported.
+					// canBeExported(...) returns galleys and supplementary galleys seperately
+					try {
+						if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
+						$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
+						// continue with other articles
+						continue;
+						}
+					} catch (DNBPluginException $e) {
+						// convert DNBPluginException to error messages that will be shown to the user
+						$result = $this->handleExceptions($e);
+						$errors = array_merge($errors, [$result]);
+					}
+					
+					$fullyDeposited = true;
+
+					foreach ($galleys as $galley) {
+
+						// store submission Id in galley object for internal use
+						$galley->setData('submissionId', $submission->getId());
+
+						// check if it is a full text
+						$galleyFile = $galley->getFile();
+
+						// if $galleyFile is not set it might be a remote URL
+						if (!isset($galleyFile)) {
+							if ($galley->getData('urlRemote') == null) continue;
+						}
+						
+						$exportFile = '';
+						// Get the TAR package for the galley
+						$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
+						
+						// If errors occured, remove all created directories and return the errors
+						if (is_array($result)) {
+							// If error occured add it to the list of errors
+							$errors[] = $result;
+							$fullyDeposited = false;
+						}
+						if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
+							// Add the galley package to the list of all exported files
+							$exportFilesNames[] = $exportFile;
+						} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
+							// Deposit the galley
+							// $exportfile will be empty if XML file could not be created
+							$result = false;
+							if ($exportFile) {
+								$result = $this->depositXML($galley, $journal, $exportFile);
+							}
+							if (is_array($result)) {
+								// If error occured add it to the list of errors
+								$errors = array_merge($errors, $result);
+								$fullyDeposited = false;
+							}
+						}
+					}
+					
+					if ($fullyDeposited && $this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
+						$this->updateSubmissionStatus($submission);
+					}
+				}
+				
+				if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
+					if (!empty($errors)) {
+						// If there were some deposit errors, display them to the user
+						$this->errorNotification($request, $errors);	
+					} else {
+						// If there is more than one export package, package them all in a single .tar.gz
+						assert(count($exportFilesNames) >= 1);
+						if (count($exportFilesNames) > 1) {
+							$finalExportFileName = $journalExportPath . $this->getPluginSettingsPrefix() . '-export.tar.gz';
+							$this->tarFiles($journalExportPath, $finalExportFileName, $exportFilesNames, true);
+						} else {
+							$finalExportFileName = reset($exportFilesNames);
+						}
+						// Stream the results to the browser
+						// Starting from OJS 3.3 this would be the prefered way to stream a file for download:
+						// 	Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
+						// However, this function exits execution after dowload not allowing for clean up of the intermediate zip file
+						// We therfore copied the appropriate functions from OJS 3.2 FileManager
+						// It was suggested (Alec) to use OJS-queues for clean up which are supposed to come with OJS 3.4 
+						$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
+					}
+					// Remove the generated directories
+					Services::get('file')->fs->deleteDirectory($journalExportPath);
+					// redirect back to the right tab
+					// redirect causes a PHP Warning because headers were already sent by above downloadByPath call
+					// we disable warning before redirect not to spam error log
+					error_reporting(~E_WARNING);
+					$request->redirect(null, null, null, $path, null, $tab);
+				} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
+					if (!empty($errors)) {
+						// If there were some deposit errors, display them to the user
+						$this->errorNotification($request, $errors);
+					} else {
+						// Provide the user with some visual feedback that deposit was successful
+						$this->_sendNotification(
+							$request->getUser(),
+							$this->getDepositSuccessNotificationMessageKey(),
+							Notification::NOTIFICATION_TYPE_SUCCESS
+						);
+					}
+					// Remove the generated directories
+					Services::get('file')->fs->deleteDirectory($journalExportPath);
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
+				}
+				break;
+			case DNB_EXPORT_ACTION_MARKEXCLUDED:
+					foreach ($submissions as $object) {
+						switch($object->getData($this->getDepositStatusSettingName())) {
+							case self::EXPORT_STATUS_NOT_DEPOSITED:
+							case NULL:
+								$object->setData($this->getDepositStatusSettingName(), DNB_EXPORT_STATUS_MARKEXCLUDED);
+								break;
+							case DNB_EXPORT_STATUS_MARKEXCLUDED:
+								$object->setData($this->getDepositStatusSettingName(), NULL);
+								break;
+						}
+						$this->updateObject($object);
+					}
+					// redirect back to the right tab
+					$request->redirect(null, null, null, $path, null, $tab);
+				break;
+			default:
+				return parent::executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation);
+		}
+	}
+
+	function updateSubmissionStatus(Submission $submission) {
+		// update submission status in memory
+		$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
+		// update submission status in database
+		Repo::submission()->edit($submission, [$this->getDepositStatusSettingName() => DNB_STATUS_DEPOSITED]);
+	}
+
+	/**
+	 * Generate TAR package for a galley.
+	 *
+	 * @param $galley ArticleGalley
+	 * @param $filter string Filter to use
+	 * @param $noValidation boolean If set to true no XML validation will be done
+	 * @param $journal Journal
+	 * @param $journalExportPath string Directory path where to put all export files
+	 * @param $exportPackageName string Just to return the exported TAR package
+	 *
+	 * @return boolean|array True for success or an array of error messages.
+	 */
+	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, &$exportPackageName, $submissionId) {
+		return $this->packageBuilder->buildPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, $exportPackageName, $submissionId);
+	}
+	
+
+
+	function handleExceptions($e) {
+		switch ($e->getCode()) {
+			case \DNB_XML_NON_VALID_CHARCTERS_EXCEPTION:
+				$param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $submissionId, 'node' => $e->getMessage()));		       
+				return array('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters', $param);
+			case \DNB_URN_SET_EXCEPTION:
+				return ['plugins.importexport.dnb.export.error.urnSet.description', $e->getMessage()];
+			case \DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION:
+				$param = __('plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));		       
+				return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
+			case \DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION:
+				return array('plugins.importexport.dnb.export.error.exception', $e->getMessage());
+		}
+	}
+
+	/**
+	 * Copy galley file to the export content path, that will be packed.
+	 *
+	 * @param $galley ArticleGalley
+	 * @param $exportPath string The final directory path, containing data to be packed
+	 *
+	 * @return string|array The export directory name or an array with
+	 *  errors if something went wrong.
+	 */
+	function copyGalleyFile($galley, $exportPath) {
+		return $this->fileManager->copyGalleyFile($galley, $exportPath);
+	}
+	
+
+
+	/**
+	 * Return the plugin export directory.
+	 * The data will be exported in this structure:
+	 * dnb/<journalId>-<dateTime>/<articleId>-<galleyId>/
+	 *
+	 * This will create the directory if it doesn't exist yet.
+	 *
+	 * @param $journalId integer
+	 * @param $currentExportPath string (optional) The base path, the content directory should be added to
+	 * @param $exportContentDir string (optional) The final directory containing data to be packed
+	 *
+	 * @return string|array The export directory name or an array with
+	 *  errors if something went wrong.
+	 */
+	
+	function getExportPath($journalId = null, $currentExportPath = null, $exportContentDir = null) {
+		return $this->fileManager->getExportPath($journalId, $currentExportPath, $exportContentDir);
+	}
+	
+
+
+	/**
+	 * The selected submission can be exported if the issue is published and
+	 * submission contains either a PDF or an EPUB full text galley.
+	 * @param $submission Submission
+	 * @param $issue Issue Just to return the issue
+	 * @param $galleys array Filtered (i.e. PDF and EPUB) submission full text galleys
+	 * @return boolean
+	 */
+	function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = []) {
+		return $this->validator->canBeExported($submission, $issue, $galleys, $supplementaryGalleys);
+	}
+	
+
+
+	/**
+	 * Check if a galley is a full text as well as PDF or an EPUB file.
+	 * @param $galley ArticleGalley
+	 * @return boolean
+	 */
+	function filterGalleys($galley) {
+		return $this->galleyFilter->filterPDFAndEPUB($galley);
+	}
+	
+
+
+	/**
+	 * Check if a galley is a supplementary file.
+	 * @param $galley ArticleGalley
+	 * @return boolean
+	 */
+	function filterSupplementaryGalleys($galley) {
+		return $this->galleyFilter->filterSupplementary($galley);
+	}
+	
+
+
+	/**
+	 * Test whether the tar binary is available.
+	 * @return boolean|array True if available otherwise
+	 *  an array with an error message.
+	 */
+	function checkForTar() {
+		$result = $this->validator->checkForTar();
+		$this->_checkedForTar = true;
+		return $result;
+	}
+	
+
+	
+	/**
+	 * Test whether the export filter was registered.
+	 * @return boolean|array True if available otherwise
+	 *  an array with an error message.
+	 */
+	function checkForExportFilter() {
+		return $this->validator->checkForExportFilter();
+	}
+	
+
+
+	/**
+	 * Create a tar archive.
+	 * Delegates to PackageBuilder service for consistency.
+	 * 
+	 * @param $targetPath string
+	 * @param $targetFile string
+	 * @param $sourceFiles array (optional) If null, everything in the target path is considered
+	 * @param $gzip boolean (optional) If TAR file should be gzipped
+	 */
+	function createTarArchive($targetPath, $targetFile, $sourceFiles = null, $gzip = false) {
+		assert($this->_checkedForTar);
+		
+		// If sourceFiles provided, extract just basenames for relative paths
+		if ($sourceFiles) {
+			$sourceFiles = array_map('basename', $sourceFiles);
+		}
+		
+		// Delegate to PackageBuilder's createTarArchive method
+		$this->packageBuilder->createTarArchive($targetPath, $targetFile, $sourceFiles, $gzip);
+	}
+	
+	/**
+	 * Legacy method name for backward compatibility
+	 * @deprecated Use createTarArchive() instead
+	 */
+	function tarFiles($targetPath, $targetFile, $sourceFiles = null, $gzip = false) {
+		$this->createTarArchive($targetPath, $targetFile, $sourceFiles, $gzip);
+	}
+
+	/**
+	 * Check if plugin settings are missing.
+	 * @param $journal Journal
+	 * @return boolean
+	 */
+	function checkPluginSettings($journal) {
+		return $this->validator->checkPluginSettings($journal);
+	}
+
+	/**
+	 * Check whether this journal is OA.
+	 * @return boolean
+	 */
+	function isOAJournal($journal = NULL) {
+		return $this->validator->isOAJournal($journal);
+	}
+	
+
+
+	/**
+	 * Get the name of the settings file
+	 * creation.
+	 * @return string
+	 */
+	function getContextSpecificPluginSettingsFile() {
+	    return $this->getPluginPath() . '/settings.xml';
+	}
+	
+	/**
+	 * Display error notification.
+	 * @param $request Request
+	 * @param $errors array
+	 */
+	function errorNotification($request, $errors) {
+		foreach($errors as $error) {
+			assert(is_array($error) && count($error) >= 1);
+			$this->_sendNotification(
+				$request->getUser(),
+				$error[0],
+				Notification::NOTIFICATION_TYPE_ERROR,
+				(isset($error[1]) ? $error[1] : null)
+			);
+		}
+	}
+
+	
+	/**
+	 * Read a file's contents.
+	 * @param $filePath string the location of the file to be read
+	 * @param $output boolean output the file's contents instead of returning a string
+	 * @return string|boolean
+	 */
+	function readFileFromPath($filePath, $output = false) {
+		return $this->fileManager->readFileFromPath($filePath, $output);
+	}
+	
+
+
+	/**
+	 * Download a file.
+	 * Outputs HTTP headers and file content for download
+	 * @param $filePath string the location of the file to be sent
+	 * @param $mediaType string the MIME type of the file, optional
+	 * @param $inline boolean print file as inline instead of attachment, optional
+	 * @param $fileName string Optional filename to use on the client side
+	 * @return boolean
+	 */
+	function downloadByPath($filePath, $mediaType = null, $inline = false, $fileName = null) {
+		return $this->fileManager->downloadByPath($filePath, $mediaType, $inline, $fileName);
+	}
+	
+
+
+	function getFileGenre($galleyFile) {
+		return $this->galleyFilter->getFileGenre($galleyFile);
+	}
+
+	function exportRemote() {
+		return $this->getSetting($this->_currentContextId, 'exportRemoteGalleys') == "on";
+	}
+
+	function isAllowedRemoteIP($url) {
+		$remoteIP = gethostbyname(parse_url($url, PHP_URL_HOST));
+		$pattern = $this->getSetting($this->_currentContextId, 'allowedRemoteIPs');
+		$isAllowed = preg_match("/".$pattern."/", $remoteIP);
+		if ($isAllowed) {
+			return true;
+		} else {
+			throw new DNBPluginException(__('plugins.importexport.dnb.export.error.remoteIPNotAllowed', ['remoteIP' => $remoteIP]), DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION);
+		}
+	}
+
+	/**
+	 * Retrieve all unregistered articles.
+	 * @param $context Context
+	 * @return array
+	 */
+	function getUnregisteredArticles($context) {
+		$submissions = parent::getUnregisteredArticles($context);
+		return array_filter($submissions, array($this, 'filterMarkExcluded'));
+	}
+
+	/**
+	 * Get published submissions from submission IDs.
+	 * @param $submissionIds array
+	 * @param $context Context
+	 * @return array
+	 */
+	function getPublishedSubmissions($submissionIds, $context) {
+		$submissions = parent::getPublishedSubmissions($submissionIds, $context);
+		if ($this->_exportAction != DNB_EXPORT_ACTION_MARKEXCLUDED)
+		{
+			return array_filter($submissions, array($this, 'filterMarkExcluded'));
+		}
+		return $submissions;
+	}
+
+	function filterMarkExcluded($submission) {
+		return ($submission->getData($this->getDepositStatusSettingName()) !== DNB_EXPORT_STATUS_MARKEXCLUDED);
+	}
+
+	function array_keys_multi(array $array)
+	{
+		$keys = array();
+
+		foreach ($array as $key => $value) {
+			$keys[] = $key;
+
+			if (is_array($value)) {
+				$keys = array_merge($keys, $this->array_keys_multi($value));
+			}
+		}
+
+		return $keys;
+	}
+}
+
+class DNBPluginException extends \ErrorException {
+}
+
+?>

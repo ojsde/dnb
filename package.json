@@ -1,0 +1,14 @@
+{
+  "name": "dnb-plugin",
+  "version": "1.0.0",
+  "description": "DNB Export Plugin - Vue components",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --minify=false",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.0",
+    "vite": "^6.0.0"
+  }
+}
