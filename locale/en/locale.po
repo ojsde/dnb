@@ -171,6 +171,9 @@ msgstr "package file {$package} of the article {$articleId}: {$error}"
 msgid "plugins.importexport.dnb.export.error.curlError"
 msgstr "An error occured executing curl: {$param}. Export canceld!"
 
+msgid "plugins.importexport.dnb.export.error.remoteGalleysNotEnabled"
+msgstr "Export of remote galleys is not enabled. Please enable remote galley export in the plugin settings."
+
 msgid "plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid"
 msgstr "Remote server reported invalid content type: {$param}. No articles exported!"
 

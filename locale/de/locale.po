@@ -171,6 +171,9 @@ msgstr "Die Paketdatei {$package} des Artikels {$articleId} konnte nicht hochgel
 msgid "plugins.importexport.dnb.export.error.curlError"
 msgstr "Bei der Ausführung von curl ist ein Fehler aufgetreten: {$param}. Export abgebrochen!"
 
+msgid "plugins.importexport.dnb.export.error.remoteGalleysNotEnabled"
+msgstr "Der Export von extern gehosteten Fahnen ist nicht aktiviert. Bitte aktivieren Sie den Export von extern gehosteten Fahnen in den Plugin-Einstellungen."
+
 msgid "plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid"
 msgstr "Der entfernte Server meldet den nicht akzeptierten Inhaltstyp: {$param}. Export aller Artikel abgebrochen!"
 
