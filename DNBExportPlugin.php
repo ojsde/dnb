@@ -667,6 +667,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 	/**
 	 * @copydoc PubObjectsExportPlugin::depositXML()
+	 * @return bool|array[] True on success, or 2D array [['locale.key', 'param'], ...] on error
 	 */
 	function depositXML($object, $context, $filename) {
 		return $this->depositService->deposit($object, $context, $filename);
@@ -728,52 +729,51 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						}
 					} catch (DNBPluginException $e) {
 						// convert DNBPluginException to error messages that will be shown to the user
-						$result = $this->handleExceptions($e);
-						$errors = array_merge($errors, [$result]);
+					// handleExceptions() returns a single error tuple like ['key', 'param'], so wrap it in array
+					$result = $this->handleExceptions($e, $submission->getId());
+					$errors = array_merge($errors, [$result]);
+				}
+
+			foreach ($galleys as $galley) {
+
+				// store submission Id in galley object for internal use
+				$galley->setData('submissionId', $submission->getId());
+
+				// check if it is a full text
+				$galleyFile = $galley->getFile();
+
+				// if $galleyFile is not set it might be a remote URL
+				if (!isset($galleyFile)) {
+					if ($galley->getData('urlRemote') == null) continue;
+				}
+				
+				$exportFile = '';
+				// Get the TAR package for the galley
+				$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
+				
+				// If errors occured, remove all created directories and return the errors
+				if (is_array($result)) {
+					// If error occured add it to the list of errors
+					$errors = array_merge($errors, $result);
+					$fullyDeposited = false;
+				}
+				if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
+					// Add the galley package to the list of all exported files
+					$exportFilesNames[] = $exportFile;
+				} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
+					// Deposit the galley
+					// $exportfile will be empty if XML file could not be created
+					$result = false;
+					if ($exportFile) {
+						$result = $this->depositXML($galley, $journal, $exportFile);
 					}
-					
-					$fullyDeposited = true;
-
-					foreach ($galleys as $galley) {
-
-						// store submission Id in galley object for internal use
-						$galley->setData('submissionId', $submission->getId());
-
-						// check if it is a full text
-						$galleyFile = $galley->getFile();
-
-						// if $galleyFile is not set it might be a remote URL
-						if (!isset($galleyFile)) {
-							if ($galley->getData('urlRemote') == null) continue;
-						}
-						
-						$exportFile = '';
-						// Get the TAR package for the galley
-						$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
-						
-						// If errors occured, remove all created directories and return the errors
-						if (is_array($result)) {
-							// If error occured add it to the list of errors
-							$errors[] = $result;
-							$fullyDeposited = false;
-						}
-						if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
-							// Add the galley package to the list of all exported files
-							$exportFilesNames[] = $exportFile;
-						} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
-							// Deposit the galley
-							// $exportfile will be empty if XML file could not be created
-							$result = false;
-							if ($exportFile) {
-								$result = $this->depositXML($galley, $journal, $exportFile);
-							}
-							if (is_array($result)) {
-								// If error occured add it to the list of errors
-								$errors = array_merge($errors, $result);
-								$fullyDeposited = false;
-							}
-						}
+					if (is_array($result)) {
+						// If error occured add it to the list of errors
+						$errors = array_merge($errors, $result);
+						$fullyDeposited = false;
 					}
+				}
+			}
 					
 					if ($fullyDeposited && $this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
 						$this->updateSubmissionStatus($submission);
@@ -864,7 +864,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @param $journalExportPath string Directory path where to put all export files
 	 * @param $exportPackageName string Just to return the exported TAR package
 	 *
-	 * @return boolean|array True for success or an array of error messages.
+	 * @return bool|array[] True for success or 2D array [['locale.key', 'param'], ...] on error
 	 */
 	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, &$exportPackageName, $submissionId) {
 		return $this->packageBuilder->buildPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, $exportPackageName, $submissionId);
@@ -872,7 +872,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	
 
 
-	function handleExceptions($e) {
+	function handleExceptions($e, $submissionId = null) {
 		switch ($e->getCode()) {
 			case \DNB_XML_NON_VALID_CHARCTERS_EXCEPTION:
 				$param = __('plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param', array('submissionId' => $submissionId, 'node' => $e->getMessage()));		       
@@ -913,8 +913,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @param $currentExportPath string (optional) The base path, the content directory should be added to
 	 * @param $exportContentDir string (optional) The final directory containing data to be packed
 	 *
-	 * @return string|array The export directory name or an array with
-	 *  errors if something went wrong.
+	 * @return string|array[] String with export directory path on success, or 2D array [['locale.key', 'param'], ...] on error
 	 */
 	
 	function getExportPath($journalId = null, $currentExportPath = null, $exportContentDir = null) {
@@ -961,8 +960,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 
 	/**
 	 * Test whether the tar binary is available.
-	 * @return boolean|array True if available otherwise
-	 *  an array with an error message.
+	 * @return bool|array[] True if available, otherwise 2D array [['locale.key', 'param'], ...] on error
 	 */
 	function checkForTar() {
 		$result = $this->validator->checkForTar();

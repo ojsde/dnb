@@ -63,7 +63,7 @@ class DNBFileManager {
 		$basedir = Config::getVar('files', 'files_dir');
 		
 		if (!$this->plugin->exportRemote()) {
-			return ['plugins.importexport.dnb.export.error.remoteGalleysNotEnabled'];
+			return [['plugins.importexport.dnb.export.error.remoteGalleysNotEnabled']];
 		}
 		
 		// Download remote file with HttpClient
