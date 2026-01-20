@@ -45,6 +45,7 @@ class DNBDepositService {
 			return $errors;
 		}
 
+		// Guzzle HttpClient cannot be used here because DNB requires SFTP or WebDAV upload. WebDAV over HTTPS could theoretically work, but it still requires careful SSH/certificate handling.
 		$curlCh = $this->initCurl();
 		
 		curl_setopt($curlCh, CURLOPT_UPLOAD, true);

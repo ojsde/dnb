@@ -4,7 +4,7 @@
 # This is not an automatic test. A native xml export file with the appropriate name and submission ID in your systems has to be placed in the tests folder.
 # You may need to install phpunit in lib/pkp: 'composer.phar require --dev phpunit/phpunit'
 
-namespace APP\plugins\importexport\dnb\test\functional;
+namespace APP\plugins\generic\dnb\test\functional;
 
 use PKP\tests\PKPTestCase;
 use APP\core\Application;

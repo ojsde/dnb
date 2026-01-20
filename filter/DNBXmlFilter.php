@@ -20,11 +20,9 @@ use APP\core\Services;
 use APP\facades\Repo;
 use PKP\i18n\LocaleConversion;
 use PKP\db\DAORegistry;
-use PKP\filter\PersistableFilter;
-use PKP\plugins\importexport\native\filter\NativeExportFilter;
 use APP\plugins\generic\dnb\DNBPluginException;
 use PKP\core\PKPString;
-use PKP\security\Role;
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
 
 define('DNB_XML_NON_VALID_CHARCTERS_EXCEPTION', 100);
 define('DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION', 102);
@@ -33,7 +31,7 @@ define('DNB_URN_SET_EXCEPTION', 101);
 define('DNB_MSG_SUPPLEMENTARY','Begleitmaterial');
 define('DNB_MSG_SUPPLEMENTARY_AMBIGUOUS','Artikel in verschiedenen Dokumentversionen mit Begleitmaterial veröffentlicht');
 
-class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportFilter {
+class DNBXmlFilter extends NativeExportFilter {
 	/**
 	 * Constructor
 	 * @param $filterGroup FilterGroup

@@ -16,6 +16,8 @@ use APP\core\Application;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\Hook;
 use PKP\plugins\PluginRegistry;
+use APP\plugins\generic\dnb\DNBExportPlugin;
+use APP\plugins\generic\dnb\DNBPluginMigration;
 
 class DNBPlugin extends GenericPlugin {
     
@@ -74,6 +76,13 @@ class DNBPlugin extends GenericPlugin {
     public function getDescription() {
         return __('plugins.generic.dnb.description');
     }
+
+	/**
+	 * @copydoc Plugin::getInstallMigration()
+	 */
+	function getInstallMigration() {
+		return new DNBPluginMigration();
+	}
 
     /**
      * Get the export plugin instance

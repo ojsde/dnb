@@ -19,34 +19,19 @@ use APP\core\Application;
 use APP\plugins\PubObjectsExportPlugin;
 use PKP\plugins\Hook;
 use APP\core\Services;
-use PKP\i18n\LocaleConversion;
 use APP\facades\Repo;
 use APP\template\TemplateManager;
 use PKP\config\Config;
-use PKP\db\DAORegistry;
 use APP\submission\Submission;
-use APP\components\forms\FieldSelectIssues;
-use APP\plugins\generic\dnb\DNBExportDeployment;
 use APP\plugins\generic\dnb\classes\components\DNBSubmissionsList;
-use PKP\plugins\generic\PKPImportExportDeployment;
-use APP\plugins\generic\dnb\filter\DNBXmlFilter;
 use PKP\plugins\GenericPlugin;
-use PKP\core\PKPString;
 use ErrorException;
-use PKP\submission\Genre;
-use PKP\facades\Locale;
-use PKP\core\JSONMessage;
-use DOMDocument;
-use DOMXPath;
-use DNBCatalogInfoProvider;
 use PKP\scheduledTask\ScheduledTaskHelper as PKPScheduledTaskHelper;
 use PKP\userGroup\UserGroup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use PKP\security\Role;
 use PKP\notification\Notification;
-use League\Flysystem\FilesystemException;
-use League\Flysystem\UnableToCopyFile;
 
 // Import new service classes
 use APP\plugins\generic\dnb\classes\api\DNBHelpApiHandler;
@@ -56,6 +41,7 @@ use APP\plugins\generic\dnb\classes\export\DNBPackageBuilder;
 use APP\plugins\generic\dnb\classes\export\DNBFileManager;
 use APP\plugins\generic\dnb\classes\export\DNBExportValidator;
 use APP\plugins\generic\dnb\classes\filter\GalleyFilter;
+use APP\plugins\generic\dnb\classes\DNBCatalogInfoProvider;
 
 
 define('DEBUG', true);
@@ -69,13 +55,16 @@ define('DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION', 103);
 if (!DEBUG) {
 	define('DNB_SFTP_SERVER','sftp://@hotfolder.dnb.de/');
 	define('DNB_SFTP_PORT', 22122);
+	define('DNB_WEBDAV_SERVER','https://@hotfolder.dnb.de/');
+	define('DNB_WEBDAV_PORT', 443);
 } else {
 	define('DNB_SFTP_SERVER','sftp://ojs@sftp/');
 	define('DNB_SFTP_PORT', 22);
+	define('DNB_WEBDAV_SERVER','NOT CONFIGURED IN DEBUG MODE');
+	define('DNB_WEBDAV_PORT', 443);
 }
 
-define('DNB_WEBDAV_SERVER','https://@hotfolder.dnb.de/');
-define('DNB_WEBDAV_PORT', 443);
+
 
 class DNBExportPlugin extends PubObjectsExportPlugin {
 
@@ -147,6 +136,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$success = parent::register($category, $path, $mainContextId);
 		
 		if ($success) {
+
+			if (Application::isUnderMaintenance()) {
+                return true;
+            }
+			
 			// Register API endpoints if this is an API request
 			$request = Application::get()->getRequest();
 			$router = $request->getRouter();
@@ -549,7 +543,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 				if ($this->getSetting($this->_currentContextId, 'dnbCatalog')) {
 
 					try {
-						$dbnCatalogInfoProvider = new classes\DNBCatalogInfoProvider();
+						$dbnCatalogInfoProvider = new DNBCatalogInfoProvider();
 						$dnbCatalogInfo = $dbnCatalogInfoProvider->getCatalogInfo($context, Config::getVar('files', 'files_dir').'/'.$this->getPluginSettingsPrefix());
 						$templateMgr->assign('dnbCatalogInfo', $dnbCatalogInfo);
 					} catch (\Throwable $e) {

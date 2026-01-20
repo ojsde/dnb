@@ -12,6 +12,7 @@
 
 namespace APP\plugins\generic\dnb\classes\export;
 
+use APP\core\Application;
 use APP\core\Services;
 use PKP\config\Config;
 use League\Flysystem\FilesystemException;
@@ -65,37 +66,29 @@ class DNBFileManager {
 			return [['Remote galleys not enabled']];
 		}
 		
-		// Download remote file with CURL
-		$curlCh = curl_init();
+		// Download remote file with HttpClient
+		$httpClient = Application::get()->getHttpClient();
+		$remoteUrl = $galley->getData('urlRemote');
 		
-		if ($httpProxyHost = Config::getVar('proxy', 'http_host')) {
-			curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
-			curl_setopt($curlCh, CURLOPT_PROXYPORT, Config::getVar('proxy', 'http_port', '80'));
-			if ($username = Config::getVar('proxy', 'username')) {
-				curl_setopt($curlCh, CURLOPT_PROXYUSERPWD, $username . ':' . Config::getVar('proxy', 'password'));
+		try {
+			$httpResponse = $httpClient->request('GET', $remoteUrl, [
+				'allow_redirects' => true,
+			]);
+		} catch (\GuzzleHttp\Exception\RequestException $e) {
+			$errorMessage = $e->getMessage();
+			if ($e->hasResponse()) {
+				$errorMessage = $e->getResponse()->getBody() . ' (' . $e->getResponse()->getStatusCode() . ')';
 			}
-		}
-		
-		curl_setopt($curlCh, CURLOPT_FOLLOWLOCATION, true);
-		curl_setopt($curlCh, CURLOPT_URL, $galley->getData('urlRemote'));
-		curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, 1);
-		
-		$response = curl_exec($curlCh);
-		$curlError = curl_error($curlCh);
-		
-		if ($curlError) {
-			curl_close($curlCh);
-			return [['plugins.importexport.dnb.export.error.curlError', $curlError]];
+			return [['plugins.importexport.dnb.export.error.curlError', $errorMessage]];
 		}
 		
 		// Verify content type
-		$contentType = curl_getinfo($curlCh, CURLINFO_CONTENT_TYPE);
+		$contentType = $httpResponse->getHeaderLine('Content-Type');
 		if (!preg_match('(application/pdf|application/epub+zip)', $contentType)) {
-			curl_close($curlCh);
 			return [['plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid', $contentType]];
 		}
 		
-		curl_close($curlCh);
+		$response = $httpResponse->getBody()->getContents();
 		
 		// Verify mime-type by magic bytes: PDF (%PDF-) or EPUB (PK..)
 		if (!preg_match('/^(%PDF-|PK..)/', $response)) {
