@@ -32,6 +32,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use PKP\security\Role;
 use PKP\notification\Notification;
+use APP\plugins\generic\dnb\classes\export\DNBExportJob;
 
 // Import new service classes
 use APP\plugins\generic\dnb\classes\api\DNBHelpApiHandler;
@@ -58,7 +59,7 @@ if (!DEBUG) {
 	define('DNB_WEBDAV_SERVER','https://@hotfolder.dnb.de/');
 	define('DNB_WEBDAV_PORT', 443);
 } else {
-	define('DNB_SFTP_SERVER','sftp://ojs@sftp/');
+	define('DNB_SFTP_SERVER','sftp://ojs@rs-dev-3.5-ojs-3.5-sftp/');
 	define('DNB_SFTP_PORT', 22);
 	define('DNB_WEBDAV_SERVER','NOT CONFIGURED IN DEBUG MODE');
 	define('DNB_WEBDAV_PORT', 443);
@@ -670,6 +671,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 	 * @return bool|array[] True on success, or 2D array [['locale.key', 'param'], ...] on error
 	 */
 	function depositXML($object, $context, $filename) {
+		// Dispatch through the deposit service which will queue the job
 		return $this->depositService->deposit($object, $context, $filename);
 	}
 
@@ -967,8 +969,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 		$this->_checkedForTar = true;
 		return $result;
 	}
-	
-
 	
 	/**
 	 * Test whether the export filter was registered.

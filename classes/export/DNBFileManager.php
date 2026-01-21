@@ -17,6 +17,7 @@ use APP\core\Services;
 use PKP\config\Config;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\UnableToCopyFile;
+use PKP\file\FileManager;
 
 class DNBFileManager {
 	
@@ -37,9 +38,12 @@ class DNBFileManager {
 			// Remote galley - handle separately
 			return $this->handleRemoteGalley($galley, $exportPath);
 		}
-		
+
 		$sourceGalleyFilePath = $galleyFile->getData('path');
 		$targetGalleyFilePath = $exportPath . basename($sourceGalleyFilePath);
+
+		$fileMgr = new FileManager();
+		$fileMgr->fileExists($sourceGalleyFilePath);
 		
 		if (!Services::get('file')->fs->has($sourceGalleyFilePath)) {
 			return [['plugins.importexport.dnb.export.error.galleyFileNotFound', $sourceGalleyFilePath ?: "NULL"]];

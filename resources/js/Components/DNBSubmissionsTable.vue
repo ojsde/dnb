@@ -38,6 +38,13 @@
 				</PkpButton>
 			</div>
 
+			<!-- Error notification -->
+			<!-- Loop through error messages -->
+			<notification type="warning" v-for="(error, index) in data.errors" :key="index" style="margin-bottom: 1rem;">
+				<icon icon="exclamation-triangle" :inline="true" />
+				{{ error }}
+			</notification>
+
 			<!-- Item Count Display -->
 			<div style="margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">
 				{{ itemCountText }}
