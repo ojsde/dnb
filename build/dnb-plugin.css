@@ -22,6 +22,10 @@
 	--dnb-color-deposited-text: #155724;
 	--dnb-color-not-deposited-bg: #f8d7da;
 	--dnb-color-not-deposited-text: #721c24;
+	--dnb-color-queued-bg: #fcdab5;
+	--dnb-color-queued-text: #92400e;
+	--dnb-color-failed-bg: #f8d7da;
+	--dnb-color-failed-text: #721c24;
 	--dnb-transition-speed: 0.2s;
 }
 .dnbSubmissionsTable {
@@ -49,13 +53,31 @@
 	color: var(--dnb-color-muted);
 	font-size: 0.9em;
 }
+.dnb-error-icon-wrapper {
+	display: inline-block;
+	cursor: help;
+	font-size: 1.2em;
+	margin: auto;
+}
 .dnb_deposited {
 	background-color: var(--dnb-color-deposited-bg);
 	color: var(--dnb-color-deposited-text);
+	border-color: var(--dnb-color-deposited-text);
+}
+.dnb_queued {
+	background-color: var(--dnb-color-queued-bg);
+	color: var(--dnb-color-queued-text);
+	border-color: var(--dnb-color-queued-text);
+}
+.dnb_failed {
+	background-color: var(--dnb-color-failed-bg);
+	color: var(--dnb-color-failed-text);
+	border-color: var(--dnb-color-failed-text);
 }
 .dnb_not_deposited {
 	background-color: var(--dnb-color-not-deposited-bg);
 	color: var(--dnb-color-not-deposited-text);
+	border-color: var(--dnb-color-not-deposited-text);
 }
 .dnb-filter-buttons .dnb-filter-btn {
 	padding: var(--dnb-padding-btn);

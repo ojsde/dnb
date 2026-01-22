@@ -51,6 +51,8 @@ define('DNB_STATUS_DEPOSITED', 'deposited');
 define('DNB_ADDITIONAL_PACKAGE_OPTIONS','--format=gnu');//use --format=gnu with tar to avoid PAX-Headers
 define('DNB_EXPORT_ACTION_MARKEXCLUDED','exclude');
 define('DNB_EXPORT_STATUS_MARKEXCLUDED','markExcluded');
+define('DNB_EXPORT_STATUS_QUEUED','queued');
+define('DNB_EXPORT_STATUS_FAILED','failed');
 define('DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION', 103);
 
 if (!DEBUG) {
@@ -141,6 +143,18 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			if (Application::isUnderMaintenance()) {
                 return true;
             }
+
+			// Add our variables to the submission schema
+			Hook::add('Schema::get::submission', function ($hookname, $params) {
+				$schema =& $params[0];
+				$schema->properties->{'dnb::lastError'} = (object)[
+					'type' => 'string',
+					'apiSummary' => true,
+					'validation' => ['nullable'],
+					'description' => 'Last error message from DNB export',
+				];
+				return Hook::CONTINUE;
+			});
 			
 			// Register API endpoints if this is an API request
 			$request = Application::get()->getRequest();
@@ -353,6 +367,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 					$publication = $submission->getCurrentPublication();
 					$status = $submission->getData($this->getPluginSettingsPrefix().'::status');
 					if (empty($status)) $nNotRegistered++;
+					$lastError = $submission->getData($this->getPluginSettingsPrefix().'::lastError');
 					
 					// Get issue information from cached data
 					$issueTitle = '';
@@ -405,6 +420,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 						'dnbStatus' => $statusNames[$status] ?? $statusNames[self::EXPORT_STATUS_NOT_DEPOSITED],
 						'dnbStatusConst' => $status ?: self::EXPORT_STATUS_NOT_DEPOSITED,
 						'supplementariesNotAssignable' => $msg !== "" ? $msg : false,
+						'lastError' => $lastError
 					];
 				}
 
@@ -592,7 +608,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin {
 			self::EXPORT_STATUS_NOT_DEPOSITED => __('plugins.importexport.dnb.status.notDeposited'),
 			DNB_STATUS_DEPOSITED => __('plugins.importexport.dnb.status.deposited'),
 			self::EXPORT_STATUS_MARKEDREGISTERED => __('plugins.importexport.common.status.markedRegistered'),
-			DNB_EXPORT_STATUS_MARKEXCLUDED => __('plugins.importexport.dnb.status.excluded')
+			DNB_EXPORT_STATUS_MARKEXCLUDED => __('plugins.importexport.dnb.status.excluded'),
+			DNB_EXPORT_STATUS_QUEUED => __('plugins.importexport.dnb.status.queued'),
+			DNB_EXPORT_STATUS_FAILED => __('plugins.importexport.dnb.status.failed'),
 		);
 	}
 

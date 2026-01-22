@@ -12,6 +12,7 @@
 
 namespace APP\plugins\generic\dnb\classes\deposit;
 
+use APP\facades\Repo;
 use PKP\config\Config;
 use APP\plugins\generic\dnb\classes\export\DNBExportJob;
 
@@ -60,6 +61,13 @@ class DNBDepositService {
 		} catch (\Exception $e) {
 			$errors[] = ['plugins.importexport.dnb.deposit.error.jobDispatchFailed', $e->getMessage()];
 			return $errors;
+		}
+
+		// If we reach this point, the job was successfully dispatched
+		// Set the submissions export status to 'queued' if the job wasn't even faster and completed immediately, i.e. it already has status 'deposited'
+		$submission = Repo::submission()->get($object->getData('submissionId'));
+		if ($submission->getData($this->plugin->getPluginSettingsPrefix().'::status') !== DNB_STATUS_DEPOSITED) {
+			Repo::submission()->edit($submission, [$this->plugin->getPluginSettingsPrefix().'::status' => DNB_EXPORT_STATUS_QUEUED]);
 		}
 
 		return true;

@@ -92,6 +92,8 @@ class DNBSubmissionsList
                 'filterAll' => __('common.all'),
                 'filterNotDeposited' => __('plugins.importexport.dnb.status.notDeposited'),
                 'filterDeposited' => __('plugins.importexport.dnb.status.deposited'),
+                'filterQueued' => __('plugins.importexport.dnb.status.queued'),
+                'filterFailed' => __('plugins.importexport.dnb.status.failed'),
                 'filterMarkedRegistered' => __('plugins.importexport.common.status.markedRegistered'),
                 'filterExcluded' => __('plugins.importexport.dnb.status.excluded'),
                 'searchLabel' => __('plugins.importexport.dnb.searchLabel'),
@@ -106,6 +108,8 @@ class DNBSubmissionsList
                 'EXPORT_STATUS_MARKEDREGISTERED' => \APP\plugins\PubObjectsExportPlugin::EXPORT_STATUS_MARKEDREGISTERED,
                 'EXPORT_STATUS_REGISTERED' => \APP\plugins\PubObjectsExportPlugin::EXPORT_STATUS_REGISTERED,
                 'DNB_STATUS_DEPOSITED' => DNB_STATUS_DEPOSITED,
+                'DNB_EXPORT_STATUS_QUEUED' => DNB_EXPORT_STATUS_QUEUED,
+                'DNB_EXPORT_STATUS_FAILED' => DNB_EXPORT_STATUS_FAILED,
                 'DNB_EXPORT_STATUS_MARKEXCLUDED' => DNB_EXPORT_STATUS_MARKEXCLUDED,
             ]
         ];

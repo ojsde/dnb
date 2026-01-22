@@ -117,6 +117,12 @@ msgstr "Not deposited"
 msgid "plugins.importexport.dnb.status.deposited"
 msgstr "Deposited"
 
+msgid "plugins.importexport.dnb.status.queued"
+msgstr "Queued"
+
+msgid "plugins.importexport.dnb.status.failed"
+msgstr "Failed"
+
 msgid "plugins.importexport.dnb.status.legend"
 msgstr ""
 "\n"
@@ -341,3 +347,6 @@ msgstr "ISSNs found for this journal"
 
 msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.curlInfoErrorMessage"
 msgstr "Curl returned false without an HTTP error message! This can occur, for example, if a connection attempt fails due to certificate issues. See the PHP error log for more information"
+
+msgid "plugins.importexport.dnb.status.queued"
+msgstr "Queued"

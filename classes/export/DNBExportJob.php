@@ -38,12 +38,7 @@ class DNBExportJob extends BaseJob
         }
 
         // Get plugin from registry
-        \PKP\plugins\PluginRegistry::loadCategory('generic');
-        $plugin = \PKP\plugins\PluginRegistry::getPlugin('importexport', 'DNBExportPlugin');
-        
-        if (!$plugin) {
-            throw new \Exception('DNB Export Plugin not found in registry');
-        }
+        $plugin = $this->getDNBExportPlugin();
 
         // Perform the complete deposit transfer via curl
         $this->executeDeposit($galley, $context, $plugin);
@@ -56,6 +51,22 @@ class DNBExportJob extends BaseJob
     {
         return sprintf('DNB Export Job - Submission %d, Galley %d', $this->submissionId, $this->galleyId);
     }
+
+    /**
+     * Get the DNB Export Plugin from the registry
+     */
+    private function getDNBExportPlugin()
+    {
+        \PKP\plugins\PluginRegistry::loadCategory('generic');
+        $plugin = \PKP\plugins\PluginRegistry::getPlugin('importexport', 'DNBExportPlugin');
+        
+        if (!$plugin) {
+            throw new \Exception('DNB Export Plugin not found in registry');
+        }
+        
+        return $plugin;
+    }
+
     private function executeDeposit($object, $context, $plugin): void
     {
         // Guzzle HttpClient cannot be used here because DNB requires SFTP or WebDAV upload. 
@@ -133,6 +144,18 @@ class DNBExportJob extends BaseJob
 
         curl_close($curlCh);
         fclose($fh);
+
+        // If we reach this point, the deposit was successful
+        // Update submission status to 'deposited'
+        $submission = Repo::submission()->get($this->submissionId);
+        if ($submission) {
+            Repo::submission()->edit($submission, [
+                $plugin->getPluginSettingsPrefix() . '::status' => DNB_STATUS_DEPOSITED,
+                $plugin->getPluginSettingsPrefix() . '::lastError' => null
+            ]);
+        }
+
+        // Todo: Cleanup packages files
     }
 
     /**
@@ -160,13 +183,20 @@ class DNBExportJob extends BaseJob
     public function failed(\Throwable $exception): void
     {
         // Log the failure with submission context
-        \Log::error('DNB export job failed: ' . $exception->getMessage(), [
-            'job_name' => $this->displayName(),
-            'submission_id' => $this->submissionId,
-            'galley_id' => $this->galleyId,
-            'context_id' => $this->contextId,
-            'file' => $this->filename,
-            'exception' => $exception->getTraceAsString()
-        ]);
+        $message = $exception->getMessage() . ', ' .
+            'job_name: ' . $this->displayName() . ', ' .
+            'submission_id: ' . $this->submissionId . ', ' .
+            'galley_id: ' . $this->galleyId . ', ' .
+            'file: ' . $this->filename;
+
+        // Update submission status to 'failed'
+        $plugin = $this->getDNBExportPlugin();
+        $submission = Repo::submission()->get($this->submissionId);
+        if ($submission) {
+            Repo::submission()->edit($submission, [
+                $plugin->getPluginSettingsPrefix() . '::status' => DNB_EXPORT_STATUS_FAILED,
+                $plugin->getPluginSettingsPrefix() . '::lastError' => $message
+            ]);
+        }
     }
 }

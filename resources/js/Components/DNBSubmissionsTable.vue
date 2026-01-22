@@ -89,6 +89,14 @@
 								:class="['dnb-filter-btn', 'dnb-filter-deposited', activeStatusFilter === data.constants.DNB_STATUS_DEPOSITED ? 'dnb-filter-active' : '']">
 								{{ data.i18n.filterDeposited }}
 							</button>
+							<button type="button" @click="setStatusFilter(data.constants.DNB_EXPORT_STATUS_QUEUED)"
+								:class="['dnb-filter-btn', 'dnb-filter-queued', activeStatusFilter === data.constants.DNB_EXPORT_STATUS_QUEUED ? 'dnb-filter-active' : '']">
+								{{ data.i18n.filterQueued }}
+							</button>
+							<button type="button" @click="setStatusFilter(data.constants.DNB_EXPORT_STATUS_FAILED)"
+								:class="['dnb-filter-btn', 'dnb-filter-failed', activeStatusFilter === data.constants.DNB_EXPORT_STATUS_FAILED ? 'dnb-filter-active' : '']">
+								{{ data.i18n.filterFailed }}
+							</button>
 							<button type="button"
 								@click="setStatusFilter(data.constants.EXPORT_STATUS_MARKEDREGISTERED)"
 								:class="['dnb-filter-btn', 'dnb-filter-marked', activeStatusFilter === data.constants.EXPORT_STATUS_MARKEDREGISTERED ? 'dnb-filter-active' : '']">
@@ -146,25 +154,30 @@
 
 						<!-- Details Column -->
 						<PkpTableCell>
-							<div class="flex flex-col gap-1">
-								<span class="dnb_authors">
-									{{ item.publication.authorsString }}
-								</span>
-								<a :href="item.urlWorkflow" class="font-semibold">
-									{{ item.publication.fullTitle }}
-								</a>
-								<a v-if="item.issueUrl" :href="item.issueUrl" class="text-sm">
-									{{ item.issueTitle }}
-								</a>
-								<div v-if="item.supplementariesNotAssignable"
-									class="flex items-center gap-1 text-negative">
-									<Icon icon="exclamation-triangle" :inline="true" />
-									<span class="text-sm">{{ item.supplementariesNotAssignable }}</span>
-								</div>
-								<div v-if="item.supplementaryNotAssignable">
-									<span class="text-sm text-negative">
-										{{ item.supplementariesNotAssignable }}
+							<div class="flex gap-2">
+								<div class="flex flex-col gap-1 flex-1">
+									<span class="dnb_authors">
+										{{ item.publication.authorsString }}
 									</span>
+									<a :href="item.urlWorkflow" class="font-semibold">
+										{{ item.publication.fullTitle }}
+									</a>
+									<a v-if="item.issueUrl" :href="item.issueUrl" class="text-sm">
+										{{ item.issueTitle }}
+									</a>
+									<div v-if="item.supplementariesNotAssignable"
+										class="flex items-center gap-1 text-negative">
+										<Icon icon="exclamation-triangle" :inline="true" />
+										<span class="text-sm">{{ item.supplementariesNotAssignable }}</span>
+									</div>
+									<div v-if="item.supplementaryNotAssignable">
+										<span class="text-sm text-negative">
+											{{ item.supplementariesNotAssignable }}
+										</span>
+									</div>
+								</div>
+								<div v-if="item.lastError" class="dnb-error-icon-wrapper" :title="`${item.lastError}`">
+									⚠️
 								</div>
 							</div>
 						</PkpTableCell>
@@ -172,11 +185,21 @@
 						<!-- Status Column -->
 						<PkpTableCell>
 							<span
-								v-if="item.dnbStatusConst && item.dnbStatusConst !== data.constants.EXPORT_STATUS_NOT_DEPOSITED"
+								v-if="item.dnbStatusConst && item.dnbStatusConst === data.constants.DNB_STATUS_DEPOSITED"
 								class="pkpBadge dnb_deposited">
 								{{ item.dnbStatus }}
 							</span>
-							<span v-else class="pkpBadge dnb_not_deposited">
+							<span
+								v-if="item.dnbStatusConst && item.dnbStatusConst === data.constants.DNB_EXPORT_STATUS_QUEUED"
+								class="pkpBadge dnb_queued">
+								{{ item.dnbStatus }}
+							</span>
+							<span v-if="item.dnbStatusConst && item.dnbStatusConst === data.constants.EXPORT_STATUS_NOT_DEPOSITED"
+								class="pkpBadge dnb_not_deposited">
+								{{ item.dnbStatus }}
+							</span>
+							<span v-if="item.dnbStatusConst && item.dnbStatusConst === data.constants.DNB_EXPORT_STATUS_FAILED"
+								class="pkpBadge dnb_failed">
 								{{ item.dnbStatus }}
 							</span>
 						</PkpTableCell>
@@ -467,6 +490,10 @@ function handleAction(action) {
 	--dnb-color-deposited-text: #155724;
 	--dnb-color-not-deposited-bg: #f8d7da;
 	--dnb-color-not-deposited-text: #721c24;
+	--dnb-color-queued-bg: #fcdab5;
+	--dnb-color-queued-text: #92400e;
+	--dnb-color-failed-bg: #f8d7da;
+	--dnb-color-failed-text: #721c24;
 	--dnb-transition-speed: 0.2s;
 }
 
@@ -500,14 +527,35 @@ function handleAction(action) {
 	font-size: 0.9em;
 }
 
+.dnb-error-icon-wrapper {
+	display: inline-block;
+	cursor: help;
+	font-size: 1.2em;
+	margin: auto;
+}
+
 .dnb_deposited {
 	background-color: var(--dnb-color-deposited-bg);
 	color: var(--dnb-color-deposited-text);
+	border-color: var(--dnb-color-deposited-text);
+}
+
+.dnb_queued {
+	background-color: var(--dnb-color-queued-bg);
+	color: var(--dnb-color-queued-text);
+	border-color: var(--dnb-color-queued-text);
+}
+
+.dnb_failed {
+	background-color: var(--dnb-color-failed-bg);
+	color: var(--dnb-color-failed-text);
+	border-color: var(--dnb-color-failed-text);
 }
 
 .dnb_not_deposited {
 	background-color: var(--dnb-color-not-deposited-bg);
 	color: var(--dnb-color-not-deposited-text);
+	border-color: var(--dnb-color-not-deposited-text);
 }
 
 .dnb-filter-buttons .dnb-filter-btn {
