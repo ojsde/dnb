@@ -280,13 +280,13 @@ msgid "plugins.importexport.dnb.logFileTabInfo"
 msgstr "Log file of the last automatic deposit to the DNB hotfolder:"
 
 msgid "plugins.importexport.dnb.export.error.noError"
-msgstr "All articles successfully deposited."
+msgstr "All articles successfully sent to job queue."
 
 msgid "plugins.importexport.dnb.logFile.info.conutArticles"
 msgstr "{$param} articles found to be exported."
 
 msgid "plugins.importexport.dnb.logFile.info.nocredentials"
-msgstr "Hotfolder credentials not set. Automatic deposit not possible."
+msgstr "Hotfolder credentials not set or automatic deposit not enabled. Automatic deposit not possible."
 
 msgid "plugins.importexport.dnb.exclude"
 msgstr "Exclude/Include"

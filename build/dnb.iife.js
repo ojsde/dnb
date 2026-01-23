@@ -45,34 +45,44 @@
   };
   const _hoisted_18 = ["value", "aria-label"];
   const _hoisted_19 = { class: "pkpBadge" };
-  const _hoisted_20 = { class: "flex gap-2" };
-  const _hoisted_21 = { class: "flex flex-col gap-1 flex-1" };
-  const _hoisted_22 = { class: "dnb_authors" };
+  const _hoisted_20 = { class: "flex flex-col gap-1 flex-1" };
+  const _hoisted_21 = { class: "dnb_authors" };
+  const _hoisted_22 = ["href"];
   const _hoisted_23 = ["href"];
-  const _hoisted_24 = ["href"];
-  const _hoisted_25 = {
+  const _hoisted_24 = {
     key: 1,
     class: "flex items-center gap-1 text-negative"
   };
-  const _hoisted_26 = { class: "text-sm" };
-  const _hoisted_27 = { key: 2 };
-  const _hoisted_28 = { class: "text-sm text-negative" };
-  const _hoisted_29 = ["title"];
-  const _hoisted_30 = {
+  const _hoisted_25 = { class: "text-sm" };
+  const _hoisted_26 = { key: 2 };
+  const _hoisted_27 = { class: "text-sm text-negative" };
+  const _hoisted_28 = {
+    key: 0,
+    class: "dnb-error"
+  };
+  const _hoisted_29 = {
     key: 0,
     class: "pkpBadge dnb_deposited"
   };
-  const _hoisted_31 = {
+  const _hoisted_30 = {
     key: 1,
     class: "pkpBadge dnb_queued"
   };
-  const _hoisted_32 = {
+  const _hoisted_31 = {
     key: 2,
     class: "pkpBadge dnb_not_deposited"
   };
-  const _hoisted_33 = {
+  const _hoisted_32 = {
     key: 3,
     class: "pkpBadge dnb_failed"
+  };
+  const _hoisted_33 = {
+    key: 4,
+    class: "pkpBadge dnb_deposited"
+  };
+  const _hoisted_34 = {
+    key: 5,
+    class: "pkpBadge dnb_deposited"
   };
   const MAX_SEARCH_LENGTH = 100;
   const MAX_FILTER_COUNT = 10;
@@ -475,43 +485,39 @@
                           vue.createVNode(_component_PkpTableCell, null, {
                             default: vue.withCtx(() => [
                               vue.createElementVNode("div", _hoisted_20, [
-                                vue.createElementVNode("div", _hoisted_21, [
-                                  vue.createElementVNode("span", _hoisted_22, vue.toDisplayString(item.publication.authorsString), 1),
-                                  vue.createElementVNode("a", {
-                                    href: item.urlWorkflow,
-                                    class: "font-semibold"
-                                  }, vue.toDisplayString(item.publication.fullTitle), 9, _hoisted_23),
-                                  item.issueUrl ? (vue.openBlock(), vue.createElementBlock("a", {
-                                    key: 0,
-                                    href: item.issueUrl,
-                                    class: "text-sm"
-                                  }, vue.toDisplayString(item.issueTitle), 9, _hoisted_24)) : vue.createCommentVNode("", true),
-                                  item.supplementariesNotAssignable ? (vue.openBlock(), vue.createElementBlock("div", _hoisted_25, [
-                                    vue.createVNode(_component_Icon, {
-                                      icon: "exclamation-triangle",
-                                      inline: true
-                                    }),
-                                    vue.createElementVNode("span", _hoisted_26, vue.toDisplayString(item.supplementariesNotAssignable), 1)
-                                  ])) : vue.createCommentVNode("", true),
-                                  item.supplementaryNotAssignable ? (vue.openBlock(), vue.createElementBlock("div", _hoisted_27, [
-                                    vue.createElementVNode("span", _hoisted_28, vue.toDisplayString(item.supplementariesNotAssignable), 1)
-                                  ])) : vue.createCommentVNode("", true)
-                                ]),
-                                item.lastError ? (vue.openBlock(), vue.createElementBlock("div", {
+                                vue.createElementVNode("span", _hoisted_21, vue.toDisplayString(item.publication.authorsString), 1),
+                                vue.createElementVNode("a", {
+                                  href: item.urlWorkflow,
+                                  class: "font-semibold"
+                                }, vue.toDisplayString(item.publication.fullTitle), 9, _hoisted_22),
+                                item.issueUrl ? (vue.openBlock(), vue.createElementBlock("a", {
                                   key: 0,
-                                  class: "dnb-error-icon-wrapper",
-                                  title: `${item.lastError}`
-                                }, " ⚠️ ", 8, _hoisted_29)) : vue.createCommentVNode("", true)
-                              ])
+                                  href: item.issueUrl,
+                                  class: "text-sm"
+                                }, vue.toDisplayString(item.issueTitle), 9, _hoisted_23)) : vue.createCommentVNode("", true),
+                                item.supplementariesNotAssignable ? (vue.openBlock(), vue.createElementBlock("div", _hoisted_24, [
+                                  vue.createVNode(_component_Icon, {
+                                    icon: "exclamation-triangle",
+                                    inline: true
+                                  }),
+                                  vue.createElementVNode("span", _hoisted_25, vue.toDisplayString(item.supplementariesNotAssignable), 1)
+                                ])) : vue.createCommentVNode("", true),
+                                item.supplementaryNotAssignable ? (vue.openBlock(), vue.createElementBlock("div", _hoisted_26, [
+                                  vue.createElementVNode("span", _hoisted_27, vue.toDisplayString(item.supplementariesNotAssignable), 1)
+                                ])) : vue.createCommentVNode("", true)
+                              ]),
+                              item.lastError ? (vue.openBlock(), vue.createElementBlock("div", _hoisted_28, vue.toDisplayString(item.lastError), 1)) : vue.createCommentVNode("", true)
                             ]),
                             _: 2
                           }, 1024),
                           vue.createVNode(_component_PkpTableCell, null, {
                             default: vue.withCtx(() => [
-                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.DNB_STATUS_DEPOSITED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_30, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true),
-                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.DNB_EXPORT_STATUS_QUEUED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_31, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true),
-                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.EXPORT_STATUS_NOT_DEPOSITED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_32, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true),
-                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.DNB_EXPORT_STATUS_FAILED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_33, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true)
+                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.DNB_STATUS_DEPOSITED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_29, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true),
+                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.DNB_EXPORT_STATUS_QUEUED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_30, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true),
+                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.EXPORT_STATUS_NOT_DEPOSITED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_31, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true),
+                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.DNB_EXPORT_STATUS_FAILED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_32, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true),
+                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.EXPORT_STATUS_MARKEDREGISTERED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_33, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true),
+                              item.dnbStatusConst && item.dnbStatusConst === __props.data.constants.DNB_EXPORT_STATUS_MARKEXCLUDED ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_34, vue.toDisplayString(item.dnbStatus), 1)) : vue.createCommentVNode("", true)
                             ]),
                             _: 2
                           }, 1024)

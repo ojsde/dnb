@@ -280,13 +280,13 @@ msgid "plugins.importexport.dnb.logFileTabInfo"
 msgstr "Log-Datei der letzen automatischen Ablieferung an die DNB:"
 
 msgid "plugins.importexport.dnb.export.error.noError"
-msgstr "Alle Artikel erfolgreich abgeliefert."
+msgstr "Alle Artikel erfolgreich an die Job Queue gesendet."
 
 msgid "plugins.importexport.dnb.logFile.info.conutArticles"
 msgstr "{$param} Artikel zum exportieren gefunden."
 
 msgid "plugins.importexport.dnb.logFile.info.nocredentials"
-msgstr "Hotfolder Zugangsdaten nicht gesetzt. Eine automatische Ablieferung ist nicht möglich."
+msgstr "Hotfolder Zugangsdaten nicht gesetzt oder automatische Ablieferung nicht aktiviert. Eine automatische Ablieferung ist nicht möglich."
 
 msgid "plugins.importexport.dnb.exclude"
 msgstr "Ausschließen/Einschließen"

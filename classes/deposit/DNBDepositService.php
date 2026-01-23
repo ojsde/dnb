@@ -67,8 +67,14 @@ class DNBDepositService {
 		// Set the submissions export status to 'queued' if the job wasn't even faster and completed immediately, i.e. it already has status 'deposited'
 		$submission = Repo::submission()->get($object->getData('submissionId'));
 		if ($submission->getData($this->plugin->getPluginSettingsPrefix().'::status') !== DNB_STATUS_DEPOSITED) {
-			Repo::submission()->edit($submission, [$this->plugin->getPluginSettingsPrefix().'::status' => DNB_EXPORT_STATUS_QUEUED]);
+			Repo::submission()->edit($submission, [
+				$this->plugin->getPluginSettingsPrefix().'::status' => DNB_EXPORT_STATUS_QUEUED
+			]);
+			// We need to set it also on the object in memory, otherwise the edit on last error will overwrite it because $submission object is not updated by OJS
+			$submission->setData($this->plugin->getPluginSettingsPrefix().'::status', DNB_EXPORT_STATUS_QUEUED);
 		}
+		// delete last error message
+		Repo::submission()->edit($submission, [$this->plugin->getPluginSettingsPrefix().'::lastError' => null]);
 
 		return true;
 	}

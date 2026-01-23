@@ -45,14 +45,14 @@ class DNBInfoSender extends ScheduledTask {
 	/**
 	 * @see ScheduledTask::getName()
 	 */
-	function getName() {
+	function getName():string {
 		return __('plugins.importexport.dnb.senderTask.name');
 	}
 
 	/**
 	 * @see ScheduledTask::executeActions()
 	 */
-	function executeActions() {
+	function executeActions():bool {
 		if (!$this->_plugin) return false;
 		$plugin = $this->_plugin;
 		
@@ -147,9 +147,9 @@ class DNBInfoSender extends ScheduledTask {
 						$result = $plugin->handleExceptions($e, $submission->getId());
 							$errors = array_merge($errors, [$result]);
 						}
-						if ($fullyDeposited) {
-							$plugin->updateSubmissionStatus($submission);
-						}
+						// if ($fullyDeposited) {
+						// 	$plugin->updateSubmissionStatus($submission);
+						// }
 					}
 				}
 				// Remove the generated directories

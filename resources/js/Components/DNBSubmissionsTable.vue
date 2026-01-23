@@ -154,7 +154,6 @@
 
 						<!-- Details Column -->
 						<PkpTableCell>
-							<div class="flex gap-2">
 								<div class="flex flex-col gap-1 flex-1">
 									<span class="dnb_authors">
 										{{ item.publication.authorsString }}
@@ -176,10 +175,7 @@
 										</span>
 									</div>
 								</div>
-								<div v-if="item.lastError" class="dnb-error-icon-wrapper" :title="`${item.lastError}`">
-									⚠️
-								</div>
-							</div>
+								<div v-if="item.lastError" class="dnb-error">{{item.lastError}}</div>
 						</PkpTableCell>
 
 						<!-- Status Column -->
@@ -200,6 +196,14 @@
 							</span>
 							<span v-if="item.dnbStatusConst && item.dnbStatusConst === data.constants.DNB_EXPORT_STATUS_FAILED"
 								class="pkpBadge dnb_failed">
+								{{ item.dnbStatus }}
+							</span>
+							<span v-if="item.dnbStatusConst && item.dnbStatusConst === data.constants.EXPORT_STATUS_MARKEDREGISTERED"
+								class="pkpBadge dnb_deposited">
+								{{ item.dnbStatus }}
+							</span>
+							<span v-if="item.dnbStatusConst && item.dnbStatusConst === data.constants.DNB_EXPORT_STATUS_MARKEXCLUDED"
+								class="pkpBadge dnb_deposited">
 								{{ item.dnbStatus }}
 							</span>
 						</PkpTableCell>
@@ -527,11 +531,8 @@ function handleAction(action) {
 	font-size: 0.9em;
 }
 
-.dnb-error-icon-wrapper {
-	display: inline-block;
-	cursor: help;
-	font-size: 1.2em;
-	margin: auto;
+.dnb-error {
+	color: red;
 }
 
 .dnb_deposited {

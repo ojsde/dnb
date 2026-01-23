@@ -53,11 +53,8 @@
 	color: var(--dnb-color-muted);
 	font-size: 0.9em;
 }
-.dnb-error-icon-wrapper {
-	display: inline-block;
-	cursor: help;
-	font-size: 1.2em;
-	margin: auto;
+.dnb-error {
+	color: red;
 }
 .dnb_deposited {
 	background-color: var(--dnb-color-deposited-bg);
