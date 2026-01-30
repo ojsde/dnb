@@ -16,6 +16,9 @@ use APP\facades\Repo;
 use PKP\config\Config;
 use APP\plugins\generic\dnb\classes\export\DNBExportJob;
 
+if (!defined('DNB_STATUS_DEPOSITED')) define('DNB_STATUS_DEPOSITED', 'deposited');
+if (!defined('DNB_EXPORT_STATUS_QUEUED')) define('DNB_EXPORT_STATUS_QUEUED', 'queued');
+
 class DNBDepositService {
 	
 	private $plugin;
@@ -26,8 +29,14 @@ class DNBDepositService {
 	
 	/**
 	 * Deposit XML package to DNB
+	 * 
+	 * @param $object Object (Galley) with submission data
+	 * @param $context Context
+	 * @param $filename string Full path to pre-built package file (used for manual exports)
+	 *                         If null, will build package in job (used for scheduled exports)
+	 * @return bool|array True on success, or error array on failure
 	 */
-	public function deposit($object, $context, $filename): bool|array {
+	public function deposit($object, $context, $filename = null): bool|array {
 		$errors = [];
 
 		// Validate credentials
@@ -38,7 +47,8 @@ class DNBDepositService {
 			return $errors;
 		}
 
-		if (!file_exists($filename)) {
+		// If filename is provided (manual export), validate it exists
+		if ($filename !== null && !file_exists($filename)) {
 			$param = __('plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param', [
 				'package' => basename($filename), 
 				'articleId' => $object->getFile()->getData('submissionId')
@@ -47,17 +57,27 @@ class DNBDepositService {
 			return $errors;
 		}
 
-		// Dispatch a job to the queue with IDs instead of full objects to avoid serialization issues
-		// The job will handle the complete deposit transfer via curl
+		// For manual exports with pre-built packages, dispatch job with filename
+		// For scheduled exports, job will build package itself (filename = null)
 		try {
-			dispatch(
-				new DNBExportJob(
-					$object->getId(), 
-					$context->getId(),
-					$object->getData('submissionId'),
-					$filename
-				)
-			);
+			if ($filename !== null) {
+				// Manual export - package already built, just upload
+				dispatch(
+					new DNBExportJob(
+						$object->getId(), 
+						$context->getId(),
+						$object->getData('submissionId'),
+						[], // No supplementary galleys needed when package is pre-built
+						'', // No filter needed
+						false, // No validation flag needed
+						$filename // Pre-built package path
+					)
+				);
+			} else {
+				// This path is not used anymore - scheduled task dispatches jobs directly
+				// Keeping for backward compatibility
+				throw new \Exception('Direct deposit without filename not supported - use DNBInfoSender to dispatch jobs');
+			}
 		} catch (\Exception $e) {
 			$errors[] = ['plugins.importexport.dnb.deposit.error.jobDispatchFailed', $e->getMessage()];
 			return $errors;

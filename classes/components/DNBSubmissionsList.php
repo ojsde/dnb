@@ -64,6 +64,7 @@ class DNBSubmissionsList
     public function getConfig()
     {
         $request = Application::get()->getRequest();
+        $user = $request->getUser();
         
         return [
             'id' => $this->id,
@@ -71,6 +72,7 @@ class DNBSubmissionsList
             'count' => $this->count,
             'items' => $this->items,
             'itemsMax' => $this->itemsMax,
+            'itemsPerPage' => $this->context ? (int)$this->context->getData('itemsPerPage') : 20,
             'getParams' => [
                 'contextId' => $this->context ? $this->context->getId() : null,
                 'count' => $this->count,
