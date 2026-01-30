@@ -23,9 +23,9 @@
 					<span v-if="isSubmitting" class="dnb-spinner"></span>
 					{{ data.i18n.exclude }}
 				</PkpButton>
-				<PkpButton @click="toggleSelectAll" :disabled="filteredItems.length === 0 || isSubmitting"
+				<PkpButton @click="toggleSelectAll" :disabled="paginatedItems.length === 0 || isSubmitting"
 					class="bg-default">
-					<template v-if="areAllVisibleSelected && filteredItems.length > 0">
+					<template v-if="areAllVisibleSelected && paginatedItems.length > 0">
 						{{ data.i18n.selectNone }}
 					</template>
 					<template v-else>
@@ -127,7 +127,7 @@
 				</PkpTableHeader>
 
 				<PkpTableBody> <!-- Empty State -->
-					<PkpTableRow v-if="filteredItems.length === 0">
+					<PkpTableRow v-if="paginatedItems.length === 0">
 						<PkpTableCell colspan="4" style="text-align: center; padding: 2rem; color: #666;">
 							<div>
 								<p style="margin: 0; font-size: 1rem;">{{ noResultsText }}</p>
@@ -139,7 +139,7 @@
 					</PkpTableRow>
 
 					<!-- Data Rows -->
-					<PkpTableRow v-for="item in filteredItems" :key="item.id">
+					<PkpTableRow v-for="item in paginatedItems" :key="item.id">
 						<!-- Checkbox Column -->
 						<PkpTableCell>
 							<input type="checkbox" name="selectedSubmissions[]" :value="item.id"
@@ -210,6 +210,15 @@
 					</PkpTableRow>
 				</PkpTableBody>
 			</PkpTable>
+
+			<!-- Pagination Controls -->
+			<PkpPagination
+				v-if="lastPage > 1"
+				:current-page="currentPage"
+				:last-page="lastPage"
+				@set-page="setPage"
+				style="margin-top: 1rem;"
+			/>
 		</form>
 	</div>
 </template>
@@ -242,6 +251,7 @@ const activeSearchFilters = ref([]);
 const activeStatusFilter = ref(null);
 const filteredItems = ref([]);
 const isSubmitting = ref(false);
+const currentPage = ref(1);
 let debounceTimeout = null;
 
 // Validation constants
@@ -256,37 +266,75 @@ filteredItems.value = props.data.items;
 // ==========================================
 
 /**
- * Check if all visible items are selected
+ * Get items per page from OJS settings or use default
+ */
+const itemsPerPage = computed(() => {
+	return props.data.itemsPerPage || 20;
+});
+
+/**
+ * Get items for current page
+ */
+const paginatedItems = computed(() => {
+	const start = (currentPage.value - 1) * itemsPerPage.value;
+	const end = start + itemsPerPage.value;
+	return filteredItems.value.slice(start, end);
+});
+
+/**
+ * Total number of pages
+ */
+const lastPage = computed(() => {
+	return Math.ceil(filteredItems.value.length / itemsPerPage.value);
+});
+
+/**
+ * Check if all visible items on current page are selected
  */
 const areAllVisibleSelected = computed(() => {
-	if (filteredItems.value.length === 0) return false;
-	const visibleIds = filteredItems.value.map(item => item.id);
+	if (paginatedItems.value.length === 0) return false;
+	const visibleIds = paginatedItems.value.map(item => item.id);
 	return visibleIds.every(id => selectedSubmissions.value.includes(id));
 });
 
 /**
- * Display text showing filtered vs total count
+ * Display text showing filtered vs total count with pagination
  */
 const itemCountText = computed(() => {
 	const filtered = filteredItems.value.length;
 	const total = props.data.items.length;
-
-	if (filtered === total) {
-		// Handle plural in JavaScript
-		const pluralMatch = props.data.i18n.itemCount.match(/\{[^}]+plural[^}]+one \{([^}]+)\} other \{([^}]+)\}\}/);
-		if (pluralMatch) {
-			const [, singular, plural] = pluralMatch;
-			const word = total === 1 ? singular : plural;
-			return props.data.i18n.itemCount
-				.replace(/\{[^}]+plural[^}]+one \{[^}]+\} other \{[^}]+\}\}/, word)
-				.replace('{$count}', total);
-		}
-		return `${total} items`; // Fallback
+	
+	if (filtered === 0) {
+		return props.data.i18n.noResults || 'No items found';
 	}
-	// Replace placeholders in filtered count string
+	
+	const start = (currentPage.value - 1) * itemsPerPage.value + 1;
+	const end = Math.min(start + itemsPerPage.value - 1, filtered);
+	
+	if (filtered === total) {
+		// No filters applied - show simple count with pagination
+		if (filtered <= itemsPerPage.value) {
+			// Single page - use original count display
+			const pluralMatch = props.data.i18n.itemCount?.match(/\{[^}]+plural[^}]+one \{([^}]+)\} other \{([^}]+)\}\}/);
+			if (pluralMatch) {
+				const [, singular, plural] = pluralMatch;
+				const word = total === 1 ? singular : plural;
+				return props.data.i18n.itemCount
+					.replace(/\{[^}]+plural[^}]+one \{[^}]+\} other \{[^}]+\}\}/, word)
+					.replace('{$count}', total);
+			}
+			return `${total} items`;
+		}
+		// Multiple pages - show range
+		return `Showing ${start}–${end} of ${total}`;
+	}
+	
+	// Filters applied - show filtered count
 	return props.data.i18n.itemCountFiltered
-		.replace('{$filtered}', filtered)
-		.replace('{$total}', total);
+		? props.data.i18n.itemCountFiltered
+			.replace('{$filtered}', `${start}–${end}`)
+			.replace('{$total}', total)
+		: `Showing ${start}–${end} of ${filtered} (filtered from ${total} total)`;
 });
 
 /**
@@ -414,26 +462,30 @@ function applyFilters() {
 		}
 
 		filteredItems.value = items;
+		
+		// Reset to first page when filters change
+		currentPage.value = 1;
 	} catch (error) {
 		console.error('Error applying filters:', error);
 		// Fallback to showing all items on error
 		filteredItems.value = props.data.items;
+		currentPage.value = 1;
 	}
 }
 
 /**
- * Toggle selection of all submissions (only filtered items)
+ * Toggle selection of all submissions on current page
  */
 function toggleSelectAll() {
-	// Check if all currently visible items are selected
-	const visibleIds = filteredItems.value.map(item => item.id);
+	// Check if all currently visible items on current page are selected
+	const visibleIds = paginatedItems.value.map(item => item.id);
 	const allVisibleSelected = visibleIds.every(id => selectedSubmissions.value.includes(id));
 
 	if (allVisibleSelected && visibleIds.length > 0) {
-		// Deselect all visible items
+		// Deselect all visible items on current page
 		selectedSubmissions.value = selectedSubmissions.value.filter(id => !visibleIds.includes(id));
 	} else {
-		// Select all visible items (merge with existing selections)
+		// Select all visible items on current page (merge with existing selections)
 		const uniqueSelections = new Set([...selectedSubmissions.value, ...visibleIds]);
 		selectedSubmissions.value = Array.from(uniqueSelections);
 	}
@@ -467,6 +519,16 @@ function handleAction(action) {
 	setTimeout(() => {
 		isSubmitting.value = false;
 	}, 2000);
+}
+
+/**
+ * Handle pagination page change
+ * @param {number} page - The new page number
+ */
+function setPage(page) {
+	currentPage.value = page;
+	// Scroll to top of table
+	document.querySelector('.dnbSubmissionsTable')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 </script>
 

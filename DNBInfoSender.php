@@ -20,6 +20,11 @@ use APP\core\Application;
 use PKP\db\DAORegistry;
 use APP\core\Services;
 use PKP\plugins\PluginRegistry;
+use APP\plugins\generic\dnb\classes\export\DNBExportJob;
+use APP\facades\Repo;
+
+if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE')) define('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE', 'notice');
+if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_WARNING')) define('SCHEDULED_TASK_MESSAGE_TYPE_WARNING', 'warning');
 
 class DNBInfoSender extends ScheduledTask {
 	/** @var $_plugin DNBExportPlugin */
@@ -30,12 +35,13 @@ class DNBInfoSender extends ScheduledTask {
 	 * @param $argv array task arguments
 	 */
 	function __construct($args) {
+		PluginRegistry::loadCategory('generic');
 		PluginRegistry::loadCategory('importexport');
 		$plugin = PluginRegistry::getPlugin('importexport', 'DNBExportPlugin'); /* @var $plugin DNBExportPlugin */
 		
 		$this->_plugin = $plugin;
 
-		if (is_a($plugin, 'APP\plugins\importexport\dnb\DNBExportPlugin')) {
+		if (is_a($plugin, 'APP\plugins\generic\dnb\DNBExportPlugin')) {
 			$plugin->addLocaleData();
 		}
 		
@@ -79,35 +85,25 @@ class DNBInfoSender extends ScheduledTask {
 			// Get not deposited articles
 			$notDepositedArticles = $plugin->getUnregisteredArticles($journal);
 			if (!empty($notDepositedArticles)) {
-				// Get the journal target export directory.
-				// The data will be exported in this structure:
-				// dnb/<journalId>-<dateTime>/
-				$result = $plugin->getExportPath($journal->getId());
-				if (is_array($result)) {
-					$errors = array_merge($errors, [$result]);
-					return false;
-				}
-				$journalExportPath = $result;
 
 				$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
 					__('plugins.importexport.dnb.logFile.info.conutArticles', array('param' => count($notDepositedArticles))),
 					SCHEDULED_TASK_MESSAGE_TYPE_NOTICE
 				);
+				
 				foreach ($notDepositedArticles as $submission) {
 					if (is_a($submission, 'Submission')) {
 						$issue = null;
-						$galleys = array();
+						$galleys = $supplementaryGalleys = [];
 
 						try {
 							// Get issue and galleys, and check if the article can be exported
-							$galleys = $supplementaryGalleys = [];
 							if (!$plugin->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
 								$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId())]);
 								// continue with other articles
 								continue;
 							}
 
-							$fullyDeposited = true;
 							$submissionId = $submission->getId();
 							foreach ($galleys as $galley) {
 
@@ -117,43 +113,44 @@ class DNBInfoSender extends ScheduledTask {
 								// if $galleyFile is not set it might be a remote URL
 								if (!isset($galleyFile)) {
 									if ($galley->getData('urlRemote') == null) continue;
-								} else {
-									$exportPath = $journalExportPath;
 								}
 
 								// store submission Id in galley object for internal use
 								$galley->setData('submissionId', $submission->getId());
 								
-								$exportFile = '';
-								// Get the TAR package for the galley
-								$result = $plugin->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation = true, $journal, $journalExportPath, $exportFile, $submissionId);
-								// If errors occured, remove all created directories and log the errors
-								if (is_array($result)) {
-									Services::get('file')->fs->deleteDirectory($journalExportPath);
-									$errors = array_merge($errors, [$result]);
-									$fullyDeposited = false;
-									continue;
-								}
-								// Deposit the article
-								$result = $plugin->depositXML($galley, $journal, $exportFile);
-								if (is_array($result)) {
-									// If error occured add it to the list of errors
-									$errors = array_merge($errors, $result);
-									$fullyDeposited = false;
+								// Collect supplementary galley IDs
+								$suppIds = array_map(fn($g) => $g->getId(), $supplementaryGalleys);
+								
+								// Dispatch job instead of processing inline
+								try {
+									dispatch(new DNBExportJob(
+										$galley->getId(),
+										$journal->getId(),
+										$submission->getId(),
+										$suppIds,
+										$filter,
+										true // noValidation
+									));
+									
+									// Update status to queued immediately
+									Repo::submission()->edit($submission, [
+										$plugin->getPluginSettingsPrefix() . '::status' => DNB_EXPORT_STATUS_QUEUED,
+										$plugin->getPluginSettingsPrefix() . '::lastError' => null
+									]);
+									
+								} catch (\Exception $e) {
+									$errors = array_merge($errors, [
+										array('plugins.importexport.dnb.export.error.jobDispatchFailed', $e->getMessage())
+									]);
 								}
 							}
-						} catch (DNBPluginException | ErrorException $e) {
+						} catch (DNBPluginException | \ErrorException $e) {
 							// convert ErrorException to error messages that will be logged below
-						$result = $plugin->handleExceptions($e, $submission->getId());
+							$result = $plugin->handleExceptions($e, $submission->getId());
 							$errors = array_merge($errors, [$result]);
 						}
-						// if ($fullyDeposited) {
-						// 	$plugin->updateSubmissionStatus($submission);
-						// }
 					}
 				}
-				// Remove the generated directories
-				Services::get('file')->fs->deleteDirectory($journalExportPath);
 			} else {
 				// there were no articles to deposit
 				$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.noNoArticlesToDeposit')]);

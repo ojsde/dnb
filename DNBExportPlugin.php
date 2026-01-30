@@ -28,6 +28,10 @@ use PKP\plugins\GenericPlugin;
 use ErrorException;
 use PKP\scheduledTask\ScheduledTaskHelper as PKPScheduledTaskHelper;
 use PKP\userGroup\UserGroup;
+use PKP\core\PKPRequest;
+
+// Import constants
+require_once __DIR__ . '/classes/form/DNBSettingsForm.php';
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use PKP\security\Role;
