@@ -444,6 +444,7 @@ class DNBXmlFilter extends NativeExportFilter {
 	 * @param $value string Element text value
 	 */
 	function createSubfieldNode($doc, $datafieldNode, $code, $value) {
+		assert(!is_null($value));
 		$deployment = $this->getDeployment();
 		$node = $doc->createElementNS($deployment->getNamespace(), 'subfield');
 		//check for characters not allowed according to XML 1.0 specification (https://www.w3.org/TR/2006/REC-xml-20060816/Overview.html#NT-Char)

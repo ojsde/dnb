@@ -104,8 +104,10 @@ class DNBInfoSender extends ScheduledTask {
 								continue;
 							}
 
-							$submissionId = $submission->getId();
-							foreach ($galleys as $galley) {
+							$submissionId = $submission->getId();						
+						// Collect supplementary galley IDs for this submission
+						$suppIds = array_map(fn($g) => $g->getId(), $supplementaryGalleys);
+													foreach ($galleys as $galley) {
 
 								// check if it is a full text
 								$galleyFile = $galley->getFile();
@@ -115,34 +117,21 @@ class DNBInfoSender extends ScheduledTask {
 									if ($galley->getData('urlRemote') == null) continue;
 								}
 
-								// store submission Id in galley object for internal use
-								$galley->setData('submissionId', $submission->getId());
+								// Dispatch job (connection determined by BaseJob::defaultConnection)
+								dispatch(new DNBExportJob(
+									$galley->getId(),
+									$journal->getId(),
+									$submission->getId(),
+									$suppIds,
+									$filter,
+									true // noValidation
+								));
 								
-								// Collect supplementary galley IDs
-								$suppIds = array_map(fn($g) => $g->getId(), $supplementaryGalleys);
-								
-								// Dispatch job instead of processing inline
-								try {
-									dispatch(new DNBExportJob(
-										$galley->getId(),
-										$journal->getId(),
-										$submission->getId(),
-										$suppIds,
-										$filter,
-										true // noValidation
-									));
-									
-									// Update status to queued immediately
-									Repo::submission()->edit($submission, [
-										$plugin->getPluginSettingsPrefix() . '::status' => DNB_EXPORT_STATUS_QUEUED,
-										$plugin->getPluginSettingsPrefix() . '::lastError' => null
-									]);
-									
-								} catch (\Exception $e) {
-									$errors = array_merge($errors, [
-										array('plugins.importexport.dnb.export.error.jobDispatchFailed', $e->getMessage())
-									]);
-								}
+								// Update status to queued immediately
+								Repo::submission()->edit($submission, [
+									$plugin->getPluginSettingsPrefix() . '::status' => DNB_EXPORT_STATUS_QUEUED,
+									$plugin->getPluginSettingsPrefix() . '::lastError' => null
+								]);
 							}
 						} catch (DNBPluginException | \ErrorException $e) {
 							// convert ErrorException to error messages that will be logged below

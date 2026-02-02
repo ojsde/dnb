@@ -176,22 +176,111 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					'validation' => ['nullable'],
 					'description' => 'Last error message from DNB export',
 				];
-				return Hook::CONTINUE;
-			});
+			$schema->properties->{'dnb::canExport'} = (object)[
+				'type' => 'boolean',
+				'apiSummary' => true,
+				'validation' => ['nullable'],
+				'description' => 'Cached result: Can this submission be exported to DNB',
+			];
+			$schema->properties->{'dnb::supplementaryNotAssignable'} = (object)[
+				'type' => 'boolean',
+				'apiSummary' => true,
+				'validation' => ['nullable'],
+				'description' => 'Cached result: Supplementary files cannot be unambiguously assigned',
+			];
+			$schema->properties->{'dnb::galleyCount'} = (object)[
+				'type' => 'integer',
+				'apiSummary' => true,
+				'validation' => ['nullable'],
+				'description' => 'Cached count of PDF/EPUB galleys',
+			];
+			$schema->properties->{'dnb::supplementaryCount'} = (object)[
+				'type' => 'integer',
+				'apiSummary' => true,
+				'validation' => ['nullable'],
+				'description' => 'Cached count of supplementary galleys',
+			];
+			return Hook::CONTINUE;
+		});
 
-			// Register API endpoints if this is an API request
-			$request = Application::get()->getRequest();
-			$router = $request->getRouter();
+		// Listen to galley changes to update cached export validation
+		Hook::add('Galley::add', [$this, 'handleGalleyChange']);
+		Hook::add('Galley::edit', [$this, 'handleGalleyChange']);
+		Hook::add('Galley::delete', [$this, 'handleGalleyChange']);
 
-			if ($router instanceof \PKP\core\APIRouter) {
-				Hook::add(
-					"APIHandler::endpoints::{$router->getEntity()}",
-					[$this, 'setupAPIEndpoints']
-				);
-			}
+		// Register API endpoints if this is an API request
+		$request = Application::get()->getRequest();
+		$router = $request->getRouter();
+
+		if ($router instanceof \PKP\core\APIRouter) {
+			Hook::add(
+				"APIHandler::endpoints::{$router->getEntity()}",
+				[$this, 'setupAPIEndpoints']
+			);
 		}
+	}
 
-		return $success;
+	return $success;
+	}
+
+	/**
+	 * Handle galley changes to recalculate export status
+	 * Called when galleys are added, edited, or deleted
+	 */
+	public function handleGalleyChange($hookName, $args)
+	{
+		$galley = $args[0]; // First argument is always the galley
+		
+		// Galleys have publicationId, not submissionId directly
+		$publicationId = $galley->getData('publicationId');
+		if (!$publicationId) {
+			return Hook::CONTINUE;
+		}
+		
+		// Get the publication to find the submission
+		$publication = Repo::publication()->get($publicationId);
+		if (!$publication) {
+			return Hook::CONTINUE;
+		}
+		
+		$submissionId = $publication->getData('submissionId');
+		if (!$submissionId) {
+			return Hook::CONTINUE;
+		}
+		
+		// Recalculate and cache export validation for this submission
+		$this->updateExportValidationCache($submissionId);
+		
+		return Hook::CONTINUE;
+	}
+
+	/**
+	 * Update cached export validation data for a submission
+	 */
+	public function updateExportValidationCache($submissionId)
+	{
+		$submission = Repo::submission()->get($submissionId);
+		if (!$submission) {
+			return;
+		}
+		
+		$issue = null;
+		$galleys = [];
+		$supplementaryGalleys = [];
+		
+		// Run the validation
+		$canExport = $this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys);
+		
+		// Get the supplementaryNotAssignable flag that was set by canBeExported
+		$supplementaryNotAssignable = $submission->getData('supplementaryNotAssignable') ?? false;
+		
+		// Cache the results in the database
+		Repo::submission()->edit($submission, [
+			$this->getPluginSettingsPrefix() . '::canExport' => $canExport,
+			$this->getPluginSettingsPrefix() . '::supplementaryNotAssignable' => $supplementaryNotAssignable,
+			$this->getPluginSettingsPrefix() . '::galleyCount' => count($galleys),
+			$this->getPluginSettingsPrefix() . '::supplementaryCount' => count($supplementaryGalleys),
+		]);
 	}
 
 	/**
@@ -397,11 +486,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 				// Prepare submission data for table
 				$submissionItems = [];
 				$nNotRegistered = 0;
+				$pluginPrefix = $this->getPluginSettingsPrefix(); // Cache prefix
+				
 				foreach ($publishedSubmissions as $submission) {
 					$publication = $submission->getCurrentPublication();
-					$status = $submission->getData($this->getPluginSettingsPrefix() . '::status');
+					$status = $submission->getData($pluginPrefix . '::status');
 					if (empty($status)) $nNotRegistered++;
-					$lastError = $submission->getData($this->getPluginSettingsPrefix() . '::lastError');
+					$lastError = $submission->getData($pluginPrefix . '::lastError');
 
 					// Get issue information from cached data
 					$issueTitle = '';
@@ -421,18 +512,31 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						);
 					}
 
+					// Use CACHED validation results instead of calling canBeExported()
+					$supplementaryNotAssignable = $submission->getData($pluginPrefix . '::supplementaryNotAssignable');
+					$galleyCount = $submission->getData($pluginPrefix . '::galleyCount') ?? 0;
+					$supplementaryCount = $submission->getData($pluginPrefix . '::supplementaryCount') ?? 0;
+					
+					// If cache is empty, calculate now and store it
+					if ($supplementaryNotAssignable === null) {
+						$this->updateExportValidationCache($submission->getId());
+						// Re-fetch the cached values
+						$submission = Repo::submission()->get($submission->getId());
+						$supplementaryNotAssignable = $submission->getData($pluginPrefix . '::supplementaryNotAssignable');
+						$galleyCount = $submission->getData($pluginPrefix . '::galleyCount') ?? 0;
+						$supplementaryCount = $submission->getData($pluginPrefix . '::supplementaryCount') ?? 0;
+					}
+					
 					// Create warning message if issues detected with supplementary files
-					$documentGalleys = $supplementaryGalleys = [];
-					$this->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys);
 					$msg = "";
-					if ($submission->getData('supplementaryNotAssignable')) {
+					if ($supplementaryNotAssignable) {
 						$plural = $currentLocale == "de" ? "n" : "s";
 						$msg = __(
 							'plugins.importexport.dnb.warning.supplementaryNotAssignable',
 							array(
-								'nDoc' => count($documentGalleys),
-								'nSupp' => count($supplementaryGalleys),
-								'pSupp' => count($supplementaryGalleys) > 1 ? $plural : ""
+								'nDoc' => $galleyCount,
+								'nSupp' => $supplementaryCount,
+								'pSupp' => $supplementaryCount > 1 ? $plural : ""
 							)
 						);
 					}
@@ -488,7 +592,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 				$templateMgr->assign([
 					'pageComponent' => 'ImportExportPage',
 					'baseurl' => $request->getBaseUrl(),
-					'debugModeWarning' => __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_SFTP_SERVER, 'port' => DNB_SFTP_PORT]),
+					'debugModeWarning' => $this->getSetting($context->getId(), 'connectionType') ? __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_WEBDAV_SERVER, 'port' => DNB_WEBDAV_PORT]):__("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_SFTP_SERVER, 'port' => DNB_SFTP_PORT]),
 					'nNotRegistered' => $nNotRegistered,
 					'remoteEnabled' => $this->getSetting($context->getId(), 'exportRemoteGalleys') ? "Remote On" : "",
 					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') === "none" ? "Supplementary Off" : "",

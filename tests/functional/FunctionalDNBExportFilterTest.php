@@ -1,6 +1,6 @@
 <?php
 
-# run with 'sh plugins/importexport/dnb/tests/runTests.sh -d' from ojs folder (note phpunit needs to be installed by running 'composer.phar --working-dir=lib/pkp install' without the -no-dev option)
+# run with 'sh plugins/generic/dnb/tests/runTests.sh -d' from ojs folder (note phpunit needs to be installed by running 'composer.phar --working-dir=lib/pkp install' without the -no-dev option)
 # This is not an automatic test. A native xml export file with the appropriate name and submission ID in your systems has to be placed in the tests folder.
 # You may need to install phpunit in lib/pkp: 'composer.phar require --dev phpunit/phpunit'
 
@@ -14,10 +14,10 @@ use PKP\db\DAORegistry;
 use PKP\core\PKPRequest;
 use PKP\plugins\PluginRegistry;
 use APP\facades\Repo;
-use PKP\submission\SubmissionKeywordDAO;
 use DOMDocument;
 use DOMXPath;
 use APP\plugins\generic\dnb\filter\DNBXmlFilter;
+use APP\plugins\generic\dnb\DNBPlugin;
 use PKP\filter\FilterGroup;
 use APP\plugins\generic\dnb\DNBExportDeployment;
 use APP\plugins\generic\dnb\DNBExportPlugin;
@@ -26,11 +26,16 @@ use PKP\facades\Locale;
 
     class FunctionalDNBExportFilterTest extends PKPTestCase {
 
+        // CONFIGURATION: Set the journal path to test
+        // Change this to match your journal's path (found in Settings > Journal > Masthead)
+        private const TEST_JOURNAL_PATH = 'tja';
+
         # How to use this test:
+        # 0) Set TEST_JOURNAL_PATH constant above to your journal's path
         # 1) Prepare a submission (including DOIs) in the OJS backend
         # 2) Add the keyword "FunctionalExportFilterTest" to the submission
         # 3) Publish and Export individual submissions as native xml
-        # 2) Copy exported xml file into "tests" folder and rename as "FunctionalExportFilterTestSubmission<submission ID in your system>.xml"
+        # 4) Copy exported xml file into "tests" folder and rename as "FunctionalExportFilterTestSubmission<submission ID in your system>.xml"
         #    
         # Alternatively you can import an existing xml file from the tests folder and replace correct submission ID assigned in your system in the file name of the existing xml file
         public function testXMLExport() {
@@ -38,18 +43,21 @@ use PKP\facades\Locale;
             // Initialize the request object with a page router
             $application = Application::get();
             $request = $application->getRequest();
-            $journalPath = 'dja';
     
-        $router = new \APP\core\PageRouter();
+            $router = new \APP\core\PageRouter();
             $router->setApplication($application);
             $request->setRouter($router);
 
             Registry::set('request', $request);
-            $context = Application::get()->getContextDAO()->getByPath($journalPath);
             
-            self::assertTrue($context != null);
+            // Get the journal by configured path
+            $context = Application::get()->getContextDAO()->getByPath(self::TEST_JOURNAL_PATH);
+            
+            self::assertTrue($context != null, 
+                "Journal with path '" . self::TEST_JOURNAL_PATH . "' not found. " .
+                "Please update TEST_JOURNAL_PATH constant in this test file.");
 
-            Locale::registerPath(BASE_SYS_DIR . '/plugins/importexport/dnb/locale');
+            Locale::registerPath(BASE_SYS_DIR . '/plugins/generic/dnb/locale');
 
             $contextDao = Application::getContextDAO();
 		    $journalFactory = $contextDao->getAll(true);
@@ -79,9 +87,12 @@ use PKP\facades\Locale;
                     $publication = $submission->getCurrentPublication();
                     $publicationId = $publication->getId();
                     $submissionId = $submission->getData('id');
-                    $submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO');
-                    $controlledVocabulary = $submissionKeywordDao->getKeywords($publicationId, [$publication->getData('locale')]);
-                    if (!empty($controlledVocabulary) && array_search('FunctionalExportFilterTest', $controlledVocabulary[$publication->getData('locale')]) !== false) {
+                    
+                    // Get keywords using modern Repository pattern
+                    $keywords = $publication->getLocalizedData('keywords') ?? [];
+                    
+                    // Check if test keyword exists
+                    if (in_array('FunctionalExportFilterTest', $keywords)) {
                         $testPublications[] = $publication;
                     }
                 }
@@ -91,7 +102,14 @@ use PKP\facades\Locale;
                 // run test for each publication
                 foreach ($testPublications as $publication) {
                     $submissionId = $publication->getData('submissionId');
-                    $this->exportXML("plugins/importexport/dnb/tests/FunctionalExportFilterTestSubmission".$submissionId.".xml", $publication, $journal);
+                    $xmlFilePath = "plugins/generic/dnb/tests/FunctionalExportFilterTestSubmission".$submissionId.".xml";
+                    
+                    // Skip if XML file doesn't exist
+                    if (!file_exists($xmlFilePath)) {
+                        continue;
+                    }
+                    
+                    $this->exportXML($xmlFilePath, $publication, $journal);
                 }
                 
             }
@@ -123,7 +141,7 @@ use PKP\facades\Locale;
 			$filterGroup->setData('outputType','xml::schema(http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd)');
 
             $xmlFilter = new DNBXmlFilter($filterGroup);
-            $xmlFilter->setDeployment(new DNBExportDeployment($context, $plugin = new DNBExportPlugin()));
+            $xmlFilter->setDeployment(new DNBExportDeployment($context, $plugin = new DNBExportPlugin(new DNBPlugin())));
 
             $plugin->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys);
 
@@ -182,7 +200,7 @@ use PKP\facades\Locale;
                 try {
                     if ($submission->getCurrentPublication()->getData('pub-id::other::urn')) {
                         $submissionURN = $submission->getStoredPubId('other::urnDNB');
-                        $msg = __('plugins.importexport.dnb.export.error.urnSet', array('submissionId' => $submissionId, 'urn' => $submissionURN));
+                        $msg = __('plugins.generic.dnb.export.error.urnSet', array('submissionId' => $submissionId, 'urn' => $submissionURN));
                         $this->expectExceptionMessage($msg);
                     }
                     $result = $xmlFilter->process($testGalley);

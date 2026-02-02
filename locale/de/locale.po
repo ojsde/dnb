@@ -256,10 +256,10 @@ msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired"
 msgstr "Dies ist ein Pflichtfeld wenn die Ablieferung von extern gehosteten Fahnen aktiviert ist."
 
 msgid "plugins.importexport.dnb.settings.debugModeActive.title"
-msgstr "The plugin is set to debug mode!"
+msgstr "Das Plugin befindet sich im Debugmodus!"
 
 msgid "plugins.importexport.dnb.settings.debugModeActive.contents"
-msgstr "SFTP server is configured as: {$server} port {$port}"
+msgstr "Der SFTP/WebDAV Server ist konfiguriert als: {$server} port {$port}"
 
 msgid "plugins.importexport.dnb.warning.supplementaryNotAssignable"
 msgstr "Dieser Artikel enthält {$nDoc} Dokumentfahnen und {$nSupp} Fahne{$pSupp} mit Begleitmaterial. Eine eindeutige automatische Zuodnung ist nicht möglich. Bitte konsultieren Sie die Hilfe für weitere Informationen."

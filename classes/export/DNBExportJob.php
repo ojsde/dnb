@@ -48,37 +48,55 @@ class DNBExportJob extends BaseJob
         $this->filename = $filename; // If provided, skip package building
     }
 
+    /**
+     * Override to ensure jobs are queued, not executed synchronously
+     * even when scheduler runs in maintenance mode
+     */
+    protected function defaultConnection(): string
+    {
+        return Config::getVar('queues', 'default_connection', 'database');
+    }
+
     public function handle(): void
     {
-        // Retrieve the objects from their IDs
-        $galley = Repo::galley()->get($this->galleyId);
-        $context = app('context')->get($this->contextId);
-        $submission = Repo::submission()->get($this->submissionId);
+        try {
+            // Retrieve the objects from their IDs
+            $galley = Repo::galley()->get($this->galleyId);
+            $context = app('context')->get($this->contextId);
+            $submission = Repo::submission()->get($this->submissionId);
 
-        if (!$galley || !$context || !$submission) {
-            throw new \Exception('Galley, Context, or Submission not found for DNB export');
-        }
-
-        // Get plugin from registry
-        $plugin = $this->getDNBExportPlugin();
-
-        // Step 1: Build the package (TAR archive with XML + PDFs) - only if not pre-built
-        if ($this->filename === null) {
-            $this->filename = $this->buildPackage($galley, $context, $submission, $plugin);
-        } else {
-            // Package already built (manual export) - just validate it exists
-            if (!file_exists($this->filename)) {
-                throw new \Exception('Pre-built package not found: ' . $this->filename);
+            if (!$galley || !$context || !$submission) {
+                throw new \Exception('Galley, Context, or Submission not found for DNB export');
             }
-        }
 
-        // Step 2: Perform the complete deposit transfer via curl
-        $this->executeDeposit($galley, $context, $plugin);
+            // Get plugin from registry
+            $plugin = $this->getDNBExportPlugin();
 
-        // Step 3: Cleanup temporary files (only if we built the package)
-        if ($this->filename !== null && empty($this->supplementaryGalleyIds) === false) {
-            // Job built the package, so clean it up
-            $this->cleanup($plugin);
+            // Step 1: Build the package (TAR archive with XML + PDFs) - only if not pre-built
+            if ($this->filename === null) {
+                $this->filename = $this->buildPackage($galley, $context, $submission, $plugin);
+            } else {
+                // Package already built (manual export) - just validate it exists
+                if (!file_exists($this->filename)) {
+                    throw new \Exception('Pre-built package not found: ' . $this->filename);
+                }
+            }
+
+            // Step 2: Perform the complete deposit transfer via curl
+            $this->executeDeposit($galley, $context, $plugin);
+
+            // Step 3: Cleanup temporary files (only if we built the package)
+            if ($this->filename !== null && empty($this->supplementaryGalleyIds) === false) {
+                // Job built the package, so clean it up
+                $this->cleanup($plugin);
+            }
+        } catch (\Throwable $exception) {
+            // Log to error_log to suppress CLI stack trace noise
+            error_log('DNB Export Job attempt failed: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine());
+            
+            // Re-throw to allow framework retry mechanism
+            // After retries exhausted, framework will call failed()
+            throw $exception;
         }
     }
 
@@ -282,28 +300,56 @@ class DNBExportJob extends BaseJob
 
     public function failed(\Throwable $exception): void
     {
-        // Log the failure with submission context
-        $message = $exception->getMessage() . ', ' .
+        // Get plugin instance
+        $plugin = $this->getDNBExportPlugin();
+        
+        // Format the error message properly
+        $errorMessage = '';
+        
+        // Check if it's a DNB-specific exception that can be handled by handleExceptions()
+        if ($exception instanceof \DNBPluginException || $exception instanceof \ErrorException) {
+            $errorTuple = $plugin->handleExceptions($exception, $this->submissionId);
+            
+            // handleExceptions() returns null for unhandled codes, so check the result
+            if (is_array($errorTuple) && count($errorTuple) >= 1) {
+                // Format: [locale_key, param] or just [locale_key]
+                $localeKey = $errorTuple[0];
+                $param = $errorTuple[1] ?? '';
+                $errorMessage = __($localeKey, ['param' => $param]);
+            } else {
+                // handleExceptions returned null - use raw exception message
+                $errorMessage = $exception->getMessage();
+            }
+        } else {
+            // For standard exceptions (curl errors, etc.), use the exception message directly
+            $errorMessage = $exception->getMessage();
+        }
+
+        // Add detailed context to the error message for debugging
+        $detailedMessage = $errorMessage . ', ' .
             'job_name: ' . $this->displayName() . ', ' .
             'submission_id: ' . $this->submissionId . ', ' .
             'galley_id: ' . $this->galleyId . ', ' .
             'file: ' . ($this->filename ?? 'not created');
 
-        // Update submission status to 'failed'
-        $plugin = $this->getDNBExportPlugin();
+        // Update submission status to 'failed' and store the detailed error
         $submission = Repo::submission()->get($this->submissionId);
         if ($submission) {
             Repo::submission()->edit($submission, [
                 $plugin->getPluginSettingsPrefix() . '::status' => DNB_EXPORT_STATUS_FAILED,
-                $plugin->getPluginSettingsPrefix() . '::lastError' => $message
+                $plugin->getPluginSettingsPrefix() . '::lastError' => $detailedMessage
             ]);
         }
+
+        // Log to PHP error log for debugging
+        error_log('DNB Export Job Failed: ' . $detailedMessage);
 
         // Cleanup any partial files
         try {
             $this->cleanup($plugin);
         } catch (\Exception $e) {
             // Ignore cleanup errors during failure handling
+            error_log('DNB Export Job cleanup failed: ' . $e->getMessage());
         }
     }
 }
