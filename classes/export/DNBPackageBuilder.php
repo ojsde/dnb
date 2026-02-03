@@ -94,9 +94,10 @@ class DNBPackageBuilder
 	 */
 	private function tarSupplementaryFiles($exportPath): void
 	{
-		$supplementaryPath = Config::getVar('files', 'files_dir') . '/' . $exportPath . 'content/supplementary';
+		$supplementaryPath = Config::getVar('files', 'files_dir') . '/' . $exportPath . 'content/supplementary/';
 		$supplementaryTar = Config::getVar('files', 'files_dir') . '/' . $exportPath . 'content/supplementary.tar';
 		$this->createTarArchive($supplementaryPath, $supplementaryTar);
+		Services::get('file')->fs->deleteDirectory($exportPath . 'content/supplementary');
 	}
 
 	/**

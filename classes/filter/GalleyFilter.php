@@ -21,7 +21,7 @@ class GalleyFilter {
 	 */
 	public function filterPDFAndEPUB($galley): bool {
 		$genreDao = DAORegistry::getDAO('GenreDAO');
-		$galleyFile = $galley->getFile();
+		$galleyFile = $galley->getFile(); // returns null for Galley::add (empty galley) AND for Galley::edit hook (i.e. a just uploaded galley file)
 
 		// Remote galleys
 		if (!isset($galleyFile)) {
@@ -36,8 +36,7 @@ class GalleyFilter {
 		}
 		
 		// Check if PDF or EPUB
-		$label = strtolower($galley->getLabel());
-		return (strpos($label, 'pdf') !== false || strpos($label, 'epub') !== false);
+		return in_array($galley->getFile()->getData('mimetype'),['application/pdf','application/epub+zip']);
 	}
 	
 	/**
@@ -69,7 +68,8 @@ class GalleyFilter {
 		$label = strtolower($galley->getLabel());
 		$url = $galley->getData('urlRemote');
 		
-		// Check label or URL extension
+		// Check label or URL extension, apart from downloading the file this is the only information we have
+		// downloaded files will be verified at export time
 		return (strpos($label, 'pdf') !== false || 
 		        strpos($label, 'epub') !== false ||
 		        preg_match('/\.(pdf|epub)$/i', $url));

@@ -22,53 +22,49 @@ use APP\core\Services;
 use PKP\plugins\PluginRegistry;
 use APP\plugins\generic\dnb\classes\export\DNBExportJob;
 use APP\facades\Repo;
-
-if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE')) define('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE', 'notice');
-if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_WARNING')) define('SCHEDULED_TASK_MESSAGE_TYPE_WARNING', 'warning');
-use APP\plugins\generic\dnb\classes\export\DNBExportJob;
-use APP\facades\Repo;
+use APP\plugins\generic\dnb\DNBExportPlugin;
 
 if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE')) define('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE', 'notice');
 if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_WARNING')) define('SCHEDULED_TASK_MESSAGE_TYPE_WARNING', 'warning');
 
-class DNBInfoSender extends ScheduledTask {
-	/** @var $_plugin DNBExportPlugin */
-	var $_plugin;
+class DNBInfoSender extends ScheduledTask
+{
+	private DNBExportPlugin $_plugin;
 
 	/**
 	 * Constructor.
 	 * @param $argv array task arguments
 	 */
-	function __construct($args) {
+	function __construct($args)
+	{
 		PluginRegistry::loadCategory('generic');
 		PluginRegistry::loadCategory('generic');
 		PluginRegistry::loadCategory('importexport');
-		$plugin = PluginRegistry::getPlugin('importexport', 'DNBExportPlugin'); /* @var $plugin DNBExportPlugin */
-		
-		$this->_plugin = $plugin;
 
-		if (is_a($plugin, 'APP\plugins\generic\dnb\DNBExportPlugin')) {
-		if (is_a($plugin, 'APP\plugins\generic\dnb\DNBExportPlugin')) {
-			$plugin->addLocaleData();
+		$this->_plugin = PluginRegistry::getPlugin('importexport', 'DNBExportPlugin');
+		if (is_a($this->_plugin, 'APP\plugins\generic\dnb\DNBExportPlugin')) {
+			$this->_plugin->addLocaleData();
 		}
-		
+
 		parent::__construct($args);
 	}
 
 	/**
 	 * @see ScheduledTask::getName()
 	 */
-	function getName():string {
+	function getName(): string
+	{
 		return __('plugins.importexport.dnb.senderTask.name');
 	}
 
 	/**
 	 * @see ScheduledTask::executeActions()
 	 */
-	function executeActions():bool {
+	function executeActions(): bool
+	{
 		if (!$this->_plugin) return false;
 		$plugin = $this->_plugin;
-		
+
 		// check if TAR command is configured
 		$checkForTarResult = $plugin->checkForTar();
 		if (is_array($checkForTarResult)) {
@@ -88,17 +84,18 @@ class DNBInfoSender extends ScheduledTask {
 			// load pubIds for this journal (they are currently not loaded in the base class)
 			PluginRegistry::loadCategory('pubIds', true, $journal->getId());
 			// set the context for all further actions
-			$this->_plugin->setContextId($journal->getId());
+			$plugin->setContextId($journal->getId());
 			// Get not deposited articles
 			$notDepositedArticles = $plugin->getUnregisteredArticles($journal);
 			if (!empty($notDepositedArticles)) {
 
-				$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
-					__('plugins.importexport.dnb.logFile.info.conutArticles', array('param' => count($notDepositedArticles))),
+				$this->addExecutionLogEntry(
+					"[" . $journal->getData('urlPath') . "] " .
+						__('plugins.importexport.dnb.logFile.info.conutArticles', array('param' => count($notDepositedArticles))),
 					SCHEDULED_TASK_MESSAGE_TYPE_NOTICE
 				);
-				
-				
+
+
 				foreach ($notDepositedArticles as $submission) {
 					if (is_a($submission, 'Submission')) {
 						$issue = null;
@@ -113,10 +110,10 @@ class DNBInfoSender extends ScheduledTask {
 								continue;
 							}
 
-							$submissionId = $submission->getId();						
-						// Collect supplementary galley IDs for this submission
-						$suppIds = array_map(fn($g) => $g->getId(), $supplementaryGalleys);
-													foreach ($galleys as $galley) {
+							$submissionId = $submission->getId();
+							// Collect supplementary galley IDs for this submission
+							$suppIds = array_map(fn($g) => $g->getId(), $supplementaryGalleys);
+							foreach ($galleys as $galley) {
 
 								// check if it is a full text
 								$galleyFile = $galley->getFile();
@@ -135,7 +132,7 @@ class DNBInfoSender extends ScheduledTask {
 									$filter,
 									true // noValidation
 								));
-								
+
 								// Update status to queued immediately
 								Repo::submission()->edit($submission, [
 									$plugin->getPluginSettingsPrefix() . '::status' => DNB_EXPORT_STATUS_QUEUED,
@@ -155,14 +152,15 @@ class DNBInfoSender extends ScheduledTask {
 				// there were no articles to deposit
 				$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.noNoArticlesToDeposit')]);
 			}
-			
+
 			if (empty($errors)) {
 				$errors = array_merge($errors, [array('plugins.importexport.dnb.export.error.noError')]);
 			}
 			// log all error messages
-			foreach($errors as $error) {
-				$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
-					__($error[0], array('param' => (isset($error[1]) ? $error[1] : null))),
+			foreach ($errors as $error) {
+				$this->addExecutionLogEntry(
+					"[" . $journal->getData('urlPath') . "] " .
+						__($error[0], array('param' => (isset($error[1]) ? $error[1] : null))),
 					SCHEDULED_TASK_MESSAGE_TYPE_WARNING
 				);
 			}
@@ -176,33 +174,34 @@ class DNBInfoSender extends ScheduledTask {
 	 * automatic articles deposit to DNB.
 	 * @return array
 	 */
-	function _getJournals() {
+	function _getJournals()
+	{
 		$plugin = $this->_plugin;
 		$contextDao = Application::getContextDAO(); /* @var $contextDao JournalDAO */
 		$journalFactory = $contextDao->getAll(true);
 
 		$journals = array();
-		while($journal = $journalFactory->next()) {
+		while ($journal = $journalFactory->next()) {
 			$journalId = $journal->getId();
 			// check required plugin settings
-			if (!$plugin->getSetting($journalId, 'username') ||
+			if (
+				!$plugin->getSetting($journalId, 'username') ||
 				!$plugin->getSetting($journalId, 'password') ||
 				!$plugin->getSetting($journalId, 'folderId') ||
 				!$plugin->getSetting($journalId, 'automaticDeposit') ||
-				!$plugin->checkPluginSettings($journal)) {
-					$this->addExecutionLogEntry("[" . $journal->getData('urlPath') ."] " .
+				!$plugin->checkPluginSettings($journal)
+			) {
+				$this->addExecutionLogEntry(
+					"[" . $journal->getData('urlPath') . "] " .
 						__('plugins.importexport.dnb.logFile.info.nocredentials'),
-						SCHEDULED_TASK_MESSAGE_TYPE_NOTICE
-					);
-					continue;
-				}
+					SCHEDULED_TASK_MESSAGE_TYPE_NOTICE
+				);
+				continue;
+			}
 
 			$journals[] = $journal;
 			unset($journal);
 		}
 		return $journals;
 	}
-
 }
-
-?>

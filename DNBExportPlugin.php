@@ -47,6 +47,7 @@ use APP\plugins\generic\dnb\classes\export\DNBFileManager;
 use APP\plugins\generic\dnb\classes\export\DNBExportValidator;
 use APP\plugins\generic\dnb\classes\filter\GalleyFilter;
 use APP\plugins\generic\dnb\classes\DNBCatalogInfoProvider;
+use APP\plugins\generic\dnb\DNBInfoSender;
 
 
 define('DEBUG', true);
@@ -204,9 +205,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		});
 
 		// Listen to galley changes to update cached export validation
-		Hook::add('Galley::add', [$this, 'handleGalleyChange']);
-		Hook::add('Galley::edit', [$this, 'handleGalleyChange']);
-		Hook::add('Galley::delete', [$this, 'handleGalleyChange']);
+		Hook::add('Galley::add', [$this, 'handleGalleyChange']); // At this stage an empty galley (i.e. without galley file) is added, we should be able to catch remote galleys here		Hook::add('Galley::edit', [$this, 'handleGalleyChange']);
+		Hook::add('Galley::edit', [$this, 'handleGalleyChange']); // Galley file is changed or uploaded. ISSUE: $galley->getFile() returns null here!
+		Hook::add('Galley::delete', [$this, 'handleGalleyChange']); // Galley is deleted, we update galley counts
+		Hook::add('Publication::publish', [$this, 'handleGalleyChange']);
 
 		// Register API endpoints if this is an API request
 		$request = Application::get()->getRequest();
@@ -229,10 +231,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 */
 	public function handleGalleyChange($hookName, $args)
 	{
-		$galley = $args[0]; // First argument is always the galley
+		$newGalley = $args[0]; // First argument is always (add/edit) the new galley object
+		$oldGalley = $args[1]; // Second argument is the old galley object for edit/delete hooks
+		$submissionFileId = $args[2]; // Third argument is the submission file ID of the new galley file
 		
 		// Galleys have publicationId, not submissionId directly
-		$publicationId = $galley->getData('publicationId');
+		$publicationId = $newGalley->getData('publicationId');
 		if (!$publicationId) {
 			return Hook::CONTINUE;
 		}
@@ -249,7 +253,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		}
 		
 		// Recalculate and cache export validation for this submission
-		$this->updateExportValidationCache($submissionId);
+		$this->updateExportValidationCache($submissionId, $newGalley);
 		
 		return Hook::CONTINUE;
 	}
@@ -257,7 +261,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * Update cached export validation data for a submission
 	 */
-	public function updateExportValidationCache($submissionId)
+	public function updateExportValidationCache($submissionId, $newGalley = null)
 	{
 		$submission = Repo::submission()->get($submissionId);
 		if (!$submission) {
@@ -269,7 +273,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		$supplementaryGalleys = [];
 		
 		// Run the validation
-		$canExport = $this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys);
+		$canExport = $this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys, $newGalley);
 		
 		// Get the supplementaryNotAssignable flag that was set by canBeExported
 		$supplementaryNotAssignable = $submission->getData('supplementaryNotAssignable') ?? false;
@@ -399,11 +403,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 
 		// if no object is selected go back to export submission tab
 		if (!empty($args)) {
-			if ((($args[0] == 'exportSubmissions') ||
+			if (empty((array) $request->getUserVar('selectedSubmissions')) || (($args[0] == 'exportSubmissions') ||
 					($args[0] == self::EXPORT_ACTION_EXPORT) ||
 					($args[0] == self::EXPORT_ACTION_DEPOSIT) ||
-					($args[0] == self::EXPORT_ACTION_MARKREGISTERED)) &&
-				empty((array) $request->getUserVar('selectedSubmissions'))
+					($args[0] == self::EXPORT_ACTION_MARKREGISTERED))
 			) {
 
 				//show error
@@ -430,7 +433,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					$this->_exportAction = DNB_EXPORT_ACTION_MARKEXCLUDED;
 					break;
 			}
-			$args[0] = 'exportSubmissions';
+			$selectedSubmissions = (array) $request->getUserVar('selectedSubmissions');
+			if (!empty($selectedSubmissions)) {
+				$args[0] = 'exportSubmissions';
+			} else {
+				$args[0] = '';
+			}
 		}
 
 		parent::display($args, $request);
@@ -1113,9 +1121,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $galleys array Filtered (i.e. PDF and EPUB) submission full text galleys
 	 * @return boolean
 	 */
-	function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = [])
+	function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = [], $newGalley = null)
 	{
-		return $this->validator->canBeExported($submission, $issue, $galleys, $supplementaryGalleys);
+		return $this->validator->canBeExported($submission, $issue, $galleys, $supplementaryGalleys, $newGalley);
 	}
 
 

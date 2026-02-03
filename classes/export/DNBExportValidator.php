@@ -29,12 +29,8 @@ class DNBExportValidator {
 	/**
 	 * Check if submission can be exported
 	 */
-	public function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = []): bool {
-		$cache = $this->plugin->getCache();
-		if (!$cache->isCached('Anzahl Artikel', $submission->getId())) {
-			$cache->add($submission, null);
-		}
-		
+	public function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = [], $newGalley = null): bool {
+
 		$issue = $issue?:Repo::issue()->getBySubmissionId($submission->getId());
 		
 		if (!$issue || !$issue->getPublished()) {
@@ -43,6 +39,21 @@ class DNBExportValidator {
 
 		// Get all galleys
 		$galleys = $submission->getGalleys();
+
+		// If a new galley is passed, replace galley with identical ID (this updates uploaded file ID still missing in the database object)
+		if ($newGalley !== null) {
+			$found = false;
+			foreach ($galleys as $index => $galley) {
+				if ($galley->getId() == $newGalley->getId()) {
+					$galleys[$index] = $newGalley;
+					$found = true;
+					break;
+				}
+			}
+			if (!$found) {
+				$galleys[] = $newGalley;
+			}
+		}
 		
 		// Filter supplementary files if configured
 		if ($this->plugin->getSetting($submission->getData('contextId'), 'submitSupplementaryMode') == 'all') {

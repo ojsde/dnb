@@ -17,14 +17,6 @@ if (!defined('DNB_SFTP_SERVER')) define('DNB_SFTP_SERVER', 'sftp://ojs@rs-dev-3.
 if (!defined('DNB_SFTP_PORT')) define('DNB_SFTP_PORT', 22);
 if (!defined('DNB_WEBDAV_SERVER')) define('DNB_WEBDAV_SERVER', 'NOT CONFIGURED IN DEBUG MODE');
 if (!defined('DNB_WEBDAV_PORT')) define('DNB_WEBDAV_PORT', 443);
-use APP\core\Services;
-
-if (!defined('DNB_STATUS_DEPOSITED')) define('DNB_STATUS_DEPOSITED', 'deposited');
-if (!defined('DNB_EXPORT_STATUS_FAILED')) define('DNB_EXPORT_STATUS_FAILED', 'failed');
-if (!defined('DNB_SFTP_SERVER')) define('DNB_SFTP_SERVER', 'sftp://ojs@rs-dev-3.5-ojs-3.5-sftp/');
-if (!defined('DNB_SFTP_PORT')) define('DNB_SFTP_PORT', 22);
-if (!defined('DNB_WEBDAV_SERVER')) define('DNB_WEBDAV_SERVER', 'NOT CONFIGURED IN DEBUG MODE');
-if (!defined('DNB_WEBDAV_PORT')) define('DNB_WEBDAV_PORT', 443);
 
 class DNBExportJob extends BaseJob
 {
@@ -35,20 +27,7 @@ class DNBExportJob extends BaseJob
     protected string $filter;
     protected bool $noValidation;
     protected ?string $filename = null; // Pre-built package path (for manual exports)
-    protected array $supplementaryGalleyIds;
-    protected string $filter;
-    protected bool $noValidation;
-    protected ?string $filename = null; // Pre-built package path (for manual exports)
 
-    public function __construct(
-        int $galleyId,
-        int $contextId,
-        int $submissionId,
-        array $supplementaryGalleyIds = [],
-        string $filter = 'galley=>dnb-xml',
-        bool $noValidation = false,
-        ?string $filename = null
-    ) {
     public function __construct(
         int $galleyId,
         int $contextId,
@@ -114,7 +93,7 @@ class DNBExportJob extends BaseJob
         } catch (\Throwable $exception) {
             // Log to error_log to suppress CLI stack trace noise
             error_log('DNB Export Job attempt failed: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine());
-            
+
             // Re-throw to allow framework retry mechanism
             // After retries exhausted, framework will call failed()
             throw $exception;
@@ -144,9 +123,9 @@ class DNBExportJob extends BaseJob
         // Use existing packageBuilder
         $fileManager = new DNBFileManager($plugin);
         $packageBuilder = new DNBPackageBuilder($plugin, $fileManager);
-        
+
         $exportPackageName = '';
-        
+
         $result = $packageBuilder->buildPackage(
             $galley,
             $supplementaryGalleys,
@@ -157,11 +136,11 @@ class DNBExportJob extends BaseJob
             $exportPackageName,
             $this->submissionId
         );
-        
+
         if (is_array($result)) {
             throw new \Exception('Package building failed: ' . json_encode($result));
         }
-        
+
         return $exportPackageName; // Full path to TAR file
     }
 
@@ -176,7 +155,7 @@ class DNBExportJob extends BaseJob
             $exportDir = dirname(dirname($this->filename)); // Go up two levels to get base export dir
             $basedir = Config::getVar('files', 'files_dir');
             $fullExportPath = $basedir . '/' . $exportDir;
-            
+
             // Only delete if it's within the expected export structure
             if (strpos($fullExportPath, $basedir . '/dnb/') === 0) {
                 Services::get('file')->fs->deleteDirectory($fullExportPath);
@@ -199,11 +178,11 @@ class DNBExportJob extends BaseJob
     {
         \PKP\plugins\PluginRegistry::loadCategory('generic');
         $plugin = \PKP\plugins\PluginRegistry::getPlugin('importexport', 'DNBExportPlugin');
-        
+
         if (!$plugin) {
             throw new \Exception('DNB Export Plugin not found in registry');
         }
-        
+
         return $plugin;
     }
 
@@ -212,7 +191,7 @@ class DNBExportJob extends BaseJob
         // Guzzle HttpClient cannot be used here because DNB requires SFTP or WebDAV upload. 
         // WebDAV over HTTPS could theoretically work, but it still requires careful SSH/certificate handling.
         $curlCh = $this->initCurl($plugin);
-        
+
         curl_setopt($curlCh, CURLOPT_UPLOAD, true);
         curl_setopt($curlCh, CURLOPT_HEADER, true);
         curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, true);
@@ -277,7 +256,7 @@ class DNBExportJob extends BaseJob
         if ($curlError || $response === false) {
             curl_close($curlCh);
             fclose($fh);
-            
+
             $error = $curlError ?: 'Unknown curl error';
             throw new \Exception('DNB upload failed: ' . $error);
         }
@@ -303,19 +282,19 @@ class DNBExportJob extends BaseJob
     {
         $curlCh = curl_init();
         $httpProxyHost = Config::getVar('proxy', 'https_proxy') ?: Config::getVar('proxy', 'http_proxy');
-        
+
         if ($httpProxyHost) {
             curl_setopt($curlCh, CURLOPT_PROXY, $httpProxyHost);
-            
+
             if ($curlProxyTunnel = Config::getVar('dnb-plugin', 'CURLOPT_HTTPPROXYTUNNEL')) {
                 curl_setopt($curlCh, CURLOPT_HTTPPROXYTUNNEL, $curlProxyTunnel);
             }
-            
+
             if ($username = Config::getVar('proxy', 'username')) {
                 curl_setopt($curlCh, CURLOPT_PROXYUSERPWD, $username . ':' . Config::getVar('proxy', 'password'));
             }
         }
-        
+
         return $curlCh;
     }
 
@@ -323,14 +302,14 @@ class DNBExportJob extends BaseJob
     {
         // Get plugin instance
         $plugin = $this->getDNBExportPlugin();
-        
+
         // Format the error message properly
         $errorMessage = '';
-        
+
         // Check if it's a DNB-specific exception that can be handled by handleExceptions()
         if ($exception instanceof \DNBPluginException || $exception instanceof \ErrorException) {
             $errorTuple = $plugin->handleExceptions($exception, $this->submissionId);
-            
+
             // handleExceptions() returns null for unhandled codes, so check the result
             if (is_array($errorTuple) && count($errorTuple) >= 1) {
                 // Format: [locale_key, param] or just [locale_key]
@@ -349,8 +328,6 @@ class DNBExportJob extends BaseJob
         // Add detailed context to the error message for debugging
         $detailedMessage = $errorMessage . ', ' .
             'job_name: ' . $this->displayName() . ', ' .
-            'submission_id: ' . $this->submissionId . ', ' .
-            'galley_id: ' . $this->galleyId . ', ' .
             'file: ' . ($this->filename ?? 'not created');
 
         // Update submission status to 'failed' and store the detailed error
