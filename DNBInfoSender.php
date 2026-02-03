@@ -25,6 +25,11 @@ use APP\facades\Repo;
 
 if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE')) define('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE', 'notice');
 if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_WARNING')) define('SCHEDULED_TASK_MESSAGE_TYPE_WARNING', 'warning');
+use APP\plugins\generic\dnb\classes\export\DNBExportJob;
+use APP\facades\Repo;
+
+if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE')) define('SCHEDULED_TASK_MESSAGE_TYPE_NOTICE', 'notice');
+if (!defined('SCHEDULED_TASK_MESSAGE_TYPE_WARNING')) define('SCHEDULED_TASK_MESSAGE_TYPE_WARNING', 'warning');
 
 class DNBInfoSender extends ScheduledTask {
 	/** @var $_plugin DNBExportPlugin */
@@ -36,11 +41,13 @@ class DNBInfoSender extends ScheduledTask {
 	 */
 	function __construct($args) {
 		PluginRegistry::loadCategory('generic');
+		PluginRegistry::loadCategory('generic');
 		PluginRegistry::loadCategory('importexport');
 		$plugin = PluginRegistry::getPlugin('importexport', 'DNBExportPlugin'); /* @var $plugin DNBExportPlugin */
 		
 		$this->_plugin = $plugin;
 
+		if (is_a($plugin, 'APP\plugins\generic\dnb\DNBExportPlugin')) {
 		if (is_a($plugin, 'APP\plugins\generic\dnb\DNBExportPlugin')) {
 			$plugin->addLocaleData();
 		}
@@ -91,9 +98,11 @@ class DNBInfoSender extends ScheduledTask {
 					SCHEDULED_TASK_MESSAGE_TYPE_NOTICE
 				);
 				
+				
 				foreach ($notDepositedArticles as $submission) {
 					if (is_a($submission, 'Submission')) {
 						$issue = null;
+						$galleys = $supplementaryGalleys = [];
 						$galleys = $supplementaryGalleys = [];
 
 						try {
@@ -134,7 +143,9 @@ class DNBInfoSender extends ScheduledTask {
 								]);
 							}
 						} catch (DNBPluginException | \ErrorException $e) {
+						} catch (DNBPluginException | \ErrorException $e) {
 							// convert ErrorException to error messages that will be logged below
+							$result = $plugin->handleExceptions($e, $submission->getId());
 							$result = $plugin->handleExceptions($e, $submission->getId());
 							$errors = array_merge($errors, [$result]);
 						}

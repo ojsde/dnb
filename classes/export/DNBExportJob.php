@@ -17,6 +17,14 @@ if (!defined('DNB_SFTP_SERVER')) define('DNB_SFTP_SERVER', 'sftp://ojs@rs-dev-3.
 if (!defined('DNB_SFTP_PORT')) define('DNB_SFTP_PORT', 22);
 if (!defined('DNB_WEBDAV_SERVER')) define('DNB_WEBDAV_SERVER', 'NOT CONFIGURED IN DEBUG MODE');
 if (!defined('DNB_WEBDAV_PORT')) define('DNB_WEBDAV_PORT', 443);
+use APP\core\Services;
+
+if (!defined('DNB_STATUS_DEPOSITED')) define('DNB_STATUS_DEPOSITED', 'deposited');
+if (!defined('DNB_EXPORT_STATUS_FAILED')) define('DNB_EXPORT_STATUS_FAILED', 'failed');
+if (!defined('DNB_SFTP_SERVER')) define('DNB_SFTP_SERVER', 'sftp://ojs@rs-dev-3.5-ojs-3.5-sftp/');
+if (!defined('DNB_SFTP_PORT')) define('DNB_SFTP_PORT', 22);
+if (!defined('DNB_WEBDAV_SERVER')) define('DNB_WEBDAV_SERVER', 'NOT CONFIGURED IN DEBUG MODE');
+if (!defined('DNB_WEBDAV_PORT')) define('DNB_WEBDAV_PORT', 443);
 
 class DNBExportJob extends BaseJob
 {
@@ -27,7 +35,20 @@ class DNBExportJob extends BaseJob
     protected string $filter;
     protected bool $noValidation;
     protected ?string $filename = null; // Pre-built package path (for manual exports)
+    protected array $supplementaryGalleyIds;
+    protected string $filter;
+    protected bool $noValidation;
+    protected ?string $filename = null; // Pre-built package path (for manual exports)
 
+    public function __construct(
+        int $galleyId,
+        int $contextId,
+        int $submissionId,
+        array $supplementaryGalleyIds = [],
+        string $filter = 'galley=>dnb-xml',
+        bool $noValidation = false,
+        ?string $filename = null
+    ) {
     public function __construct(
         int $galleyId,
         int $contextId,
