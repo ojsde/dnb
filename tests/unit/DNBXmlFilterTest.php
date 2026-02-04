@@ -45,6 +45,7 @@ use PKP\filter\FilterGroup;
 use APP\plugins\generic\dnb\DNBExportDeployment;
 use APP\plugins\generic\dnb\DNBExportPlugin;
 use APP\plugins\generic\dnb\DNBPluginException;
+use Illuminate\Support\LazyCollection;
 
 #[CoversClass(DNBXmlFilter::class)]
 class DNBXmlFilterTest extends PKPTestCase
@@ -384,6 +385,13 @@ class DNBXmlFilterTest extends PKPTestCase
     ): void {
         // Arrange
         $authors = array_map(fn($data) => $this->createMockAuthor($data), $authorsData);
+        // Erstelle eine LazyCollection aus dem Array
+        $authors = LazyCollection::make(function () use ($authors) {
+            foreach ($authors as $item) {
+                yield $item;
+            }
+        });
+
         $publication = $this->createMockPublication(['authors' => $authors]);
         $galley = $this->createMockGalley(['publication' => $publication]);
         
@@ -1292,6 +1300,13 @@ class DNBXmlFilterTest extends PKPTestCase
     {
         // Default author if none provided
         $authors = $data['authors'] ?? [$this->createMockAuthor()];
+        // Erstelle eine LazyCollection aus dem Array
+        $authors = LazyCollection::make(function () use ($authors) {
+            foreach ($authors as $item) {
+                yield $item;
+            }
+        });
+        
         $locale = $data['locale'] ?? 'en';
         
         $publication = Mockery::mock(\APP\publication\Publication::class)

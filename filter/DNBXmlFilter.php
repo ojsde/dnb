@@ -110,7 +110,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		// get contributers
 		$contributors = $publication->getData('authors');
 		// filter contributers by given name and family name, both should have at least one character [A-Z,a-z]
-		$contributors = array_filter((array) $contributors, function($contributor) use ($galleyLocale, $submission) {
+		$contributors = array_filter((array) $contributors->toArray(), function($contributor) use ($galleyLocale, $submission) {
 			$locale = $contributor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getData('locale');
 			$givenName = $contributor->getGivenName($locale);
 			$familyName = $contributor->getFamilyName($locale);

@@ -28,7 +28,7 @@ use PKP\facades\Locale;
 
         // CONFIGURATION: Set the journal path to test
         // Change this to match your journal's path (found in Settings > Journal > Masthead)
-        private const TEST_JOURNAL_PATH = 'tja';
+        private const TEST_JOURNAL_PATH = 'tza';
 
         # How to use this test:
         # 0) Set TEST_JOURNAL_PATH constant above to your journal's path
