@@ -403,10 +403,10 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 
 		// if no object is selected go back to export submission tab
 		if (!empty($args)) {
-			if (empty((array) $request->getUserVar('selectedSubmissions')) || (($args[0] == 'exportSubmissions') ||
-					($args[0] == self::EXPORT_ACTION_EXPORT) ||
-					($args[0] == self::EXPORT_ACTION_DEPOSIT) ||
-					($args[0] == self::EXPORT_ACTION_MARKREGISTERED))
+			if (empty((array) $request->getUserVar('selectedSubmissions')) || (($args[0] !== 'exportSubmissions') &&
+					($args[0] !== self::EXPORT_ACTION_EXPORT) &&
+					($args[0] !== self::EXPORT_ACTION_DEPOSIT) &&
+					($args[0] !== self::EXPORT_ACTION_MARKREGISTERED))
 			) {
 
 				//show error

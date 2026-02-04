@@ -66,9 +66,9 @@ class DNBXmlFilter extends NativeExportFilter {
 		$doc->formatOutput = true;
 
 		// prepare basic application objects required later
-		$deployment = $this->getDeployment();
+		$deployment = $this->getDeployment(); /** @var $deployment DNBExportDeployment */
 		$journal = $deployment->getContext();
-		$plugin = $deployment->getPlugin();
+		$plugin = $deployment->getPlugin(); /** @var $plugin DNBExportPlugin */
 		$cache = $plugin->getCache();
 		$request = Application::get()->getRequest();
 
