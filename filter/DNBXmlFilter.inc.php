@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @file plugins/importexport/dnb/filter/DNBXmlFilter.inc.php
+ * @file plugins/generic/dnb/filter/DNBXmlFilter.inc.php
  *
  * Copyright (c) 2021 Center for Digital Systems (CeDiS), Universitätsbibliothek Freie Universität Berlin
  * Distributed under the GNU GPL v3. For full terms see the plugin file LICENSE.
@@ -101,10 +101,34 @@ class DNBXmlFilter extends NativeExportFilter {
 		$yearYY = date('y', strtotime($datePublished));
 		$month = date('m', strtotime($datePublished));
 		$day = date('d', strtotime($datePublished));
-		$contributors = $submission->getAuthors();
 
-		// extract submission authors
-		$authors = array_filter($contributors, array($this, '_filterAuthors'));
+		// get contributers
+		$contributors = $publication->getData('authors');
+		// filter contributers by given name and family name, both should have at least one character [A-Z,a-z]
+		$contributors = array_filter((array) $contributors, function($contributor) use ($galleyLocale, $submission) {
+			$locale = $contributor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getData('locale');
+			$givenName = $contributor->getGivenName($locale);
+			$familyName = $contributor->getFamilyName($locale);
+			if (preg_match('/[A-Za-z]/', $givenName) && preg_match('/[A-Za-z]/', $familyName)) {
+				return true;
+			} else {
+				return false;
+			}
+		});
+
+		// and split into authors and translators
+		$authors = $translators = [];
+		foreach ($contributors as $contributor) {
+			$userGroup = Repo::userGroup()->get($contributor->getData('userGroupId'))->toArray();
+			$nameLocalKey = $userGroup['nameLocaleKey'];
+			if ($nameLocalKey == 'default.groups.name.author') {
+				$authors[] = $contributor;
+			} elseif ($nameLocalKey == 'default.groups.name.translator') {
+				$translators[] = $contributor;
+			};
+		}
+
+		// get primary author
 		if (is_array($authors) && !empty($authors)) {
 			// get and remove first author from the array
 			// so the array can be used later in the field 700 1 _
