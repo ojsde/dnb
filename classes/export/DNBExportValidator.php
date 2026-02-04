@@ -92,7 +92,7 @@ class DNBExportValidator {
 	 * Check if export filter is registered
 	 */
 	public function checkForExportFilter(): bool|array {
-		$filterDao = DAORegistry::getDAO('FilterDAO');
+		$filterDao = DAORegistry::getDAO('FilterDAO'); /** @var FilterDAO $filterDao */
 		$exportFilters = $filterDao->getObjectsByGroup($this->plugin->getSubmissionFilter());
 		
 		if (count($exportFilters) == 0) {

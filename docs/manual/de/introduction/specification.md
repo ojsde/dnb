@@ -1,7 +1,10 @@
 # Spezifikation des Marc 21 Formats zur Ablieferung von Netzpublikationen an die DNB aus OJS
 
 Die hier zusammengefassten Spezifikationen entstehen in enger Absprache mit der DNB.
-Stand: 17.2.2022
+Stand: 4.2.2026
+
+Allgemein:
+- Autorennamen werden nur an die DNB abgeliefert wenn Vor- und Nachname mindestens einen Buchstaben enthalten.
 
 Header
 ---

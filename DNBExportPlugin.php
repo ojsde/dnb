@@ -975,14 +975,15 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						assert(count($exportFilesNames) >= 1);
 						if (count($exportFilesNames) > 1) {
 							$finalExportFileName = $journalExportPath . $this->getPluginSettingsPrefix() . '-export.tar.gz';
-							$this->tarFiles($journalExportPath, $finalExportFileName, $exportFilesNames, true);
+							$this->createTarArchive($journalExportPath, $finalExportFileName, $exportFilesNames, true);
 						} else {
 							$finalExportFileName = reset($exportFilesNames);
 						}
+						// TODO @RS
 						// Stream the results to the browser
 						// Starting from OJS 3.3 this would be the prefered way to stream a file for download:
 						// 	Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
-						// However, this function exits execution after dowload not allowing for clean up of the intermediate zip file
+						// However, this function exits execution after download not allowing for clean up of the intermediate zip file
 						// We therfore copied the appropriate functions from OJS 3.2 FileManager
 						// It was suggested (Alec) to use OJS-queues for clean up which are supposed to come with OJS 3.4 
 						$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
@@ -1195,15 +1196,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 
 		// Delegate to PackageBuilder's createTarArchive method
 		$this->packageBuilder->createTarArchive($targetPath, $targetFile, $sourceFiles, $gzip);
-	}
-
-	/**
-	 * Legacy method name for backward compatibility
-	 * @deprecated Use createTarArchive() instead
-	 */
-	function tarFiles($targetPath, $targetFile, $sourceFiles = null, $gzip = false)
-	{
-		$this->createTarArchive($targetPath, $targetFile, $sourceFiles, $gzip);
 	}
 
 	/**

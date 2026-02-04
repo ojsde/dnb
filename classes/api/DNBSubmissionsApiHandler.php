@@ -18,6 +18,7 @@ use APP\submission\Submission;
 use Illuminate\Http\JsonResponse;
 use PKP\db\DAORegistry;
 use PKP\userGroup\UserGroup;
+use PKP\facades\Locale;
 
 class DNBSubmissionsApiHandler {
 	
@@ -62,7 +63,7 @@ class DNBSubmissionsApiHandler {
 			
 		// Get default submission list properties
 		$userGroups = UserGroup::withContextIds([$context->getId()])->get();
-		$genreDao = DAORegistry::getDAO('GenreDAO');
+		$genreDao = DAORegistry::getDAO('GenreDAO'); /** @var \PKP\submission\GenreDAO $genreDao */
 		$genres = $genreDao->getByContextId($context->getId())->toArray();
 		$userRoles = $request->getUser()->getRoles($context->getId());
 		$mappedItems = Repo::submission()->getSchemaMap()

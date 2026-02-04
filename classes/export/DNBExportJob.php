@@ -10,6 +10,8 @@ use APP\facades\Repo;
 use PKP\jobs\BaseJob;
 use PKP\config\Config;
 use APP\core\Services;
+use APP\plugins\generic\dnb\DNBPluginException;
+use APP\plugins\generic\dnb\DNBExportPlugin;
 
 if (!defined('DNB_STATUS_DEPOSITED')) define('DNB_STATUS_DEPOSITED', 'deposited');
 if (!defined('DNB_EXPORT_STATUS_FAILED')) define('DNB_EXPORT_STATUS_FAILED', 'failed');
@@ -174,7 +176,7 @@ class DNBExportJob extends BaseJob
     /**
      * Get the DNB Export Plugin from the registry
      */
-    private function getDNBExportPlugin()
+    private function getDNBExportPlugin():DNBExportPlugin
     {
         \PKP\plugins\PluginRegistry::loadCategory('generic');
         $plugin = \PKP\plugins\PluginRegistry::getPlugin('importexport', 'DNBExportPlugin');
@@ -254,14 +256,12 @@ class DNBExportJob extends BaseJob
         }
 
         if ($curlError || $response === false) {
-            curl_close($curlCh);
             fclose($fh);
 
             $error = $curlError ?: 'Unknown curl error';
             throw new \Exception('DNB upload failed: ' . $error);
         }
 
-        curl_close($curlCh);
         fclose($fh);
 
         // If we reach this point, the deposit was successful
@@ -307,7 +307,7 @@ class DNBExportJob extends BaseJob
         $errorMessage = '';
 
         // Check if it's a DNB-specific exception that can be handled by handleExceptions()
-        if ($exception instanceof \DNBPluginException || $exception instanceof \ErrorException) {
+        if ($exception instanceof DNBPluginException || $exception instanceof \ErrorException) {
             $errorTuple = $plugin->handleExceptions($exception, $this->submissionId);
 
             // handleExceptions() returns null for unhandled codes, so check the result
