@@ -66,7 +66,7 @@ class GalleyFilter {
 	 */
 	private function isRemoteGalleyPDFOrEPUB($galley): bool {
 		$label = strtolower($galley->getLabel());
-		$url = $galley->getData('urlRemote');
+		$url = $galley->getData('urlRemote')?$galley->getData('urlRemote'):'';
 		
 		// Check label or URL extension, apart from downloading the file this is the only information we have
 		// downloaded files will be verified at export time

@@ -117,7 +117,7 @@ class DNBSubmissionsApiHandler {
 
 			// Create warning message if issues detected with supplementary files
 			$msg = "";
-			if ($submission->getData('supplementaryNotAssignable')) {
+			if ($submission->getData($this->plugin->getPluginSettingsPrefix().'::supplementaryNotAssignable')) {
 				$plural = Locale::getLocale() == "de_DE" ? "n" : "s";
 				$msg = __('plugins.importexport.dnb.warning.supplementaryNotAssignable',
 					array(

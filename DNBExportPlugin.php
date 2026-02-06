@@ -123,6 +123,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					'verb' => 'save'
 				)
 			);
+		} else {
+			// We might be called from the cli and need to register
+			$this->register('generic', $this->getPluginPath());
 		}
 	}
 
@@ -171,31 +174,37 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 			// Add our variables to the submission schema
 			Hook::add('Schema::get::submission', function ($hookname, $params) {
 				$schema = &$params[0];
-				$schema->properties->{'dnb::lastError'} = (object)[
+				$schema->properties->{$this->getPluginSettingsPrefix().'::lastError'} = (object)[
 					'type' => 'string',
 					'apiSummary' => true,
 					'validation' => ['nullable'],
 					'description' => 'Last error message from DNB export',
 				];
-			$schema->properties->{'dnb::canExport'} = (object)[
+			$schema->properties->{$this->getPluginSettingsPrefix().'::canExport'} = (object)[
 				'type' => 'boolean',
 				'apiSummary' => true,
 				'validation' => ['nullable'],
 				'description' => 'Cached result: Can this submission be exported to DNB',
 			];
-			$schema->properties->{'dnb::supplementaryNotAssignable'} = (object)[
+			$schema->properties->{$this->getPluginSettingsPrefix().'::supplementaryNotAssignable'} = (object)[
 				'type' => 'boolean',
 				'apiSummary' => true,
 				'validation' => ['nullable'],
 				'description' => 'Cached result: Supplementary files cannot be unambiguously assigned',
 			];
-			$schema->properties->{'dnb::galleyCount'} = (object)[
+			$schema->properties->{$this->getPluginSettingsPrefix().'::hasSupplementary'} = (object)[
+				'type' => 'boolean',
+				'apiSummary' => true,
+				'validation' => ['nullable'],
+				'description' => 'Cached result: Has supplementary files',
+			];
+			$schema->properties->{$this->getPluginSettingsPrefix().'::galleyCount'} = (object)[
 				'type' => 'integer',
 				'apiSummary' => true,
 				'validation' => ['nullable'],
 				'description' => 'Cached count of PDF/EPUB galleys',
 			];
-			$schema->properties->{'dnb::supplementaryCount'} = (object)[
+			$schema->properties->{$this->getPluginSettingsPrefix().'::supplementaryCount'} = (object)[
 				'type' => 'integer',
 				'apiSummary' => true,
 				'validation' => ['nullable'],
@@ -276,7 +285,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		$canExport = $this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys, $newGalley);
 		
 		// Get the supplementaryNotAssignable flag that was set by canBeExported
-		$supplementaryNotAssignable = $submission->getData('supplementaryNotAssignable') ?? false;
+		$supplementaryNotAssignable = $submission->getData($this->getPluginSettingsPrefix().'::supplementaryNotAssignable') ?? false;
 		
 		// Cache the results in the database
 		Repo::submission()->edit($submission, [
@@ -687,7 +696,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						->toArray();
 
 					usort($logFiles, function ($f1, $f2) {
-						return $f1['lastModified'] < $f2['lastModified'];
+						return (int) $f1['lastModified'] < $f2['lastModified'];
 					});
 
 					$latestLogFile = [];
@@ -937,7 +946,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						if (is_array($result)) {
 							// If error occured add it to the list of errors
 							$errors = array_merge($errors, $result);
-							$fullyDeposited = false;
 						}
 
 						// deposit the package
@@ -954,15 +962,14 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 							if (is_array($result)) {
 								// If error occured add it to the list of errors
 								$errors = array_merge($errors, $result);
-								$fullyDeposited = false;
 							}
 						}
 					}
 
-					// Todo: Revise handling of success, is $fullyDeposited still used ???
-					if ($fullyDeposited && $this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
-						$this->updateSubmissionStatus($submission);
-					}
+					// // Todo: Revise handling of success, is $fullyDeposited still used ???
+					// if ($fullyDeposited && $this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
+					// 	$this->updateSubmissionStatus($submission);
+					// }
 				}
 
 				// Handle errors and cleanup

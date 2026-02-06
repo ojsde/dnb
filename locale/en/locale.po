@@ -350,3 +350,6 @@ msgstr "Curl returned false without an HTTP error message! This can occur, for e
 
 msgid "plugins.importexport.dnb.status.queued"
 msgstr "Queued"
+
+msgid "plugins.importexport.dnb.export.error.xmlExportFailed"
+msgstr "XML-Export failed. {$param}"

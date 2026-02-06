@@ -58,7 +58,7 @@ class DNBExportValidator {
 		// Filter supplementary files if configured
 		if ($this->plugin->getSetting($submission->getData('contextId'), 'submitSupplementaryMode') == 'all') {
 			$supplementaryGalleys = array_filter($galleys, [$this->galleyFilter, 'filterSupplementary']);
-			$supplementaryGalleys ? $submission->setData('hasSupplementary', true) : NULL;
+			$supplementaryGalleys ? $submission->setData($this->plugin->getPluginSettingsPrefix().'::hasSupplementary', true) : NULL;
 		}
 		
 		// Filter PDF and EPUB full text galleys
@@ -66,9 +66,9 @@ class DNBExportValidator {
 
 		// Flag if supplementary files can't be unambiguously assigned
 		if ((count($galleys) > 1) && (isset($supplementaryGalleys) && count($supplementaryGalleys) > 0)) {
-			$submission->setData('supplementaryNotAssignable', true);
+			$submission->setData($this->plugin->getPluginSettingsPrefix().'::supplementaryNotAssignable', true);
 		} else {
-			$submission->setData('supplementaryNotAssignable', false);
+			$submission->setData($this->plugin->getPluginSettingsPrefix().'::supplementaryNotAssignable', false);
 		}
 
 		return (count($galleys) > 0);

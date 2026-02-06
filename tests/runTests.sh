@@ -22,7 +22,7 @@ DEBUG_MODE="coverage"
 while getopts "d" opt; do
 	case "$opt" in
 		d)	DEBUG="--debug" # --verbose
-			DEBUG_MODE="debug"
+			DEBUG_MODE="debug,coverage"
 			export XDEBUG_SESSION=1
 			;;
 	esac

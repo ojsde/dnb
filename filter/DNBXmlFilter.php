@@ -78,13 +78,14 @@ class DNBXmlFilter extends NativeExportFilter {
 		$galleyLocale = $galley->getLocale();
 
 		$submissionId = $galley->getData('submissionId');
-		if ($cache->isCached('articles', $submissionId)) {
-			$submission = $cache->get('articles', $submissionId);
-		} else {
-			$submission = Repo::submission()->get($submissionId);
-			if ($submission) $cache->add($submission, null);
-		}
+		// if ($cache->isCached('articles', $submissionId)) {
+		// 	$submission = $cache->get('articles', $submissionId);
+		// } else {
+		// 	$submission = Repo::submission()->get($submissionId);
+		// 	if ($submission) $cache->add($submission, null);
+		// }
 
+		$submission = Repo::submission()->get($submissionId);
 		$issue = Repo::issue()->getBySubmissionId($submission->getId());
 		$issueId = $issue->getId();
 
@@ -109,12 +110,15 @@ class DNBXmlFilter extends NativeExportFilter {
 
 		// get contributers
 		$contributors = $publication->getData('authors');
+		if (!($contributors->count() > 0)) {
+			throw new DNBPluginException("DNBXmlFilter Error: At least one author is required.", DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
+		}
 		// filter contributers by given name and family name, both should have at least one character [A-Z,a-z]
 		$contributors = array_filter((array) $contributors->toArray(), function($contributor) use ($galleyLocale, $submission) {
 			$locale = $contributor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getData('locale');
 			$givenName = $contributor->getGivenName($locale);
 			$familyName = $contributor->getFamilyName($locale);
-			if (preg_match('/[A-Za-z]/', $givenName) && preg_match('/[A-Za-z]/', $familyName)) {
+			if (preg_match('/[A-Za-z]/', $givenName?:'') && preg_match('/[A-Za-z]/', $familyName?:'')) {
 				return true;
 			} else {
 				return false;
@@ -134,13 +138,11 @@ class DNBXmlFilter extends NativeExportFilter {
 		}
 
 		// get primary author
+		$firstAuthor = null;
 		if (is_array($authors) && !empty($authors)) {
 			// get and remove first author from the array
 			// so the array can be used later in the field 700 1 _
 			$firstAuthor = array_shift($authors);
-		}
-		if (!$firstAuthor) {
-			throw new DNBPluginException("DNBXmlFilter Error: ", DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
 		}
 		
 		// is open access
@@ -223,19 +225,25 @@ class DNBXmlFilter extends NativeExportFilter {
 		}
 
 		// Marc 100 first author
-		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
-		$locale = $firstAuthor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getData('locale');
-		$this->createSubfieldNode($doc, $datafield100, 'a', trim($firstAuthor->getFamilyName($locale)).', '.trim($firstAuthor->getGivenName($locale)));
-		if (!empty($firstAuthor->getData('orcidAccessToken'))) {
-            $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename(trim($firstAuthor->getOrcid())));
-    	}
-		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
+		if ($firstAuthor) {
+			// Historically all publications require at least one author
+			// With the changes applied in 01/2026 concerning author content filtering (see above)
+			// it might happen that there is no author left after filtering, only in this case (author exists but name is filtred)
+			// the DNB allows field 100 to be skipped
+			$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
+			$locale = $firstAuthor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getData('locale');
+			$this->createSubfieldNode($doc, $datafield100, 'a', trim($firstAuthor->getFamilyName($locale)).', '.trim($firstAuthor->getGivenName($locale)));
+			if (!empty($firstAuthor->getData('orcidAccessToken'))) {
+				$this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename(trim($firstAuthor->getOrcid())));
+			}
+			$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
+		}
 
 		// Marc 254 title
 		// title
 		;
-		$title = $publication->getLocalizedData('title', $galleyLocale);
-		if (empty($title)) $title = $publication->getLocalizedData('title', $submission->getData('locale'));
+		$title = $publication->getLocalizedTitle($galleyLocale);
+		if (empty($title)) $title = $publication->getLocalizedTitle($submission->getData('locale'));
 		assert(!empty($title));
 		//remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
 		$title = preg_replace("#[\s\n\r]+#",' ',$title);
@@ -243,8 +251,8 @@ class DNBXmlFilter extends NativeExportFilter {
 		$this->createSubfieldNode($doc, $datafield245, 'a', trim($title));
 
 		// subtitle
-		$subTitle = $publication->getLocalizedData('subtitle', $galleyLocale);
-		if (empty($subTitle)) $subTitle = $publication->getLocalizedData('subtitle', $submission->getData('locale'));
+		$subTitle = $publication->getLocalizedSubTitle($galleyLocale);
+		if (empty($subTitle)) $subTitle = $publication->getLocalizedSubTitle($submission->getData('locale'));
 		if (!empty($subTitle)) {
 		    //remove line breaks in case DNB doesn't like them (they are allowed in XML 1.0 spec)
 		    $subTitle = preg_replace("#[\s\n\r]+#",' ',$subTitle); 
@@ -257,7 +265,7 @@ class DNBXmlFilter extends NativeExportFilter {
 
 		// Marc 300 Supplementary
 		// this package will be delivered including supplementary material
-		if ($submission->getData('hasSupplementary')) {
+		if ($submission->getData($plugin->getPluginSettingsPrefix().'::hasSupplementary')) {
 			// !!! Do not change this message without consultation of the DNB !!!
 			$datafield300 = $this->createDatafieldNode($doc, $recordNode, '300', ' ', ' ');
 			$this->createSubfieldNode($doc, $datafield300, 'e', DNB_MSG_SUPPLEMENTARY);
@@ -275,7 +283,7 @@ class DNBXmlFilter extends NativeExportFilter {
 
 		// Marc 500 additional information
 		// additional info field in case supplememtary galleys cannot be unambiguously assigned to the main document galleys
-		if ($submission->getData('supplementaryNotAssignable')) {
+		if ($submission->getData($plugin->getPluginSettingsPrefix().'::supplementaryNotAssignable')) {
 			// !!! Do not change this message without consultation of the DNB !!!
 			$supplementaryDatafield500 = $this->createDatafieldNode($doc, $recordNode, '500', ' ', ' ');
 			$this->createSubfieldNode($doc, $supplementaryDatafield500, 'a', DNB_MSG_SUPPLEMENTARY_AMBIGUOUS);
@@ -464,14 +472,14 @@ class DNBXmlFilter extends NativeExportFilter {
 		$matches = array();
 		//use for debugging:
 		//if ($datafieldNode->getAttribute('tag') == '520') {$value = $value . mb_chr(0,'utf-8').chr(11) . $value;}
-		$res = preg_match_all('/[^\x09\x0A\x0D\x20-\xFF]/', $value, $matches,PREG_OFFSET_CAPTURE);
+		$res = preg_match_all('/[^\x09\x0A\x0D\x20-\xFF]/', $value?:'', $matches,PREG_OFFSET_CAPTURE);
     	if ($res != 0) {
 		    // libxml will strip input at the first occurance of an non-allowed character, subsequent character will be lost
 		    // we don't remove these characters automatically because user has to be aware of the issue
     	    throw new DNBPluginException("Character code ".ord($matches[0][0][0])." found at position ".$matches[0][0][1]." in MARC21 datafield node ".$datafieldNode->getAttribute('tag')." code ".$code, DNB_XML_NON_VALID_CHARCTERS_EXCEPTION);
 		}
 
-		$node->appendChild($doc->createTextNode($value));
+		$node->appendChild($doc->createTextNode($value?:''));
 		$datafieldNode->appendChild($node);
 		$node->setAttribute('code', $code);
 	}

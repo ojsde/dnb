@@ -359,3 +359,6 @@ msgstr "Curl erzeugte den Rückgabewert False ohne eine HTTP-Fehlermeldung! Dies
 
 msgid "plugins.importexport.dnb.status.queued"
 msgstr "Warteschlange"
+
+msgid "plugins.importexport.dnb.export.error.xmlExportFailed"
+msgstr "XML-Export fehlgeschlagen. {$param}"
