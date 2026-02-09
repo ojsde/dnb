@@ -10,20 +10,6 @@
     display:none;
 }
 
-.dnb_not_deposited {
-    background-color: #D00A6C;
-    border-color: #D00A6C;
-    color: white;
-    padding-left: 0.5rem;
-}
-
-.dnb_deposited {
-    background-color: #00b28d;
-    border-color: #00b28d;
-    color: white;
-    padding-left: 0.5rem;
-}
-
 .dnb_info_center {
 	right: 7rem;
     display: flex;
