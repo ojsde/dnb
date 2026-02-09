@@ -74,5 +74,7 @@ if [ "$DEBUG" = "--debug" ]; then
 fi
 
 echo "=========================================="
-set -x # Show command being executed
+# set -x # Show command being executed
 $phpunit $DEBUG $TEST_CONF1 $OUTPUT_FLAG "$TEST_PATH"
+# set +x # Stop showing commands
+echo "=========================================="
