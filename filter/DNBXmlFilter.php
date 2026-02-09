@@ -76,18 +76,9 @@ class DNBXmlFilter extends NativeExportFilter {
 		$issue = $submission = $galleyFile = null;
 		$galley = $pubObject;
 		$galleyLocale = $galley->getLocale();
-
 		$submissionId = $galley->getData('submissionId');
-		// if ($cache->isCached('articles', $submissionId)) {
-		// 	$submission = $cache->get('articles', $submissionId);
-		// } else {
-		// 	$submission = Repo::submission()->get($submissionId);
-		// 	if ($submission) $cache->add($submission, null);
-		// }
-
 		$submission = Repo::submission()->get($submissionId);
 		$issue = Repo::issue()->getBySubmissionId($submission->getId());
-		$issueId = $issue->getId();
 
 		// abort export in case any URN is set on the submission/article level, this is a special case that has to be discussed with DNB and implemented differently in each case
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
@@ -345,11 +336,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			}
 		}
 
-		// Marc 563 keywords
-		// $submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
-		// $controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getCurrentPublication()->getId(), array($galleyLocale));
-
-
+		// Marc 653 keywords
 		$keywords = $publication->getLocalizedData('keywords', $galleyLocale);
 
 		if (!empty($keywords)) {
