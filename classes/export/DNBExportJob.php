@@ -22,6 +22,8 @@ if (!defined('DNB_WEBDAV_PORT')) define('DNB_WEBDAV_PORT', 443);
 
 class DNBExportJob extends BaseJob
 {
+    public const DISPLAY_NAME_PREFIX = 'DNB Export Job - Submission';
+
     protected int $galleyId;
     protected int $contextId;
     protected int $submissionId;
@@ -170,7 +172,7 @@ class DNBExportJob extends BaseJob
      */
     public function displayName(): string
     {
-        return sprintf('DNB Export Job - Submission %d, Galley %d', $this->submissionId, $this->galleyId);
+        return sprintf('%s %d, Galley %d', self::DISPLAY_NAME_PREFIX, $this->submissionId, $this->galleyId);
     }
 
     /**

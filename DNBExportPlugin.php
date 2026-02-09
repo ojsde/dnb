@@ -24,11 +24,13 @@ use APP\template\TemplateManager;
 use PKP\config\Config;
 use APP\submission\Submission;
 use APP\plugins\generic\dnb\classes\components\DNBSubmissionsList;
+use APP\plugins\generic\dnb\classes\components\DNBCatalogTable;
 use PKP\plugins\GenericPlugin;
 use ErrorException;
 use PKP\scheduledTask\ScheduledTaskHelper as PKPScheduledTaskHelper;
 use PKP\userGroup\UserGroup;
 use PKP\core\PKPRequest;
+use PKP\core\PKPApplication;
 
 // Import constants
 require_once __DIR__ . '/classes/form/DNBSettingsForm.php';
@@ -43,6 +45,7 @@ use APP\plugins\generic\dnb\classes\api\DNBHelpApiHandler;
 use APP\plugins\generic\dnb\classes\api\DNBSubmissionsApiHandler;
 use APP\plugins\generic\dnb\classes\deposit\DNBDepositService;
 use APP\plugins\generic\dnb\classes\export\DNBPackageBuilder;
+use APP\plugins\generic\dnb\classes\export\DNBExportJob;
 use APP\plugins\generic\dnb\classes\export\DNBFileManager;
 use APP\plugins\generic\dnb\classes\export\DNBExportValidator;
 use APP\plugins\generic\dnb\classes\filter\GalleyFilter;
@@ -76,6 +79,113 @@ if (!DEBUG) {
 
 class DNBExportPlugin extends PubObjectsExportPlugin
 {
+	/**
+	 * @copydoc Plugin::manage()
+	 */
+	public function manage($args, $request)
+	{
+		switch ($request->getUserVar('verb')) {
+			case 'clearFailedDnbJobs':
+				if (!$request->checkCSRF()) {
+					return new \PKP\core\JSONMessage(false, __('form.csrfInvalid'));
+				}
+
+				$user = $request->getUser();
+				$context = $request->getContext();
+				if (!$user || !$context) {
+					return new \PKP\core\JSONMessage(false, __('common.error'));
+				}
+
+				$isManager = $user->hasRole([Role::ROLE_ID_MANAGER], $context->getId());
+				$isSiteAdmin = $user->hasRole([Role::ROLE_ID_SITE_ADMIN], PKPApplication::SITE_CONTEXT_ID);
+				if (!$isManager && !$isSiteAdmin) {
+					return new \PKP\core\JSONMessage(false, __('api.403.unauthorized'));
+				}
+
+				$displayNamePrefix = DNBExportJob::DISPLAY_NAME_PREFIX;
+				$failedJobs = Repo::failedJob()
+					->newQuery()
+					->where(function ($query) use ($displayNamePrefix) {
+						$query->where('payload', 'like', '%"displayName":"' . $displayNamePrefix . '%')
+							->orWhere('payload', 'like', '%DNBExportJob%');
+					})
+					->get(['id', 'payload']);
+
+				$failedJobIds = $failedJobs->pluck('id')->all();
+				if (empty($failedJobIds)) {
+					return new \PKP\core\JSONMessage(true, __('plugins.importexport.dnb.failedJobs.success', ['count' => 0]));
+				}
+
+				$submissionIds = [];
+				foreach ($failedJobs as $failedJob) {
+					$payloadArray = is_array($failedJob->payload) ? $failedJob->payload : [];
+					$displayName = $failedJob->display_name ?? ($payloadArray['displayName'] ?? '');
+					$displayNamePattern = '/^' . preg_quote($displayNamePrefix, '/') . '\s+(\d+)/';
+					if (preg_match($displayNamePattern, (string) $displayName, $matches)) {
+						$submissionIds[] = (int) $matches[1];
+						continue;
+					}
+
+					$payloadJson = $payloadArray ? json_encode($payloadArray) : (string) $failedJob->payload;
+					if (preg_match('/submissionId"\s*:\s*(\d+)/', $payloadJson, $matches)) {
+						$submissionIds[] = (int) $matches[1];
+						continue;
+					}
+					if (preg_match('/submissionId";i:(\d+)/', $payloadJson, $matches)) {
+						$submissionIds[] = (int) $matches[1];
+						continue;
+					}
+
+					$command = $failedJob->command ?? [];
+					if (is_array($command)) {
+						if (isset($command['submissionId'])) {
+							$submissionIds[] = (int) $command['submissionId'];
+							continue;
+						}
+						if (isset($command["\0*\0submissionId"])) {
+							$submissionIds[] = (int) $command["\0*\0submissionId"];
+							continue;
+						}
+					}
+				}
+
+				$deletedCount = Repo::failedJob()->deleteJobs(null, $failedJobIds);
+				if (!empty($submissionIds)) {
+					$submissionIds = array_values(array_unique($submissionIds));
+					$statusKey = $this->getDepositStatusSettingName();
+					$lastErrorKey = $this->getPluginSettingsPrefix() . '::lastError';
+					foreach ($submissionIds as $submissionId) {
+						$submission = Repo::submission()->get($submissionId);
+						if (!$submission || $submission->getData('contextId') !== $context->getId()) {
+							continue;
+						}
+						Repo::submission()->edit($submission, [
+							$statusKey => self::EXPORT_STATUS_NOT_DEPOSITED,
+							$lastErrorKey => null,
+						]);
+					}
+				}
+
+				return new \PKP\core\JSONMessage(true, __('plugins.importexport.dnb.failedJobs.success', ['count' => $deletedCount]));
+			case 'fetchCatalogInfo':
+				$context = $request->getContext();
+				if (!$context) {
+					return new \PKP\core\JSONMessage(false, __('common.error'));
+				}
+				try {
+					$dbnCatalogInfoProvider = new DNBCatalogInfoProvider();
+					$dnbCatalogInfo = $dbnCatalogInfoProvider->getCatalogInfo($context, Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix());
+					$this->updateSetting($context->getId(), 'dnbCatalogInfo', $dnbCatalogInfo, 'object');
+					return new \PKP\core\JSONMessage(true, __('plugins.importexport.dnb.settings.form.dnbCatalog.fetchSuccess'));
+				} catch (\Throwable $e) {
+					error_log($e->getMessage());
+					$param = __('plugins.importexport.dnb.error.catalogQueryFailed.param', array('error' => $e->getMessage()));
+					return new \PKP\core\JSONMessage(false, __('plugins.importexport.dnb.error.catalogQueryFailed', ['param' => $param]));
+				}
+		}
+
+		return parent::manage($args, $request);
+	}
 
 	private $_settingsForm;
 	private $_settingsFormURL;
@@ -508,7 +618,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 				foreach ($publishedSubmissions as $submission) {
 					$publication = $submission->getCurrentPublication();
 					$status = $submission->getData($pluginPrefix . '::status');
-					if (empty($status)) $nNotRegistered++;
+					if (empty($status) || $status === self::EXPORT_STATUS_NOT_DEPOSITED) {
+						$nNotRegistered++;
+					}
 					$lastError = $submission->getData($pluginPrefix . '::lastError');
 
 					// Get issue information from cached data
@@ -617,16 +729,29 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					'currentLocale' => $currentLocale
 				]);
 
+				$dnbCatalogInfo = $this->getSetting($this->_currentContextId, 'dnbCatalogInfo');
+				if (!empty($dnbCatalogInfo)) {
+					$templateMgr->assign('dnbCatalogInfo', $dnbCatalogInfo);
+				}
+				$dnbCatalogTable = new DNBCatalogTable($dnbCatalogInfo ?? []);
+				$catalogConfig = $dnbCatalogTable->getConfig();
+
 				$templateMgr->setConstants([
 					'FORM_DNB_SETTINGS',
 					'DNB_SUBMISSIONS_LIST',
+					'DNB_CATALOG_TABLE',
 				]);
 
+				$components = [
+					FORM_DNB_SETTINGS => $settingsFormConfig,
+					DNB_SUBMISSIONS_LIST => $submissionsConfig,
+				];
+				if (!empty($dnbCatalogInfo)) {
+					$components[DNB_CATALOG_TABLE] = $catalogConfig;
+				}
+
 				$state = [
-					'components' => [
-						FORM_DNB_SETTINGS => $settingsFormConfig,
-						DNB_SUBMISSIONS_LIST => $submissionsConfig
-					],
+					'components' => $components,
 				];
 				$templateMgr->setState($state);
 
@@ -674,9 +799,40 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					"contexts/" . $context->getId() . "/_plugins/generic/dnb/help"
 				);
 
+				$catalogFetchUrl = $request->getDispatcher()->url(
+					$request,
+					Application::ROUTE_COMPONENT,
+					null,
+					'grid.settings.plugins.settingsPluginGridHandler',
+					'manage',
+					null,
+					array(
+						'plugin' => $this->getName(),
+						'category' => 'importexport',
+						'verb' => 'fetchCatalogInfo'
+					)
+				);
+
+				$clearFailedJobsUrl = $request->getDispatcher()->url(
+					$request,
+					Application::ROUTE_COMPONENT,
+					null,
+					'grid.settings.plugins.settingsPluginGridHandler',
+					'manage',
+					null,
+					array(
+						'plugin' => $this->getName(),
+						'category' => 'importexport',
+						'verb' => 'clearFailedDnbJobs'
+					)
+				);
+
 				$script_data = [
-					'helpUrl' => $helpUrl
+					'helpUrl' => $helpUrl,
+					'catalogFetchUrl' => $catalogFetchUrl,
 				];
+
+				$templateMgr->assign('clearFailedJobsUrl', $clearFailedJobsUrl);
 
 				// provide url for help pages
 				$templateMgr->addJavaScript(
@@ -714,23 +870,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						);
 					}
 					$templateMgr->assign('latestLogFile', $latestLogFile);
-				}
-
-				// query dnb catalog
-				if ($this->getSetting($this->_currentContextId, 'dnbCatalog')) {
-
-					try {
-						$dbnCatalogInfoProvider = new DNBCatalogInfoProvider();
-						$dnbCatalogInfo = $dbnCatalogInfoProvider->getCatalogInfo($context, Config::getVar('files', 'files_dir') . '/' . $this->getPluginSettingsPrefix());
-						$templateMgr->assign('dnbCatalogInfo', $dnbCatalogInfo);
-					} catch (\Throwable $e) {
-						error_log($e->getMessage());
-						$param = __('plugins.importexport.dnb.error.catalogQueryFailed.param', array('error' => $e->getMessage()));
-						$this->errorNotification(
-							$request,
-							array(array('plugins.importexport.dnb.error.catalogQueryFailed', $param))
-						);
-					}
 				}
 
 				$templateMgr->display($this->getTemplateResource('index.tpl'));

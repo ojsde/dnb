@@ -26,4 +26,37 @@ jQuery(function() {
 			helpLocale: $.pkp.app.currentLocale,
 		}
 	);
+
+	$(document).on('click', '[data-dnb-catalog-fetch]', function(event) {
+		event.preventDefault();
+		const $button = $(this);
+		const $status = $button.closest('p').find('.dnbCatalogFetch__status');
+		const fetchUrl = $.pkp.plugins.importexport.dnbexportplugin.catalogFetchUrl;
+		if (!fetchUrl) {
+			return;
+		}
+
+		$button.prop('disabled', true);
+		$status.text('');
+		$.ajax({
+			url: fetchUrl,
+			type: 'POST',
+			data: {verb: 'fetchCatalogInfo'},
+			headers: {
+				'X-Csrf-Token': pkp.currentUser.csrfToken
+			},
+		})
+			.done(function() {
+				window.location.reload();
+			})
+			.fail(function(xhr) {
+				const message = xhr && xhr.responseJSON && xhr.responseJSON.content
+					? xhr.responseJSON.content
+					: 'Request failed.';
+				$status.text(message);
+			})
+			.always(function() {
+				$button.prop('disabled', false);
+			});
+	});
 })

@@ -2,7 +2,7 @@
 	<div class="dnbSubmissionsTable">
 		<form ref="exportForm" id="exportXmlForm" class="pkp_form dnb_form" action="" method="post">
 			<!-- Action Buttons - Before Table -->
-			<div class="dnb-button-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+			<div class="dnb-button-container">
 				<PkpButton id="dnb_deposit" @click="handleAction('deposit')"
 					:disabled="selectedSubmissions.length === 0 || isSubmitting" class="bg-default">
 					<span v-if="isSubmitting" class="dnb-spinner"></span>
@@ -36,7 +36,17 @@
 					class="bg-default">
 					{{ data.i18n.deselectAll }}
 				</PkpButton>
+				<PkpButton v-if="data.canClearFailedJobs" @click="handleClearFailedJobs"
+					:disabled="isSubmitting || isClearingFailedJobs" class="bg-default">
+					<span v-if="isClearingFailedJobs" class="dnb-spinner"></span>
+					{{ data.i18n.clearFailedJobs }}
+				</PkpButton>
 			</div>
+
+			<notification v-if="actionMessage" :type="actionMessageType" style="margin-bottom: 1rem;">
+				<icon v-if="actionMessageType === 'warning'" icon="exclamation-triangle" :inline="true" />
+				{{ actionMessage }}
+			</notification>
 
 			<!-- Error notification -->
 			<!-- Loop through error messages -->
@@ -53,7 +63,7 @@
 			<PkpTable>
 				<template #top-controls>
 					<!-- Search and Filter Controls -->
-					<div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+					<div class="dnb-top-controls" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
 						<!-- Search Field -->
 						<div style="width: 100%; max-width: 28rem;">
 							<div @keydown.enter.prevent="addSearchFilter">
@@ -76,36 +86,43 @@
 							</div>
 						</div>
 						<!-- Status Filter Buttons -->
-						<div class="dnb-filter-buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+						<div class="dnb-filter-buttons">
 							<button type="button" @click="setStatusFilter(null)"
 								:class="['dnb-filter-btn', 'dnb-filter-all', activeStatusFilter === null ? 'dnb-filter-active' : '']">
 								{{ data.i18n.filterAll }}
+								<span class="pkpBadge dnb-filter-badge">{{ statusCounts.all }}</span>
 							</button>
 							<button type="button" @click="setStatusFilter(data.constants.EXPORT_STATUS_NOT_DEPOSITED)"
 								:class="['dnb-filter-btn', 'dnb-filter-not-deposited', activeStatusFilter === data.constants.EXPORT_STATUS_NOT_DEPOSITED ? 'dnb-filter-active' : '']">
 								{{ data.i18n.filterNotDeposited }}
+								<span class="pkpBadge dnb-filter-badge">{{ statusCounts.notDeposited }}</span>
 							</button>
 							<button type="button" @click="setStatusFilter(data.constants.DNB_STATUS_DEPOSITED)"
 								:class="['dnb-filter-btn', 'dnb-filter-deposited', activeStatusFilter === data.constants.DNB_STATUS_DEPOSITED ? 'dnb-filter-active' : '']">
 								{{ data.i18n.filterDeposited }}
+								<span class="pkpBadge dnb-filter-badge">{{ statusCounts.deposited }}</span>
 							</button>
 							<button type="button" @click="setStatusFilter(data.constants.DNB_EXPORT_STATUS_QUEUED)"
 								:class="['dnb-filter-btn', 'dnb-filter-queued', activeStatusFilter === data.constants.DNB_EXPORT_STATUS_QUEUED ? 'dnb-filter-active' : '']">
 								{{ data.i18n.filterQueued }}
+								<span class="pkpBadge dnb-filter-badge">{{ statusCounts.queued }}</span>
 							</button>
 							<button type="button" @click="setStatusFilter(data.constants.DNB_EXPORT_STATUS_FAILED)"
 								:class="['dnb-filter-btn', 'dnb-filter-failed', activeStatusFilter === data.constants.DNB_EXPORT_STATUS_FAILED ? 'dnb-filter-active' : '']">
 								{{ data.i18n.filterFailed }}
+								<span class="pkpBadge dnb-filter-badge">{{ statusCounts.failed }}</span>
 							</button>
 							<button type="button"
 								@click="setStatusFilter(data.constants.EXPORT_STATUS_MARKEDREGISTERED)"
 								:class="['dnb-filter-btn', 'dnb-filter-marked', activeStatusFilter === data.constants.EXPORT_STATUS_MARKEDREGISTERED ? 'dnb-filter-active' : '']">
 								{{ data.i18n.filterMarkedRegistered }}
+								<span class="pkpBadge dnb-filter-badge">{{ statusCounts.markedRegistered }}</span>
 							</button>
 							<button type="button"
 								@click="setStatusFilter(data.constants.DNB_EXPORT_STATUS_MARKEXCLUDED)"
 								:class="['dnb-filter-btn', 'dnb-filter-excluded', activeStatusFilter === data.constants.DNB_EXPORT_STATUS_MARKEXCLUDED ? 'dnb-filter-active' : '']">
 								{{ data.i18n.filterExcluded }}
+								<span class="pkpBadge dnb-filter-badge">{{ statusCounts.excluded }}</span>
 							</button>
 						</div>
 					</div>
@@ -228,8 +245,10 @@
 // Imports
 // ==========================================
 import { ref, computed } from 'vue';
+const { useModal } = pkp.modules.useModal;
 const { useLocalize } = pkp.modules.useLocalize;
 const { t } = useLocalize();
+const { openDialog } = useModal();
 
 // ==========================================
 // Props & Emits
@@ -252,6 +271,9 @@ const activeStatusFilter = ref(null);
 const filteredItems = ref([]);
 const isSubmitting = ref(false);
 const currentPage = ref(1);
+const isClearingFailedJobs = ref(false);
+const actionMessage = ref('');
+const actionMessageType = ref('success');
 let debounceTimeout = null;
 
 // Validation constants
@@ -359,6 +381,48 @@ const noResultsText = computed(() => {
 		return props.data.i18n.noResultsFiltered;
 	}
 	return props.data.i18n.noResults;
+});
+
+/**
+ * Counts for status filter badges
+ */
+const statusCounts = computed(() => {
+	const counts = {
+		all: props.data.items.length,
+		notDeposited: 0,
+		deposited: 0,
+		queued: 0,
+		failed: 0,
+		markedRegistered: 0,
+		excluded: 0,
+	};
+
+	props.data.items.forEach((item) => {
+		switch (item.dnbStatusConst) {
+			case props.data.constants.EXPORT_STATUS_NOT_DEPOSITED:
+				counts.notDeposited += 1;
+				break;
+			case props.data.constants.DNB_STATUS_DEPOSITED:
+				counts.deposited += 1;
+				break;
+			case props.data.constants.DNB_EXPORT_STATUS_QUEUED:
+				counts.queued += 1;
+				break;
+			case props.data.constants.DNB_EXPORT_STATUS_FAILED:
+				counts.failed += 1;
+				break;
+			case props.data.constants.EXPORT_STATUS_MARKEDREGISTERED:
+				counts.markedRegistered += 1;
+				break;
+			case props.data.constants.DNB_EXPORT_STATUS_MARKEXCLUDED:
+				counts.excluded += 1;
+				break;
+			default:
+				break;
+		}
+	});
+
+	return counts;
 });
 
 // ==========================================
@@ -522,6 +586,69 @@ function handleAction(action) {
 }
 
 /**
+ * Clear failed DNB export jobs from the queue
+ */
+async function handleClearFailedJobs() {
+	if (!props.actionUrls.clearFailedJobs || isClearingFailedJobs.value) return;
+
+	const confirmMessage = props.data.i18n.clearFailedJobsConfirm || 'Clear failed DNB jobs?';
+	openDialog({
+		title: props.data.i18n.clearFailedJobs || t('common.confirm'),
+		message: confirmMessage,
+		actions: [
+			{
+				label: t('common.confirm'),
+				isPrimary: true,
+				callback: (close) => {
+					close();
+					performClearFailedJobs();
+				},
+			},
+			{
+				label: t('common.cancel'),
+				callback: (close) => close(),
+			},
+		],
+	});
+}
+
+async function performClearFailedJobs() {
+
+	isClearingFailedJobs.value = true;
+	actionMessage.value = '';
+	actionMessageType.value = 'success';
+
+	try {
+		const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+		const csrfToken = props.data.csrfToken || window.pkp?.currentUser?.csrfToken || metaCsrf?.getAttribute('content') || '';
+		const body = new URLSearchParams({ csrfToken });
+		const response = await fetch(props.actionUrls.clearFailedJobs, {
+			method: 'POST',
+			headers: {
+				'X-Csrf-Token': csrfToken,
+				'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+			},
+			body: body.toString(),
+		});
+
+		const result = await response.json();
+		if (result?.status) {
+			actionMessageType.value = 'success';
+			actionMessage.value = result.content || props.data.i18n.clearFailedJobsSuccess;
+		} else {
+			actionMessageType.value = 'warning';
+			actionMessage.value = result?.content || props.data.i18n.clearFailedJobsError;
+		}
+	} catch (error) {
+		console.error('Failed to clear failed jobs:', error);
+		actionMessageType.value = 'warning';
+		actionMessage.value = props.data.i18n.clearFailedJobsError;
+	} finally {
+		isClearingFailedJobs.value = false;
+	}
+}
+
+/**
  * Handle pagination page change
  * @param {number} page - The new page number
  */
@@ -573,12 +700,25 @@ function setPage(page) {
 	width: 100% !important;
 }
 
+/* Allow the table top-controls container to shrink with the viewport */
+.dnbSubmissionsTable .flex-shrink-0 {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.dnbSubmissionsTable .dnb-top-controls {
+	max-width: 100%;
+	width: 100%;
+}
+
 .dnbSubmissionsTable .dnb-button-container {
 	display: flex !important;
 	flex-wrap: wrap !important;
 	gap: var(--dnb-gap-sm);
+	row-gap: var(--dnb-gap-sm);
 	max-width: 100% !important;
 	width: 100% !important;
+	margin-bottom: var(--dnb-gap-md);
 }
 
 .dnbSubmissionsTable .dnb-button-container .pkpButton {
@@ -621,6 +761,16 @@ function setPage(page) {
 	border-color: var(--dnb-color-not-deposited-text);
 }
 
+.dnb-filter-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--dnb-gap-sm);
+	row-gap: var(--dnb-gap-sm);
+	align-items: center;
+	max-width: 100%;
+	white-space: normal;
+}
+
 .dnb-filter-buttons .dnb-filter-btn {
 	padding: var(--dnb-padding-btn);
 	font-size: var(--dnb-font-size-sm);
@@ -631,6 +781,11 @@ function setPage(page) {
 	cursor: pointer;
 	transition: all var(--dnb-transition-speed);
 	font-weight: 400;
+	flex: 0 1 auto;
+	white-space: normal;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
 }
 
 .dnb-filter-buttons .dnb-filter-btn:hover {
@@ -648,6 +803,11 @@ function setPage(page) {
 .dnb-filter-buttons .dnb-filter-btn.dnb-filter-active:hover {
 	background-color: var(--dnb-color-primary-hover);
 	border-color: var(--dnb-color-primary-hover);
+}
+
+.dnb-filter-badge {
+	margin-left: 0.35rem;
+	color: currentColor;
 }
 
 .dnb-search-filter-chip {

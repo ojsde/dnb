@@ -133,7 +133,7 @@ msgstr ""
 "\t\t</p>"
 
 msgid "plugins.importexport.dnb.deposited.success"
-msgstr "The selected articles were deposited!"
+msgstr "The selected articles were sent to the job queue."
 
 msgid "plugins.importexport.dnb.deposit"
 msgstr "Deposit"
@@ -152,6 +152,18 @@ msgstr "Select All"
 
 msgid "plugins.importexport.dnb.deselectAll"
 msgstr "Deselect All"
+
+msgid "plugins.importexport.dnb.failedJobs.clearButton"
+msgstr "Reset failed DNB export jobs"
+
+msgid "plugins.importexport.dnb.failedJobs.confirm"
+msgstr "Delete all failed DNB export jobs from the queue? This action also resets the article status to \"Not registered\" and deletes the last error message."
+
+msgid "plugins.importexport.dnb.failedJobs.success"
+msgstr "Cleared {$count} failed DNB export job(s)."
+
+msgid "plugins.importexport.dnb.failedJobs.error"
+msgstr "Failed to clear DNB export jobs."
 
 msgid "plugins.importexport.dnb.export.error.articleCannotBeExported"
 msgstr "The article {$param} (or one of its supplementary galleys) cannot be exported because it has no galley file labeled as document or the file type of the galley or supplementary galley is not PDF or EPUB."
@@ -333,8 +345,14 @@ msgstr "This features queries the DNB catalog for entries belonging to the ISSN 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel"
 msgstr "Enable DNB catalog queries"
 
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.fetchButton"
+msgstr "Fetch catalog info"
+
 msgid "plugins.importexport.dnb.dnbCataloTabTitle"
 msgstr "DNB Catalog Info"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.fetchSuccess"
+msgstr "Catalog information updated."
 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.catalogInfo.issnNotFound"
 msgstr "The ISSN for the journals was not found in the DNB catalog."

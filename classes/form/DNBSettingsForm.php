@@ -18,8 +18,8 @@ use APP\core\Application;
 use PKP\components\forms\FormComponent;
 use PKP\components\forms\FieldText;
 use PKP\components\forms\FieldOptions;
+use PKP\components\forms\FieldHTML;
 use PKP\validation\ValidatorFactory;
-use Illuminate\Http\JsonResponse;
 
 define('FORM_DNB_SETTINGS', 'dnbsettingsform');
 
@@ -172,15 +172,19 @@ class DNBSettingsForm extends FormComponent {
 		$this->addGroup([
 			'id' => 'experimentalFeatures',
 			'label' => __('plugins.importexport.dnb.settings.form.experimentalFeatures.title'),
-		])->addField(new FieldOptions('dnbCatalog', [
-				'label' => __('plugins.importexport.dnb.settings.form.dnbCatalog.label'),
-				'description' => __('plugins.importexport.dnb.settings.form.dnbCatalog.description'),
-				'groupId' => 'experimentalFeatures',
-				'options' => [
-					['value' => true, 'label' => __('plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel')],
-				],
-				'default' => false,
-				'value' => (bool)$plugin->getSetting($contextId, 'dnbCatalog'),
+		]);
+
+		$catalogDescription = __('plugins.importexport.dnb.settings.form.dnbCatalog.description');
+		$catalogButtonLabel = __('plugins.importexport.dnb.settings.form.dnbCatalog.fetchButton');
+		$catalogHtml = '<p>' . $catalogDescription . '</p>' .
+			'<p><button type="button" class="pkp_button" data-dnb-catalog-fetch="1">' .
+			$catalogButtonLabel .
+			'</button> <span class="dnbCatalogFetch__status" aria-live="polite"></span></p>';
+
+		$this->addField(new FieldHTML('dnbCatalogFetch', [
+			'label' => __('plugins.importexport.dnb.settings.form.dnbCatalog.label'),
+			'description' => $catalogHtml,
+			'groupId' => 'experimentalFeatures',
 		]));
 	}
 
@@ -204,7 +208,7 @@ class DNBSettingsForm extends FormComponent {
 				'regex' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.error'),
 				'required_unless' => __('plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired')
 			];
-			$validator = \PKP\validation\ValidatorFactory::make($props, $rules, $messages);
+			$validator = ValidatorFactory::make($props, $rules, $messages);
 
 			if ($validator->fails()) {
 				$errors = $validator->errors()->getMessages();
@@ -250,7 +254,6 @@ class DNBSettingsForm extends FormComponent {
 			'submitSupplementaryMode' => 'string',
 			'exportRemoteGalleys' => 'bool',
 			'allowedRemoteIPs' => 'string',
-			'dnbCatalog' => 'bool',
 			'connectionType' => 'bool',
 		);
 	}
@@ -261,7 +264,7 @@ class DNBSettingsForm extends FormComponent {
 	 * @return boolean
 	 */
 	function isOptional($settingName) {
-		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit','submitSupplementaryMode','exportRemoteGalleys','allowedRemoteIPs','dnbCatalog', 'connectionType'));
+		return in_array($settingName, array('archiveAccess', 'username', 'password', 'folderId', 'automaticDeposit','submitSupplementaryMode','exportRemoteGalleys','allowedRemoteIPs', 'connectionType'));
 	}
 
 	/**

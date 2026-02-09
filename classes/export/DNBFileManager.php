@@ -41,9 +41,6 @@ class DNBFileManager {
 
 		$sourceGalleyFilePath = $galleyFile->getData('path');
 		$targetGalleyFilePath = $exportPath . basename($sourceGalleyFilePath);
-
-		$fileMgr = new FileManager();
-		$fileMgr->fileExists($sourceGalleyFilePath);
 		
 		if (!Services::get('file')->fs->has($sourceGalleyFilePath)) {
 			return [['plugins.importexport.dnb.export.error.galleyFileNotFound', $sourceGalleyFilePath ?: "NULL"]];

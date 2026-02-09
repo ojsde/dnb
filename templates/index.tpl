@@ -83,7 +83,8 @@
                         deposit: '{plugin_url path=$smarty.const.EXPORT_ACTION_DEPOSIT}',
                         export: '{plugin_url path=$smarty.const.EXPORT_ACTION_EXPORT}',
                         mark: '{plugin_url path=$smarty.const.EXPORT_ACTION_MARKREGISTERED}',
-                        exclude: '{plugin_url path=$smarty.const.DNB_EXPORT_ACTION_MARKEXCLUDED}'
+                        exclude: '{plugin_url path=$smarty.const.DNB_EXPORT_ACTION_MARKEXCLUDED}',
+                        clearFailedJobs: '{$clearFailedJobsUrl}'
                     {rdelim}"
                     @set="set"
                 />
@@ -93,8 +94,12 @@
 
         {if $dnbCatalogInfo}
             <tab id="dnb-catalog-tab" label="{translate key="plugins.importexport.dnb.dnbCataloTabTitle"}">
-                <badge>{translate key="plugins.importexport.dnb.dnbCatalogTabInfo"}</badge>
-                {include file="../plugins/generic/dnb/templates/dnbCatalogTab.tpl"}
+                <notification type="info" class="dnb_catalog_info">
+                    {translate key="plugins.importexport.dnb.dnbCatalogTabInfo"}
+                </notification>
+                {if $dnbCatalogInfo}
+                    <dnb-catalog-table :data="components.{$smarty.const.DNB_CATALOG_TABLE}" />
+                {/if}
             </tab>
         {/if}
 
