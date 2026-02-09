@@ -76,18 +76,9 @@ class DNBXmlFilter extends NativeExportFilter {
 		$issue = $submission = $galleyFile = null;
 		$galley = $pubObject;
 		$galleyLocale = $galley->getLocale();
-
 		$submissionId = $galley->getData('submissionId');
-		// if ($cache->isCached('articles', $submissionId)) {
-		// 	$submission = $cache->get('articles', $submissionId);
-		// } else {
-		// 	$submission = Repo::submission()->get($submissionId);
-		// 	if ($submission) $cache->add($submission, null);
-		// }
-
 		$submission = Repo::submission()->get($submissionId);
 		$issue = Repo::issue()->getBySubmissionId($submission->getId());
-		$issueId = $issue->getId();
 
 		// abort export in case any URN is set on the submission/article level, this is a special case that has to be discussed with DNB and implemented differently in each case
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
@@ -118,7 +109,8 @@ class DNBXmlFilter extends NativeExportFilter {
 			$locale = $contributor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getData('locale');
 			$givenName = $contributor->getGivenName($locale);
 			$familyName = $contributor->getFamilyName($locale);
-			if (preg_match('/[A-Za-z]/', $givenName?:'') && preg_match('/[A-Za-z]/', $familyName?:'')) {
+			// both names have to contain at least one letter
+			if (preg_match('/\p{L}/u', $givenName ?: '') && preg_match('/\p{L}/u', $familyName ?: '')) {
 				return true;
 			} else {
 				return false;
@@ -345,11 +337,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			}
 		}
 
-		// Marc 563 keywords
-		// $submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO'); /* @var $submissionKeywordDao SubmissionKeywordDAO */
-		// $controlledVocabulary = $submissionKeywordDao->getKeywords($submission->getCurrentPublication()->getId(), array($galleyLocale));
-
-
+		// Marc 653 keywords
 		$keywords = $publication->getLocalizedData('keywords', $galleyLocale);
 
 		if (!empty($keywords)) {

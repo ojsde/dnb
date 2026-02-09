@@ -133,7 +133,7 @@ msgstr ""
 "\t\t</p>"
 
 msgid "plugins.importexport.dnb.deposited.success"
-msgstr "Die ausgewählten Artikel wurden abgeliefert!"
+msgstr "Die ausgewählten Artikel wurden zur Ablieferung in die Warteschlange gesetzt."
 
 msgid "plugins.importexport.dnb.deposit"
 msgstr "Abliefern"
@@ -152,6 +152,18 @@ msgstr "Alle auswählen"
 
 msgid "plugins.importexport.dnb.deselectAll"
 msgstr "Alle abwählen"
+
+msgid "plugins.importexport.dnb.failedJobs.clearButton"
+msgstr "Fehlgeschlagene Artikel zurücksetzen"
+
+msgid "plugins.importexport.dnb.failedJobs.confirm"
+msgstr "Alle fehlgeschlagenen DNB-Export-Jobs aus der Warteschlange löschen? Diese Aktion setzt den Artikelstatus zurück auf \"Nicht registriert\" und löscht die letzte Fehlermeldung."
+
+msgid "plugins.importexport.dnb.failedJobs.success"
+msgstr "Es wurden {$count} fehlgeschlagene DNB-Export-Jobs entfernt."
+
+msgid "plugins.importexport.dnb.failedJobs.error"
+msgstr "Fehler beim Entfernen der fehlgeschlagenen DNB-Export-Jobs."
 
 msgid "plugins.importexport.dnb.export.error.articleCannotBeExported"
 msgstr "Der Artikel {$param} (oder eine der seiner Zusatzdateien) kann nicht exportiert werden, weil er nicht als Dokumentfahne markiert wurde oder der Dateityp der Fahne oder Zusatzdatei nicht PDF oder EPUB ist."
@@ -333,11 +345,17 @@ msgstr "Diese Funktion fragt die zur ISSN dieser Zeitschrift im DNB-Katalog verf
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel"
 msgstr "DNB-Katalogabfrage aktivieren"
 
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.fetchButton"
+msgstr "Kataloginformationen abrufen"
+
 msgid "plugins.importexport.dnb.curl.error.dnbCatalog"
 msgstr "Fehler beim Verbindungsaufbau zum DNB-Katalog: {$param}"
 
 msgid "plugins.importexport.dnb.dnbCataloTabTitle"
 msgstr "DNB Katalog Info"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.fetchSuccess"
+msgstr "Kataloginformationen wurden aktualisiert."
 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.catalogInfo.issnNotFound"
 msgstr "Die ISSN dieser Zeitschrift wurde im DNB-Katalog nicht gefunden."

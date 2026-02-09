@@ -20,11 +20,17 @@ Der Ablieferungsstatus eines Artikels kann einen der folgenden Zustände haben:
 
 ***Ausgeschlossen***: Der Artikel wurde vom Export ausgeschlossen. Er wird werder beim Abliefern über die Benutzeroberflächen noch beim Abliefern durch einen Cronjob berücksichtigt. Diese Einstellung kann rückgängig gemacht werden.
 
+***Queued***: Der Artikel wurde zur Ablieferung in die OJS Job-Queue übertragen.
+
+***Failed***: Die Ablieferung des Artikels ist fehlgeschlagen.
+
 ## <a name="deposit"></a>Abliefern
 
-Mit Hilfe der der Funktion ***Abliefern*** werden die erstellten Archivdateien direkt per SFTP an den unter [Einstellungen](settings) konfigurierten Ordner gesendet. Bitte stellen Sie sicher, dass Ihr Server und Ihre locale IT-Umgebung (z.B. Firewalls) ausgehende SFTP-Verbindungen zulassen.
+Mit Hilfe der der Funktion ***Abliefern*** werden die erstellten Archivdateien direkt per SFTP oder WebDAV an den unter [Einstellungen](settings) konfigurierten Ordner gesendet. Bitte stellen Sie sicher, dass Ihr Server und Ihre locale IT-Umgebung (z.B. Firewalls) ausgehende SFTP-Verbindungen zulassen. Falls dies nicht der Falls ist benutzen Sie WebDAV.
 
-Beachten Sie, dass die Ablieferung der Artikel eine Weile dauern kann, Sie werden benachrichtigt, sobald der Prozess abgeschlossen ist. Bei einer größeren Anzahl von Artikeln ist es ratsam, (anfangs) schrittweise vorzugehen und zu prüfen, ob alle Artikel übertragen wurden. Nach der Ablieferung der Artikel ändert sich deren Status automatisch auf „Abgeliefert“. 
+Beachten Sie, dass die Ablieferung der Artikel über die OJS Job-Queue im Hintergrund, zu durch Ihren Systemadminsitrator bestimmen Zeiten erfolgt. Sie müssen also nicht auf die Ablieferung der Artikel warten. Aktualisieren Sie die Artikelliste um den aktuellen Ablieferungsstatus zu sehen.
+
+Bei einer größeren Anzahl von Artikeln ist es ratsam, (anfangs) schrittweise vorzugehen und zu prüfen, ob alle Artikel übertragen wurden. Nach der Ablieferung der Artikel ändert sich deren Status automatisch auf „Abgeliefert“. 
 
 ## <a name="export"></a>Exportieren
 

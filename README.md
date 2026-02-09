@@ -1,9 +1,9 @@
 # OJS DNB-Export-Plug-In
-**Version: 1.6.3**
+**Version: 1.7.0**
 
 **Autor: Bozana Bokan, Ronald Steffen**
 
-**Letzte Änderung: 8. Juli 2025**
+**Letzte Änderung: 9. Februar 2026**
 
 ---
 
@@ -21,7 +21,7 @@ Das Plug-In ist unter GNU General Public License v3 lizenziert. Sehen Sie die Da
 Systemanforderungen
 -------------------
 Dieses Plug-In Verison ist kompatibel mit...
- - OJS 3.4.0-4
+ - OJS 3.5.0-3
 
 Das Programm `tar` wird benötigt und muss in der Datei config.inc.php konfiguriert werden.
 
@@ -39,6 +39,7 @@ Installation über die OJS-Benutzeroberfläche:
    | 3.2         | 1.4.x             |
    | 3.3         | 1.5.x             |
    | 3.4         | 1.6.x             |
+   | 3.5         | 1.7.x             |
 
  - Installation des Plugins im Managementbereich von OJS (Einstellungen -> Website -> Plugins -> „Ein neues Plugin hochladen“ -> dnb-[Version].tar.gz hochladen)
 

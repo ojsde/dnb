@@ -157,7 +157,8 @@ class DNBSubmissionsApiHandler {
 				$result = false;
 				foreach ($args[$statusName] as $status) {
 					if ($item[$statusName] == NULL && $status == $this->plugin::EXPORT_STATUS_NOT_DEPOSITED) {
-						$result = $result || true;
+						$result = true;
+						break;
 					}
 					$result = $result || $item[$statusName] == $status;
 				}

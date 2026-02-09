@@ -15,6 +15,8 @@
 namespace APP\plugins\generic\dnb\classes\components;
 
 use APP\core\Application;
+use PKP\core\PKPApplication;
+use PKP\security\Role;
 
 define('DNB_SUBMISSIONS_LIST', 'dnbSubmissionsListComponent');
 
@@ -65,6 +67,14 @@ class DNBSubmissionsList
     {
         $request = Application::get()->getRequest();
         $user = $request->getUser();
+        $contextId = $this->context ? $this->context->getId() : null;
+        $canClearFailedJobs = false;
+        $csrfToken = $request->getSession()->token();
+
+        if ($user && $contextId) {
+            $canClearFailedJobs = $user->hasRole([Role::ROLE_ID_MANAGER], $contextId)
+                || $user->hasRole([Role::ROLE_ID_SITE_ADMIN], PKPApplication::SITE_CONTEXT_ID);
+        }
         
         return [
             'id' => $this->id,
@@ -73,6 +83,8 @@ class DNBSubmissionsList
             'items' => $this->items,
             'itemsMax' => $this->itemsMax,
             'itemsPerPage' => $this->context ? (int)$this->context->getData('itemsPerPage') : 20,
+            'canClearFailedJobs' => $canClearFailedJobs,
+            'csrfToken' => $csrfToken,
             'getParams' => [
                 'contextId' => $this->context ? $this->context->getId() : null,
                 'count' => $this->count,
@@ -104,6 +116,10 @@ class DNBSubmissionsList
                 'noResults' => __('plugins.importexport.dnb.noResults'),
                 'itemCount' => __('plugins.importexport.dnb.itemCount'),
                 'itemCountFiltered' => __('plugins.importexport.dnb.itemCountFiltered'),
+                'clearFailedJobs' => __('plugins.importexport.dnb.failedJobs.clearButton'),
+                'clearFailedJobsConfirm' => __('plugins.importexport.dnb.failedJobs.confirm'),
+                'clearFailedJobsSuccess' => __('plugins.importexport.dnb.failedJobs.success'),
+                'clearFailedJobsError' => __('plugins.importexport.dnb.failedJobs.error'),
             ],
             'constants' => [
                 'EXPORT_STATUS_NOT_DEPOSITED' => \APP\plugins\PubObjectsExportPlugin::EXPORT_STATUS_NOT_DEPOSITED,

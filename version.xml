@@ -12,7 +12,7 @@
 	<application>dnb</application>
 	<type>plugins.generic</type>
 	<release>1.7.0.0</release>
-	<date>2025-12-29</date>
+	<date>2026-02-09</date>
 	<lazy-load>1</lazy-load>
 	<class>DNBPlugin</class>
 </version>

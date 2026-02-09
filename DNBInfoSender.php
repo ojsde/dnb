@@ -38,7 +38,6 @@ class DNBInfoSender extends ScheduledTask
 	function __construct($args)
 	{
 		PluginRegistry::loadCategory('generic');
-		PluginRegistry::loadCategory('generic');
 		PluginRegistry::loadCategory('importexport');
 
 		$this->_plugin = PluginRegistry::getPlugin('importexport', 'DNBExportPlugin');
@@ -100,7 +99,6 @@ class DNBInfoSender extends ScheduledTask
 					if (is_a($submission, 'Submission')) {
 						$issue = null;
 						$galleys = $supplementaryGalleys = [];
-						$galleys = $supplementaryGalleys = [];
 
 						try {
 							// Get issue and galleys, and check if the article can be exported
@@ -140,9 +138,7 @@ class DNBInfoSender extends ScheduledTask
 								]);
 							}
 						} catch (DNBPluginException | \ErrorException $e) {
-						} catch (DNBPluginException | \ErrorException $e) {
 							// convert ErrorException to error messages that will be logged below
-							$result = $plugin->handleExceptions($e, $submission->getId());
 							$result = $plugin->handleExceptions($e, $submission->getId());
 							$errors = array_merge($errors, [$result]);
 						}

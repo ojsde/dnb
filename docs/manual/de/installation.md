@@ -12,13 +12,16 @@ Bitte installieren Sie immer die neuste Revisionsnummer (.x) des Plugins für Ih
 |:----------: | :--------------: |
 | 3.2         | 1.4.x            |
 | 3.3         | 1.5.x            |
+| 3.4         | 1.6.x            |
+| 3.5         | 1.7.x            |
 
 ## <a name="plugin"></a>Plugin installieren
 
 **Voraussetzungen**
 
 - Ein TAR-Programm wird benötigt und muss in der Datei config.inc.php konfiguriert werden. Dies ist auf den meisten Linux-Systemen Standard.
-- Um Artikel direkt in den Hotfolder der DNB abzuliefern muss der Server SFTP über das PHP-Paket libcurl unterstützen. Bitte achten Sie darauf, dass das installierte libcurl-Paket das SFTP-Protokoll unterstützt. 
+- Um Artikel über SFTP direkt in den Hotfolder der DNB abzuliefern muss der Server SFTP über das PHP-Paket libcurl unterstützen. Bitte achten Sie darauf, dass das installierte libcurl-Paket das SFTP-Protokoll unterstützt. Zusätzlich musee der Port 22122 in Ihrer Firewall freigegeben sein.
+
 
 **Installation des Plugins im Managementbereich von OJS**
 
@@ -52,10 +55,6 @@ Damit das DNB-Plugin Transferpakete an die DNB übertragen kann muss eine SSH-Ve
 
 Ersetzen Sie `<username>` und `<folder ID>` durch die Ihnen von der DNB mitgeteilen Login-Daten.
 
-## <a name="cronjob"></a>Cronjob für automatische Ablieferung einrichten
+## Aautomatische Ablieferung einrichten
 
-Um die automatische Ablieferung von Artikeln an die DNB nutzen zu können muss ein cronjob eingerichtet werden. Der Befehl für das Starten der Aufgabe lautet: 
-
-`php tools/runScheduledTasks.php plugins/importexport/dnb/scheduledTasks.xml`
-
-In der Datei version.xml im Pluginverzeichniss können Sie über das Attribute "frequency" zusätzlich die Häufigkeit der Ablieferungsversuche konfigurieren.
+Ab OJS Version 3.5 ist keine zusätzliche Konfiguration mehr notwendig. Die Ablieferung erfolgt über die bei der Installation von OJS durch den Adminsitrator eingerichtete Job-Queue (siehe https://docs.pkp.sfu.ca/admin-guide/en/deploy-jobs).
