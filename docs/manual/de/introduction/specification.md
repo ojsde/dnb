@@ -120,7 +120,7 @@ Schlagwörter
 ---
 Feld | tag | ind1 | ind2 | code | Inhalt/Beschreibung
 -----|:---:|:----:|:----:|:----:|------------------
-datafield | 653 |  |  | a | Ein Feld pro Schlagwort
+datafield | 653 |  |  | a | Ein Unterfeld pro Schlagwort
 
 Weitere Autoren
 ---

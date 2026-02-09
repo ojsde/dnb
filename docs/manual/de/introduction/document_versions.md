@@ -16,7 +16,4 @@ Die DNB kann derzeit noch keine Versionen von Galleys verwalten. Veränderte Gal
 Mit OJS Version 3.2 hat [PKP](https://pkp.sfu.ca/ojs/) die Möglichkeit eingeführt verschiedene [Versionen](https://docs.pkp.sfu.ca/learning-ojs/en/production-publication#versioning-of-articles) eines Artikels zu veröffentlichen. Dabei können neue Versionen sowohl Änderungen der Metadaten als auch der Volltexte beinhalten. Alle 
 veröffentlichten Versionen eines Artikels sind auf der Artikelseite von OJS verfügbar und können durch Nutzer abgerufen werden.
 
-Das DNB-Export Plugin liefert immer nur die letzte veröffentlichte Version eines Artikels an die DNB ab und markiert den Artikel nach erfolgreicher Ablieferung als „Abgeliefert“. Eine Ablieferung von nachträglich neu erstellten Versionen des Artikels direkt durch das DNB-Export Plugin ist nicht möglich.
-
-Falls die Ablieferung von neu erstellten Artikeln gewünscht wird, muss dazu die manuelle Ablieferung durch Export und selbständiges hochladen des Transferpaketes in den Hotfolder 
-(Vorgehensweise 1) genutzt werden. 
+Das DNB-Export Plugin liefert immer nur die letzte veröffentlichte Version eines Artikels an die DNB ab, und markiert den Artikel nach erfolgreicher Ablieferung als „Abgeliefert“. Eine Ablieferung von nachträglich neu erstellten Versionen des Artikels kann nur mit vorheriger Rücksprache mit der DNB erfolgen.

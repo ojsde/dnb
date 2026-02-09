@@ -109,7 +109,8 @@ class DNBXmlFilter extends NativeExportFilter {
 			$locale = $contributor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getData('locale');
 			$givenName = $contributor->getGivenName($locale);
 			$familyName = $contributor->getFamilyName($locale);
-			if (preg_match('/[A-Za-z]/', $givenName?:'') && preg_match('/[A-Za-z]/', $familyName?:'')) {
+			// both names have to contain at least one letter
+			if (preg_match('/\p{L}/u', $givenName ?: '') && preg_match('/\p{L}/u', $familyName ?: '')) {
 				return true;
 			} else {
 				return false;
