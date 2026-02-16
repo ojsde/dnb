@@ -340,7 +340,7 @@ msgid "plugins.importexport.dnb.settings.form.dnbCatalog.label"
 msgstr "Überprüfung der Ablieferungen über DNB-Katalogabfrage"
 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.description"
-msgstr "Diese Funktion fragt die zur ISSN dieser Zeitschrift im DNB-Katalog verfübaren Einträge ab und zeigt Informationen dazu an. Dies kann eventuell zu längeren Ladezeiten führen."
+msgstr "Diese Funktion fragt die zur ISSN dieser Zeitschrift im DNB-Katalog verfübaren Einträge ab und zeigt Informationen dazu an. Das Abrufen und verarbeiten der Daten kann möglicherweise länger dauern. Nach Abschluss der Verarbeitung erscheint ein neuer Reiter \"DNB Kaltalog Info\"."
 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel"
 msgstr "DNB-Katalogabfrage aktivieren"
