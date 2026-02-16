@@ -1040,74 +1040,72 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					$request->redirect(null, null, null, $path, null, $tab);
 				}
 				$exportPath = $result;
-				$journalExportPath = $basedir . '/' . $result;
+			// Keep both relative (for Flysystem) and absolute (for direct FS operations) paths
+			$exportPathRelative = $result;
+			$journalExportPath = $basedir . '/' . $result;
 
-				$errors = $exportFilesNames = [];
+			$errors = $exportFilesNames = [];
 
-				// Go through all submissions, create an deposit packages
-				foreach ($submissions as $submission) {
-					$issue = null;
-					$galleys = [];
-					$supplementaryGalleys = [];
-					// Get issue and galleys, and check if the article can be exported.
-					// canBeExported(...) returns galleys and supplementary galleys seperately
-					try {
-						if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
-							$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
-							// continue with other articles
-							continue;
-						}
-					} catch (DNBPluginException $e) {
-						// convert DNBPluginException to error messages that will be shown to the user
-						// handleExceptions() returns a single error tuple like ['key', 'param'], so wrap it in array
-						$result = $this->handleExceptions($e, $submission->getId());
-						$errors = array_merge($errors, [$result]);
+			// Go through all submissions, create an deposit packages
+			foreach ($submissions as $submission) {
+				$issue = null;
+				$galleys = [];
+				$supplementaryGalleys = [];
+				// Get issue and galleys, and check if the article can be exported.
+				// canBeExported(...) returns galleys and supplementary galleys seperately
+				try {
+					if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
+						$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
+						// continue with other articles
+						continue;
 					}
+				} catch (DNBPluginException $e) {
+					// convert DNBPluginException to error messages that will be shown to the user
+					// handleExceptions() returns a single error tuple like ['key', 'param'], so wrap it in array
+					$result = $this->handleExceptions($e, $submission->getId());
+					$errors = array_merge($errors, [$result]);
+				}
 
-					// Go through all gellyes, prepare packages and deposit
-					foreach ($galleys as $galley) {
+			// Go through all gellyes, prepare packages and deposit
+			foreach ($galleys as $galley) {
 
-						// store submission Id in galley object for internal use
-						$galley->setData('submissionId', $submission->getId());
+				// store submission Id in galley object for internal use
+				$galley->setData('submissionId', $submission->getId());
 
-						// check if it is a full text
-						// if $galleyFile is not set it might be a remote URL
-						$galleyFile = $galley->getFile();
-						if (!isset($galleyFile)) {
-							if ($galley->getData('urlRemote') == null) continue;
-						}
+				// check if it is a full text
+				// if $galleyFile is not set it might be a remote URL
+				$galleyFile = $galley->getFile();
+				if (!isset($galleyFile)) {
+					if ($galley->getData('urlRemote') == null) continue;
+				}
 
-						$exportFile = '';
-						// Get the TAR package for the galley
-						$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
+				$exportFile = '';
+				// Get the TAR package for the galley
+				$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
 
-						// If errors occured, remove all created directories and return the errors
-						if (is_array($result)) {
-							// If error occured add it to the list of errors
-							$errors = array_merge($errors, $result);
-						}
+				// If errors occured, remove all created directories and return the errors
+				if (is_array($result)) {
+					// If error occured add it to the list of errors
+					$errors = array_merge($errors, $result);
+				}
 
-						// deposit the package
-						if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
-							// Add the galley package to the list of all exported files
-							$exportFilesNames[] = $exportFile;
-						} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
-							// Deposit the galley
-							// $exportfile will be empty if XML file could not be created
-							$result = false;
-							if ($exportFile) {
-								$result = $this->depositXML($galley, $journal, $exportFile);
-							}
-							if (is_array($result)) {
-								// If error occured add it to the list of errors
-								$errors = array_merge($errors, $result);
-							}
-						}
-					}
-
-					// // Todo: Revise handling of success, is $fullyDeposited still used ???
-					// if ($fullyDeposited && $this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
-					// 	$this->updateSubmissionStatus($submission);
+				// deposit the package
+				if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
+					// Add the galley package to the list of all exported files
+					$exportFilesNames[] = $exportFile;
+			} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
+				// Deposit the galley
+				// $exportfile will be empty if XML file could not be created
+				$result = false;
+				if ($exportFile) {
+					$result = $this->depositXML($galley, $journal, $exportFile);
+				}
+				if (is_array($result)) {
+					// If error occured add it to the list of errors
+					$errors = array_merge($errors, $result);
+				}
+			}
+		}
 					// }
 				}
 
@@ -1135,7 +1133,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
 					}
 					// Remove the generated directories
-					Services::get('file')->fs->deleteDirectory($journalExportPath);
+					Services::get('file')->fs->deleteDirectory($exportPathRelative);
 					// redirect back to the right tab
 					// redirect causes a PHP Warning because headers were already sent by above downloadByPath call
 					// we disable warning before redirect not to spam error log
@@ -1154,7 +1152,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						);
 					}
 					// Remove the generated directories
-					Services::get('file')->fs->deleteDirectory($journalExportPath);
+					Services::get('file')->fs->deleteDirectory($exportPathRelative);
 					// redirect back to the right tab
 					$request->redirect(null, null, null, $path, null, $tab);
 				}
