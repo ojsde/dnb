@@ -83,6 +83,7 @@ class DNBSubmissionsList
             'items' => $this->items,
             'itemsMax' => $this->itemsMax,
             'itemsPerPage' => $this->context ? (int)$this->context->getData('itemsPerPage') : 20,
+            'statusParamName' => 'dnb::status',
             'canClearFailedJobs' => $canClearFailedJobs,
             'csrfToken' => $csrfToken,
             'getParams' => [
