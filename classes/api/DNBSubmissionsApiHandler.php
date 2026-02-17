@@ -16,6 +16,7 @@ use APP\core\Application;
 use APP\facades\Repo;
 use APP\submission\Submission;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use PKP\db\DAORegistry;
 use PKP\userGroup\UserGroup;
 use PKP\facades\Locale;
@@ -37,6 +38,11 @@ class DNBSubmissionsApiHandler {
 		$args = array_merge($params, $illuminateRequest->input() ?? []);
 		
 		$statusName = $this->plugin->getDepositStatusSettingName();
+		$countsOnly = !empty($args['countsOnly']);
+		$defaultItemsPerPage = (int) ($context->getData('itemsPerPage') ?: 20);
+		$itemsPerPage = isset($args['count']) ? (int) $args['count'] : $defaultItemsPerPage;
+		$itemsPerPage = max(1, min(100, $itemsPerPage));
+		$offset = isset($args['offset']) ? max(0, (int) $args['offset']) : 0;
 
 		// Get all published submissions
 		$issueIds = Repo::issue()
@@ -59,82 +65,168 @@ class DNBSubmissionsApiHandler {
 			$collector->filterBySearchPhrase($args['searchPhrase']);
 		}
 		
-		$submissionsIterator = $collector->getMany();
+		$itemsMax = $collector->getCount();
+		if ($countsOnly) {
+			$submissionIds = $collector->getIds()->toArray();
+			$statusCounts = $this->getStatusCounts($submissionIds, $statusName);
+			return response()->json([
+				'itemsMax' => count($submissionIds),
+				'items' => [],
+				'statusCounts' => $statusCounts,
+			], 200);
+		}
+		$submissionsIterator = $collector
+			->limit($itemsPerPage)
+			->offset($offset)
+			->getMany()
+			->remember();
+		$submissions = $submissionsIterator->all();
 			
 		// Get default submission list properties
 		$userGroups = UserGroup::withContextIds([$context->getId()])->get();
 		$genreDao = DAORegistry::getDAO('GenreDAO'); /** @var \PKP\submission\GenreDAO $genreDao */
 		$genres = $genreDao->getByContextId($context->getId())->toArray();
-		$userRoles = $request->getUser()->getRoles($context->getId());
+		$userRoles = array_map(
+			fn ($role) => $role->getId(),
+			$request->getUser()->getRoles($context->getId()) ?? []
+		);
 		$mappedItems = Repo::submission()->getSchemaMap()
 			->mapManyToSubmissionsList($submissionsIterator, $userGroups, $genres, $userRoles)
 			->toArray();
 
 		// Add DNB-specific properties
-		$items = $this->enrichWithDNBData($submissionsIterator, $mappedItems, $request, $context, $statusName);
+		$items = $this->enrichWithDNBData($submissions, $mappedItems, $request, $context, $statusName);
 		
 		// Filter by DNB status
 		$items = $this->filterByDNBStatus($items, $args, $statusName);
+		if (isset($args[$statusName])) {
+			$itemsMax = count($items);
+		}
 
 		// Paginate
 		$data = [];
-		$data['itemsMax'] = count($items);
-		$itemsPerPage = $context->getData('itemsPerPage') ?? 20;
-		$data['items'] = array_values(array_slice($items, $args['offset'] ?? 0, $itemsPerPage));
+		$data['itemsMax'] = $itemsMax;
+		$data['items'] = array_values($items);
 	
 		return response()->json($data, 200);
+	}
+
+	private function getStatusCounts(array $submissionIds, string $statusName): array
+	{
+		$counts = [
+			'all' => count($submissionIds),
+			'notDeposited' => 0,
+			'deposited' => 0,
+			'queued' => 0,
+			'failed' => 0,
+			'markedRegistered' => 0,
+			'excluded' => 0,
+		];
+
+		if (empty($submissionIds)) {
+			return $counts;
+		}
+
+		$statusCounts = DB::table('submission_settings')
+			->select('setting_value', DB::raw('COUNT(*) as count'))
+			->where('setting_name', $statusName)
+			->whereIn('submission_id', $submissionIds)
+			->groupBy('setting_value')
+			->pluck('count', 'setting_value');
+
+		$counts['deposited'] = (int) ($statusCounts[DNB_STATUS_DEPOSITED] ?? 0);
+		$counts['queued'] = (int) ($statusCounts[DNB_EXPORT_STATUS_QUEUED] ?? 0);
+		$counts['failed'] = (int) ($statusCounts[DNB_EXPORT_STATUS_FAILED] ?? 0);
+		$counts['markedRegistered'] = (int) ($statusCounts[$this->plugin::EXPORT_STATUS_MARKEDREGISTERED] ?? 0);
+		$counts['excluded'] = (int) ($statusCounts[DNB_EXPORT_STATUS_MARKEXCLUDED] ?? 0);
+
+		$known = $counts['deposited'] + $counts['queued'] + $counts['failed'] + $counts['markedRegistered'] + $counts['excluded'];
+		$counts['notDeposited'] = max(0, $counts['all'] - $known);
+
+		return $counts;
 	}
 	
 	/**
 	 * Enrich submissions with DNB-specific data
 	 */
-	private function enrichWithDNBData($submissionsIterator, $mappedItems, $request, $context, $statusName): array {
+	private function enrichWithDNBData($submissions, $mappedItems, $request, $context, $statusName): array {
 		$items = [];
+		$pluginPrefix = $this->plugin->getPluginSettingsPrefix();
+		$contextPath = $context->getPath();
+		$authorUserGroups = UserGroup::withContextIds([$context->getId()])
+			->withRoleIds([\PKP\security\Role::ROLE_ID_AUTHOR])
+			->get();
+
+		$issueIds = array_values(array_unique(array_filter(array_map(function ($submission) {
+			return $submission->getCurrentPublication()->getData('issueId');
+		}, $submissions))));
+		$issuesById = [];
+		if (!empty($issueIds)) {
+			$issues = Repo::issue()
+				->getCollector()
+				->filterByContextIds([$context->getId()])
+				->filterByIssueIds($issueIds)
+				->getMany();
+			foreach ($issues as $issue) {
+				$issuesById[$issue->getId()] = $issue;
+			}
+		}
+
+		$missingCacheIds = [];
+		foreach ($submissions as $submission) {
+			if ($submission->getData($pluginPrefix . '::supplementaryNotAssignable') === null) {
+				$missingCacheIds[] = $submission->getId();
+			}
+		}
+
+		$refreshedSubmissions = [];
+		foreach ($missingCacheIds as $submissionId) {
+			$this->plugin->updateExportValidation($submissionId);
+			$refreshedSubmissions[$submissionId] = Repo::submission()->get($submissionId);
+		}
 		
-		foreach ($submissionsIterator as $submission) {
+		foreach ($submissions as $submission) {
 			$item = $mappedItems[$submission->getId()];
 			
-			$issue = Repo::issue()->get($submission->getCurrentPublication()->getData('issueId'));
-			if (!$issue) continue;
+			$issueId = $submission->getCurrentPublication()->getData('issueId');
+			$issue = $issueId ? ($issuesById[$issueId] ?? null) : null;
+			if (!$issue) {
+				continue;
+			}
 			
 			$item['issueTitle'] = $issue->getLocalizedTitle();
 			$item['issueUrl'] = $request->getDispatcher()->url(
 				$request,
 				Application::ROUTE_PAGE,
-				$context->getPath(),
+				$contextPath,
 				'issue',
 				'view',
-				[$issue->getId()]
+				[$issue->getBestIssueId()]
 			);
 
-			// Check if can be exported
-			$documentGalleys = $supplementaryGalleys = [];
-			try {
-				$this->plugin->canBeExported($submission, $issue, $documentGalleys, $supplementaryGalleys);
-			} catch (\Exception $e) {
-				$item['exportError'] = $e->getMessage();
-			}
+			$submissionData = $refreshedSubmissions[$submission->getId()] ?? $submission;
+			$supplementaryNotAssignable = $submissionData->getData($pluginPrefix . '::supplementaryNotAssignable') ?? false;
+			$galleyCount = (int) ($submissionData->getData($pluginPrefix . '::galleyCount') ?? 0);
+			$supplementaryCount = (int) ($submissionData->getData($pluginPrefix . '::supplementaryCount') ?? 0);
 
 			// Create warning message if issues detected with supplementary files
 			$msg = "";
-			if ($submission->getData($this->plugin->getPluginSettingsPrefix().'::supplementaryNotAssignable')) {
+			if ($supplementaryNotAssignable) {
 				$plural = Locale::getLocale() == "de_DE" ? "n" : "s";
 				$msg = __('plugins.importexport.dnb.warning.supplementaryNotAssignable',
 					array(
-						'nDoc' => count($documentGalleys),
-						'nSupp' => count($supplementaryGalleys),
-						'pSupp' => count($supplementaryGalleys) > 1 ? $plural : ""
+						'nDoc' => $galleyCount,
+						'nSupp' => $supplementaryCount,
+						'pSupp' => $supplementaryCount > 1 ? $plural : ""
 					));
 			}
-			$item['supplementariesNotAssignable'] = $msg;
+			$item['supplementaryNotAssignable'] = $supplementaryNotAssignable;
+			$item['supplementaryNotAssignableMessage'] = $msg !== "" ? $msg : false;
 
 			$currentPublication = $submission->getCurrentPublication();
 			$item['publication']['id'] = $currentPublication->getData('id');
 			$item['sectionIds'] = $currentPublication->getData('sectionId');
 			
-			$authorUserGroups = UserGroup::withContextIds([$context->getId()])
-				->withRoleIds([\PKP\security\Role::ROLE_ID_AUTHOR])
-				->get();
 			$item['publication']['authorsString'] = $currentPublication->getAuthorString($authorUserGroups);
 			$item['publication']['fullTitle'] = $currentPublication->getLocalizedFullTitle('html');
 			

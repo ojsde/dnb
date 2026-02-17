@@ -31,19 +31,27 @@ jQuery(function() {
 		event.preventDefault();
 		const $button = $(this);
 		const $status = $button.closest('p').find('.dnbCatalogFetch__status');
+		const $spinner = $button.closest('p').find('.dnbCatalogFetch__spinner');
 		const fetchUrl = $.pkp.plugins.importexport.dnbexportplugin.catalogFetchUrl;
+		const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+		const csrfToken = pkp?.currentUser?.csrfToken || metaCsrf?.getAttribute('content') || '';
 		if (!fetchUrl) {
+			return;
+		}
+		if (!csrfToken) {
+			$status.text('Request failed. Missing CSRF token.');
 			return;
 		}
 
 		$button.prop('disabled', true);
+		$spinner.show();
 		$status.text('');
 		$.ajax({
 			url: fetchUrl,
 			type: 'POST',
-			data: {verb: 'fetchCatalogInfo'},
+			data: {csrfToken: csrfToken},
 			headers: {
-				'X-Csrf-Token': pkp.currentUser.csrfToken
+				'X-Csrf-Token': csrfToken
 			},
 		})
 			.done(function() {
@@ -56,6 +64,50 @@ jQuery(function() {
 				$status.text(message);
 			})
 			.always(function() {
+				$spinner.hide();
+				$button.prop('disabled', false);
+			});
+	});
+
+	$(document).on('click', '[data-dnb-refresh-validation]', function(event) {
+		event.preventDefault();
+		const $button = $(this);
+		const $status = $button.closest('p').find('.dnbRefreshValidation__status');
+		const $spinner = $button.closest('p').find('.dnbRefreshValidation__spinner');
+		const refreshUrl = $.pkp.plugins.importexport.dnbexportplugin.refreshValidationUrl;
+		const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+		const csrfToken = pkp?.currentUser?.csrfToken || metaCsrf?.getAttribute('content') || '';
+		if (!refreshUrl) {
+			return;
+		}
+		if (!csrfToken) {
+			$status.text('Request failed. Missing CSRF token.');
+			return;
+		}
+
+		$button.prop('disabled', true);
+		$spinner.show();
+		$status.text('');
+		$.ajax({
+			url: refreshUrl,
+			type: 'POST',
+			data: {csrfToken: csrfToken},
+			headers: {
+				'X-Csrf-Token': csrfToken
+			},
+		})
+			.done(function(response) {
+				const message = response && response.content ? response.content : 'Done.';
+				$status.text(message);
+			})
+			.fail(function(xhr) {
+				const message = xhr && xhr.responseJSON && xhr.responseJSON.content
+					? xhr.responseJSON.content
+					: 'Request failed.';
+				$status.text(message);
+			})
+			.always(function() {
+				$spinner.hide();
 				$button.prop('disabled', false);
 			});
 	});

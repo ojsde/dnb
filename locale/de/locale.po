@@ -213,10 +213,10 @@ msgstr "Die Fahnendatei {$param} kopiert werden."
 msgid "plugins.importexport.dnb.export.error.galleyFileNoCopy.param"
 msgstr "{$sourceGalleyFilePath} konnte nicht nach {$targetGalleyFilePath}"
 
-msgid "plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param"
+msgid "plugins.importexport.dnb.export.error.firstAuthorNotRegistred.param"
 msgstr "Fehler beim Export der Fahne {$submissionId}. {$msg}"
 
-msgid "plugins.importexport.dnb.export.error.firestAuthorNotRegistred"
+msgid "plugins.importexport.dnb.export.error.firstAuthorNotRegistred"
 msgstr "{$param} Der Erstautor der Fahe muss bei dieser Zeitschrift als Autor registriert sein."
 
 msgid "plugins.importexport.dnb.senderTask.name"
@@ -335,6 +335,21 @@ msgstr "Keine publizierten Ausgaben gefunden. Das DNB Export Plugin kann nur pub
 
 msgid "plugins.importexport.dnb.settings.form.experimentalFeatures.title"
 msgstr "Experimentelle Funktionen"
+
+msgid "plugins.importexport.dnb.settings.form.maintenance.title"
+msgstr "Wartung"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.label"
+msgstr "Export-Validierung aktualisieren"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.description"
+msgstr "Diese Funktion überprüft und aktualisiert den OJS-internen Status aller Einreichungen. Dies sollte nur für Einreichungen notwendig sein die mit älteren Plugin-Versionen getätigt wurden. Die Überprüfung kann einige Zeit in Anspruch nehmen."
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.button"
+msgstr "Neu berechnen"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.success"
+msgstr "Validierung fur {$count} Einreichungen aktualisiert."
 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.label"
 msgstr "Überprüfung der Ablieferungen über DNB-Katalogabfrage"
