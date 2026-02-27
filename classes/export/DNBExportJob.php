@@ -28,16 +28,24 @@ class DNBExportJob extends BaseJob
     protected int $contextId;
     protected int $submissionId;
     protected array $supplementaryGalleyIds;
-    protected string $filter;
     protected bool $noValidation;
     protected ?string $filename = null; // Pre-built package path (for manual exports)
 
+    /**
+     * DNBExportJob constructor.
+     *
+     * @param int $galleyId Identifier for the galley to export.
+     * @param int $contextId Journal context ID.
+     * @param int $submissionId Submission ID being exported.
+     * @param array $supplementaryGalleyIds Optional array of additional galley IDs.
+     * @param bool $noValidation Skip XML validation if true.
+     * @param string|null $filename Pre-built package path (for manual exports).
+     */
     public function __construct(
         int $galleyId,
         int $contextId,
         int $submissionId,
         array $supplementaryGalleyIds = [],
-        string $filter = 'galley=>dnb-xml',
         bool $noValidation = false,
         ?string $filename = null
     ) {
@@ -47,7 +55,6 @@ class DNBExportJob extends BaseJob
         $this->contextId = $contextId;
         $this->submissionId = $submissionId;
         $this->supplementaryGalleyIds = $supplementaryGalleyIds;
-        $this->filter = $filter;
         $this->noValidation = $noValidation;
         $this->filename = $filename; // If provided, skip package building
     }
@@ -63,8 +70,13 @@ class DNBExportJob extends BaseJob
 
     public function handle(): void
     {
+        // The job orchestrates three major phases:
+        // 1. (Optional) build the export package if not already provided
+        // 2. perform the deposit transfer to the DNB hotfolder
+        // 3. clean up any temporary files generated during package creation
         try {
-            // Retrieve the objects from their IDs
+            // Retrieve the objects from their IDs.  If any of them is missing
+            // something is seriously wrong and we bail out immediately.
             $galley = Repo::galley()->get($this->galleyId);
             $context = app('context')->get($this->contextId);
             $submission = Repo::submission()->get($this->submissionId);
@@ -73,17 +85,21 @@ class DNBExportJob extends BaseJob
                 throw new \Exception('Galley, Context, or Submission not found for DNB export');
             }
 
+            if ($context->getId() !== $submission->getData('contextId')) {
+                throw new \Exception('Context ID mismatch between submission and provided context');
+            }
+
             // Get plugin from registry
             $plugin = $this->getDNBExportPlugin();
+            $plugin->setContextId($this->contextId); // Ensure plugin has context for settings retrieval
 
-            // Step 1: Build the package (TAR archive with XML + PDFs) - only if not pre-built
-            if ($this->filename === null) {
-                $this->filename = $this->buildPackage($galley, $context, $submission, $plugin);
+            // Step 1: Build the package (TAR archive with XML + PDFs) - only if
+            // the filename was not supplied by the caller.  Manual exports pass a
+            // pre‑built package path; scheduled jobs construct the archive here.
+            if ($this->filename === null || !file_exists($this->filename)) {
+                $this->filename = $this->orchestratePackageBuild($galley, $context, $submission, $plugin);
             } else {
-                // Package already built (manual export) - just validate it exists
-                if (!file_exists($this->filename)) {
-                    throw new \Exception('Pre-built package not found: ' . $this->filename);
-                }
+                    throw new \Exception('Package could not be built and no valid filename provided for DNB export.');
             }
 
             // Step 2: Perform the complete deposit transfer via curl
@@ -105,9 +121,20 @@ class DNBExportJob extends BaseJob
     }
 
     /**
-     * Build the export package (TAR archive with XML + files)
+     * Orchestrate the export package build for this job.
+     *
+     * Coordinates the package builder, manages paths, and returns the path to
+     * the generated TAR archive. This is the job-level wrapper around the lower-level
+     * DNBPackageBuilder::assemblePackage() method.
+     *
+     * @param \APP\submission\Galley $galley Primary galley object.
+     * @param \APP\core\Context $context Journal context.
+     * @param \APP\submission\Submission $submission Submission object.
+     * @param DNBExportPlugin $plugin Plugin instance used for configuration.
+     * @return string Full path to the generated TAR file.
+     * @throws \Exception on failure.
      */
-    private function buildPackage($galley, $context, $submission, $plugin): string
+    private function orchestratePackageBuild($galley, $context, $submission, $plugin): string
     {
         // Get supplementary galleys from IDs
         $supplementaryGalleys = array_map(
@@ -130,10 +157,10 @@ class DNBExportJob extends BaseJob
 
         $exportPackageName = '';
 
-        $result = $packageBuilder->buildPackage(
+        $result = $packageBuilder->assemblePackage(
             $galley,
             $supplementaryGalleys,
-            $this->filter,
+            $plugin->getSubmissionFilter(),
             $this->noValidation,
             $context,
             $exportPathBase,
@@ -149,7 +176,10 @@ class DNBExportJob extends BaseJob
     }
 
     /**
-     * Cleanup temporary export files
+     * Cleanup temporary export files generated for the job.
+     *
+     * @param DNBExportPlugin $plugin Plugin instance (used to determine paths).
+     * @return void
      */
     private function cleanup($plugin): void
     {
@@ -176,7 +206,10 @@ class DNBExportJob extends BaseJob
     }
 
     /**
-     * Get the DNB Export Plugin from the registry
+     * Fetch the DNB export plugin instance from the PKP registry.
+     *
+     * @return DNBExportPlugin
+     * @throws \Exception if the plugin is not registered.
      */
     private function getDNBExportPlugin():DNBExportPlugin
     {
@@ -192,10 +225,18 @@ class DNBExportJob extends BaseJob
 
     private function executeDeposit($object, $context, $plugin): void
     {
-        // Guzzle HttpClient cannot be used here because DNB requires SFTP or WebDAV upload. 
-        // WebDAV over HTTPS could theoretically work, but it still requires careful SSH/certificate handling.
+        // Perform the actual transfer of the archive to the DNB hotfolder.  The
+        // protocol may be SFTP or WebDAV; the plugin abstracted most of the
+        // configuration in initCurl(), but we still need to set upload-specific
+        // options here.  Curl is used because the DNB service does not accept a
+        // simple HTTP POST. Guzzle and other HTTP client libraries were considered 
+        // but do not support certificate handling and other required options as flexibly as 
+        // curl for this use case.
         $curlCh = $this->initCurl($plugin);
 
+        // Ensure curl is in upload mode and that we capture headers for
+        // diagnostic purposes.  CURLOPT_PROTOCOLS restricts to SFTP/HTTPS so we
+        // don't accidentally follow redirects to other protocols.
         curl_setopt($curlCh, CURLOPT_UPLOAD, true);
         curl_setopt($curlCh, CURLOPT_HEADER, true);
         curl_setopt($curlCh, CURLOPT_RETURNTRANSFER, true);

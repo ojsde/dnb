@@ -39,6 +39,12 @@ use PKP\facades\Locale;
         #    
         # Alternatively you can import an existing xml file from the tests folder and replace correct submission ID assigned in your system in the file name of the existing xml file
         public function testXMLExport() {
+            // This functional test walks through one or more journals defined by
+            // TEST_JOURNAL_PATH, collects all published submissions tagged with
+            // the special keyword and then for each searches for a corresponding
+            // native XML export file in the tests directory.  If a reference
+            // file exists we call exportXML() to exercise the export filter and
+            // compare its output.
 
             // Initialize the request object with a page router
             $application = Application::get();
@@ -130,17 +136,21 @@ use PKP\facades\Locale;
 
             print_r("Testing submission ID: ", $submissionId);
 
-            // define the submission metadata you expect in the exported file
+            // load the reference native XML file produced by an earlier export
+            // run.  This file will be the basis for our assertions later in the
+            // method.
             $exportFile = new DOMDocument();
             $exportFile->load($filename, LIBXML_PARSEHUGE);
             $xpathNative = new DOMXPath($exportFile);
             $xpathNative->registerNamespace("d", "http://pkp.sfu.ca");
 
-            // prepare xml export
-            // load DNB Export Plugin and force schame reload to add out custom properties to the submission schema
+            // prepare xml export environment: instantiate the plugin and reload
+            // the submission schema so that our custom fields are available to
+            // the export filter.
             $plugin = new DNBExportPlugin(new DNBPlugin());
             $schema = app()->get('schema'); /** @var \PKP\services\PKPSchemaService $schema */
             $schema = $schema->get("submission", true);
+
 
             $submission = Repo::submission()->get($submissionId);
             self::assertTrue($submission->getId() == $submissionId);
@@ -330,7 +340,7 @@ use PKP\facades\Locale;
                 // title and subtitle
                 $entries = $xpathDNBFilter->query("//*[@tag='245']/*[@code='a']");
                 if ($entries->length > 0) {
-                    $value = strip_tags($entries[0]->textContent); // TODO @RS: verify with DNB
+                    $value = strip_tags($entries[0]->textContent); 
                     self::assertTrue($value == $title, $subIdInfo."Title for galley locale '".$galleyLocale."' was: ".print_r($value, true)."\nValue should have been: ".$title);
                 }
                 $entries = $xpathDNBFilter->query("//*[@tag='245']/*[@code='b']");

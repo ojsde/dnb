@@ -80,7 +80,11 @@ class DNBXmlFilter extends NativeExportFilter {
 		$submission = Repo::submission()->get($submissionId);
 		$issue = Repo::issue()->getBySubmissionId($submission->getId());
 
-		// abort export in case any URN is set on the submission/article level, this is a special case that has to be discussed with DNB and implemented differently in each case
+// abort export in case any URN is set on the submission/article level.
+	// This plugin currently does not support URN handling; the DNB requires a
+	// special workflow for already‑assigned URNs, so we request manual
+	// intervention by throwing an exception.  The calling code will surface
+	// the message to the user.
 		$submissionURN = $submission->getStoredPubId('other::urnDNB');
 		if (empty($submissionURN)) $submissionURN = $submission->getStoredPubId('other::urn');
 		if (!empty($submissionURN)) {
@@ -104,7 +108,10 @@ class DNBXmlFilter extends NativeExportFilter {
 		if (!($contributors->count() > 0)) {
 			throw new DNBPluginException("DNBXmlFilter Error: At least one author is required.", DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
 		}
-		// filter contributers by given name and family name, both should have at least one character [A-Z,a-z]
+		// filter contributers by given name and family name; we require each to
+		// contain at least one Unicode letter.  This prevents empty or malformed
+		// contributor records from being output in the MARC XML, which would
+		// violate DNB validation rules.
 		$contributors = array_filter((array) $contributors->toArray(), function($contributor) use ($galleyLocale, $submission) {
 			$locale = $contributor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getData('locale');
 			$givenName = $contributor->getGivenName($locale);
@@ -137,7 +144,10 @@ class DNBXmlFilter extends NativeExportFilter {
 			$firstAuthor = array_shift($authors);
 		}
 		
-		// is open access
+		// determine whether this item can be considered open access from the
+		// perspective of the DNB; this influences which XML fields will appear in
+		// the output.  We check the journal publishing mode first, then fall back
+		// to issue/submission-specific access settings for subscription journals.
 		$openAccess = false;
 		if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN) {
 			$openAccess = true;
@@ -151,6 +161,7 @@ class DNBXmlFilter extends NativeExportFilter {
 			}
 		}
 		$archiveAccess = $plugin->getSetting($journal->getId(), 'archiveAccess');
+		// at least one of openAccess or archiveAccess must be true according to plugin settings
 		assert($openAccess || $archiveAccess);
 
 		// Create the root node

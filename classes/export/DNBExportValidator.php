@@ -27,20 +27,32 @@ class DNBExportValidator {
 	}
 	
 	/**
-	 * Check if submission can be exported
+	 * Determine whether a submission meets the requirements for export.
+	 *
+	 * @param \APP\submission\Submission $submission The submission to test.
+	 * @param \APP\issue\Issue|null &$issue Optional issue; if not provided it will be looked up.
+	 * @param array &$galleys Will be populated with eligible galleys (PDF/EPUB).
+	 * @param array &$supplementaryGalleys Will be populated with supplementary files.
+	 * @param mixed $newGalley Optionally provide a new galley object to merge.
+	 * @return bool True if exportable, false otherwise.
 	 */
 	public function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = [], $newGalley = null): bool {
 
+		// Ensure we have an issue and that it is published; unpublished
+		// submissions are not exportable.
 		$issue = $issue?:Repo::issue()->getBySubmissionId($submission->getId());
 		
 		if (!$issue || !$issue->getPublished()) {
 			return false;
 		}
 
-		// Get all galleys
-		$galleys = $submission->getGalleys();
+		// Retrieve the current set of galleys attached to the submissions current publication.
+		$galleys = $submission->getCurrentPublication()->getData('galleys')->toArray();
 
-		// If a new galley is passed, replace galley with identical ID (this updates uploaded file ID still missing in the database object)
+		// If the caller supplied a freshly-uploaded galley object (e.g. during
+		// form submission), swap it into the array so validation can inspect its
+		// properties.  The DB object may not yet contain the file ID, hence the
+		// merge logic.
 		if ($newGalley !== null) {
 			$found = false;
 			foreach ($galleys as $index => $galley) {
@@ -61,21 +73,27 @@ class DNBExportValidator {
 			$supplementaryGalleys ? $submission->setData($this->plugin->getPluginSettingsPrefix().'::hasSupplementary', true) : NULL;
 		}
 		
-		// Filter PDF and EPUB full text galleys
+		// From the full list, only keep galleys that represent PDF/EPUB
+		// files; other formats are ignored by the DNB export.
 		$galleys = array_filter($galleys, [$this->galleyFilter, 'filterPDFAndEPUB']);
 
-		// Flag if supplementary files can't be unambiguously assigned
+		// If we have more than one main galley *and* we also classified some
+		// as supplementary, the plugin currently cannot decide which file is the
+		// primary export.  Memoize this situation for later UI warning.
 		if ((count($galleys) > 1) && (isset($supplementaryGalleys) && count($supplementaryGalleys) > 0)) {
 			$submission->setData($this->plugin->getPluginSettingsPrefix().'::supplementaryNotAssignable', true);
 		} else {
 			$submission->setData($this->plugin->getPluginSettingsPrefix().'::supplementaryNotAssignable', false);
 		}
 
+		// Submission is exportable only if there is at least one valid galley
 		return (count($galleys) > 0);
 	}
 	
 	/**
-	 * Check if tar binary is available
+	 * Verify that the system tar command exists and is executable.
+	 *
+	 * @return bool|array True on success or an array of error messages.
 	 */
 	public function checkForTar(): bool|array {
 		$tarBinary = Config::getVar('cli', 'tar');
@@ -89,7 +107,9 @@ class DNBExportValidator {
 	}
 	
 	/**
-	 * Check if export filter is registered
+	 * Ensure that the configured submission filter is registered in the system.
+	 *
+	 * @return bool|array True if found or an array of errors otherwise.
 	 */
 	public function checkForExportFilter(): bool|array {
 		$filterDao = DAORegistry::getDAO('FilterDAO'); /** @var FilterDAO $filterDao */
@@ -103,7 +123,10 @@ class DNBExportValidator {
 	}
 	
 	/**
-	 * Check if plugin settings are complete
+	 * Confirm that required plugin settings are present for the given journal.
+	 *
+	 * @param \APP\journal\Journal $journal Journal object to inspect.
+	 * @return bool True if configuration is sufficient.
 	 */
 	public function checkPluginSettings($journal): bool {
 		// If journal is not open access, archive access setting is required
@@ -111,7 +134,10 @@ class DNBExportValidator {
 	}
 	
 	/**
-	 * Check if journal is open access
+	 * Determine whether the journal is open access (no site or article restrictions).
+	 *
+	 * @param \APP\journal\Journal|null $journal Optional journal object; current context is used if omitted.
+	 * @return bool True if journal is open access.
 	 */
 	public function isOAJournal($journal = null): bool {
 		if (!isset($journal)) {

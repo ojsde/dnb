@@ -17,7 +17,10 @@ use PKP\db\DAORegistry;
 class GalleyFilter {
 	
 	/**
-	 * Filter for PDF and EPUB full text galleys
+	 * Determine if a galley represents a full-text PDF or EPUB file.
+	 *
+	 * @param object $galley Galley object to inspect.
+	 * @return bool True if the galley should be treated as PDF/EPUB full text.
 	 */
 	public function filterPDFAndEPUB($galley): bool {
 		$genreDao = DAORegistry::getDAO('GenreDAO');
@@ -40,7 +43,10 @@ class GalleyFilter {
 	}
 	
 	/**
-	 * Filter for supplementary galleys
+	 * Determine if a galley should be considered supplementary material.
+	 *
+	 * @param object $galley Galley object to inspect.
+	 * @return bool True if the galley is supplementary.
 	 */
 	public function filterSupplementary($galley): bool {
 		$genreDao = DAORegistry::getDAO('GenreDAO');
@@ -62,7 +68,10 @@ class GalleyFilter {
 	}
 	
 	/**
-	 * Check if remote galley is PDF or EPUB
+	 * Inspect a remote galley entry (no local file) to guess its type.
+	 *
+	 * @param object $galley Remote galley object.
+	 * @return bool True if its label or URL suggests PDF/EPUB.
 	 */
 	private function isRemoteGalleyPDFOrEPUB($galley): bool {
 		$label = strtolower($galley->getLabel());
@@ -76,7 +85,10 @@ class GalleyFilter {
 	}
 	
 	/**
-	 * Get file genre category
+	 * Retrieve the genre category identifier for a galley file.
+	 *
+	 * @param object $galleyFile File object with genreId property.
+	 * @return int Numeric genre category or 0 if unknown.
 	 */
 	public function getFileGenre($galleyFile): int {
 		$genreDao = DAORegistry::getDAO('GenreDAO');

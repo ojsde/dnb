@@ -30,7 +30,11 @@ class DNBSubmissionsApiHandler {
 	}
 	
 	/**
-	 * Handle submissions list request
+	 * Process an API request to list submissions for the DNB export plugin.
+	 *
+	 * @param \Illuminate\Http\Request $illuminateRequest The Laravel request object containing query parameters.
+	 * @param \PKP\classes\core\PKPRequest $request OJS request providing context and user information.
+	 * @return JsonResponse JSON response containing items, totals and optional status counts.
 	 */
 	public function handle($illuminateRequest, $request): JsonResponse {
 		$context = $request->getContext();
@@ -111,6 +115,13 @@ class DNBSubmissionsApiHandler {
 		return response()->json($data, 200);
 	}
 
+	/**
+	 * Count submissions by export status.
+	 *
+	 * @param int[] $submissionIds Array of submission identifiers to inspect.
+	 * @param string $statusName Name of the setting storing the export status.
+	 * @return array Associative array with counts for each status category.
+	 */
 	private function getStatusCounts(array $submissionIds, string $statusName): array
 	{
 		$counts = [
@@ -147,7 +158,15 @@ class DNBSubmissionsApiHandler {
 	}
 	
 	/**
-	 * Enrich submissions with DNB-specific data
+	 * Add plugin-specific properties (deposit status, export URLs, etc.) to the
+	 * mapped submission items.
+	 *
+	 * @param \PKP\submission\Submission[] $submissions The raw submission objects.
+	 * @param array $mappedItems Schema-mapped representations keyed by submission id.
+	 * @param \PKP\classes\core\PKPRequest $request Current request context.
+	 * @param \APP\core\Context $context Journal context.
+	 * @param string $statusName Export status setting identifier.
+	 * @return array The enriched items array.
 	 */
 	private function enrichWithDNBData($submissions, $mappedItems, $request, $context, $statusName): array {
 		$items = [];
@@ -157,6 +176,9 @@ class DNBSubmissionsApiHandler {
 			->withRoleIds([\PKP\security\Role::ROLE_ID_AUTHOR])
 			->get();
 
+		// Gather all issue IDs referenced by the current batch of submissions.
+		// We'll fetch those issues in a single query to avoid N+1 retrieval
+		// later when iterating submissions.
 		$issueIds = array_values(array_unique(array_filter(array_map(function ($submission) {
 			return $submission->getCurrentPublication()->getData('issueId');
 		}, $submissions))));
@@ -172,6 +194,12 @@ class DNBSubmissionsApiHandler {
 			}
 		}
 
+		// Some submissions may not yet have had their validation cache populated
+		// (e.g. newly imported or edited items).  We detect those cases by
+		// looking for a null value in the supplementaryNotAssignable flag and
+		// trigger an on-the-fly refresh so that subsequent logic has accurate
+		// data.  Refreshed submissions are stored separately to avoid
+		// re-querying the original iterator mid-loop.
 		$missingCacheIds = [];
 		foreach ($submissions as $submission) {
 			if ($submission->getData($pluginPrefix . '::supplementaryNotAssignable') === null) {
@@ -241,7 +269,12 @@ class DNBSubmissionsApiHandler {
 	}
 	
 	/**
-	 * Filter items by DNB status
+	 * Filter items by DNB status parameter provided in the request.
+	 *
+	 * @param array $items Array of item maps produced by schema mapping.
+	 * @param array $args Request arguments which may include status filters.
+	 * @param string $statusName The name of the status field to match.
+	 * @return array Filtered array retaining only matching statuses.
 	 */
 	private function filterByDNBStatus(array $items, array $args, string $statusName): array {
 		return array_filter($items, function ($item) use ($args, $statusName) {

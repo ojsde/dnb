@@ -1126,7 +1126,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 */
 	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, &$exportPackageName, $submissionId)
 	{
-		return $this->packageBuilder->buildPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, $exportPackageName, $submissionId);
+		return $this->packageBuilder->assemblePackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, $exportPackageName, $submissionId);
 	}
 
 

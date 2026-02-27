@@ -27,12 +27,18 @@ jQuery(function() {
 		}
 	);
 
+	// When the catalog fetch button is clicked we need to POST to the
+	// backend endpoint.  The handler collects a CSRF token either from the
+	// global pkp object or from the meta tag (for pages rendered before the
+	// pkp JS is initialised), disables the button and shows a spinner
+	// while the request is in progress.
 	$(document).on('click', '[data-dnb-catalog-fetch]', function(event) {
 		event.preventDefault();
 		const $button = $(this);
 		const $status = $button.closest('p').find('.dnbCatalogFetch__status');
 		const $spinner = $button.closest('p').find('.dnbCatalogFetch__spinner');
 		const fetchUrl = $.pkp.plugins.importexport.dnbexportplugin.catalogFetchUrl;
+		// fallback chain for CSRF token retrieval
 		const metaCsrf = document.querySelector('meta[name="csrf-token"]');
 		const csrfToken = pkp?.currentUser?.csrfToken || metaCsrf?.getAttribute('content') || '';
 		if (!fetchUrl) {
@@ -55,6 +61,7 @@ jQuery(function() {
 			},
 		})
 			.done(function() {
+				// On success the page is reloaded to show updated catalog info
 				window.location.reload();
 			})
 			.fail(function(xhr) {
@@ -69,6 +76,9 @@ jQuery(function() {
 			});
 	});
 
+	// Similar to the catalog fetch handler, this button triggers a server-side
+	// process to recalculate which submissions are exportable.  We show a
+	// spinner, disable the button, and display the returned status message.
 	$(document).on('click', '[data-dnb-refresh-validation]', function(event) {
 		event.preventDefault();
 		const $button = $(this);

@@ -25,7 +25,11 @@ class DNBHelpApiHandler {
 	}
 	
 	/**
-	 * Handle help content request
+	 * Return help documentation as JSON.
+	 *
+	 * @param string $lang Two-letter language code.
+	 * @param string $topic Topic path within the help docs (defaults to SUMMARY).
+	 * @return JsonResponse JSON object containing HTML content and navigation links.
 	 */
 	public function handle($lang, $topic): JsonResponse {
 		try {
@@ -66,7 +70,12 @@ class DNBHelpApiHandler {
 	}
 	
 	/**
-	 * Parse markdown to HTML with URL filtering
+	 * Render Markdown text to HTML, adjusting relative URLs based on the
+	 * originating filename.
+	 *
+	 * @param string $markdownContent Raw Markdown text.
+	 * @param string $filename Filename used to resolve relative links.
+	 * @return string HTML output.
 	 */
 	private function parseMarkdown(string $markdownContent, string $filename): string {
 		$parser = new \Michelf\MarkdownExtra;
@@ -79,7 +88,11 @@ class DNBHelpApiHandler {
 	}
 	
 	/**
-	 * Find previous/next navigation links from SUMMARY.md
+	 * Extract adjacent links from a SUMMARY.md file for navigation.
+	 *
+	 * @param string $summaryFile Filesystem path to the SUMMARY.md.
+	 * @param string $currentTopic Current topic identifier to locate within file.
+	 * @return array An array with two elements: [previousLink|null, nextLink|null].
 	 */
 	private function findNavigationLinks(string $summaryFile, string $currentTopic): array {
 		$previousLink = $nextLink = null;

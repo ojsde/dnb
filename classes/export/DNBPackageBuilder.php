@@ -28,10 +28,29 @@ class DNBPackageBuilder
 	}
 
 	/**
-	 * Generate TAR package for a galley
+	 * Assemble the export package (TAR archive with XML + files).
+	 *
+	 * Performs the low-level construction: runs the XML filter on the submission,
+	 * gathers supplementary files, creates the package directory structure,
+	 * and generates the final TAR archive ready for deposit to the DNB.
+	 *
+	 * @param \APP\submission\Galley $galley Primary galley object.
+	 * @param array $supplementaryGalleys Array of supplementary galley objects.
+	 * @param string $filter Filter identifier used for metadata export.
+	 * @param bool $noValidation Skip XML validation if true.
+	 * @param \APP\core\Context $journal Journal context object.
+	 * @param string $exportPathBase Base path within files_dir where export occurs.
+	 * @param string &$exportPackageName Output parameter; will hold full path to final TAR file.
+	 * @param int $submissionId Submission identifier used in path naming.
+	 * @return bool|array True on success or array of error messages.
 	 */
-	public function buildPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, &$exportPackageName, $submissionId): bool|array
+	public function assemblePackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, &$exportPackageName, $submissionId): bool|array
 	{
+		// Export filter must be provided and not empty
+		if (empty($filter)) {
+			return [['plugins.importexport.dnb.export.error.missingFilter']];
+		}
+
 		$exportContentDir = $journal->getId() . '-' . $submissionId . '-' . $galley->getId();
 		$exportPath = $this->fileManager->getExportPath($journal->getId(), $exportPathBase, $exportContentDir);
 
@@ -90,7 +109,11 @@ class DNBPackageBuilder
 	}
 
 	/**
-	 * TAR supplementary files
+	 * TAR all supplemental files contained under the given export path and
+	 * remove the original directory after archiving.
+	 *
+	 * @param string $exportPath Relative export directory path inside files_dir.
+	 * @return void
 	 */
 	private function tarSupplementaryFiles($exportPath): void
 	{
@@ -101,7 +124,13 @@ class DNBPackageBuilder
 	}
 
 	/**
-	 * Create TAR archive
+	 * Execute system tar command to create an archive.
+	 *
+	 * @param string $targetPath Directory to change into before running tar.
+	 * @param string $targetFile Full path to output tar file.
+	 * @param array|null $sourceFiles List of files (relative to targetPath) to include. If null all files are added.
+	 * @param bool $gzip Whether to gzip the resulting archive.
+	 * @return void
 	 */
 	public function createTarArchive($targetPath, $targetFile, $sourceFiles = null, $gzip = false): void
 	{

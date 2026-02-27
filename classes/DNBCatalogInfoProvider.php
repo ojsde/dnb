@@ -24,7 +24,18 @@ class DNBCatalogInfoProvider {
 
 	private $pluginFilesDir;
 
-	function getCatalogInfo($context, $pluginFilesDir) {
+	/**
+	 * Retrieve catalog information for the given journal context.
+	 *
+	 * The result is an array of associative arrays containing ISSN, DNB
+	 * identifier, article counts and optionally predecessor/successor titles.
+	 *
+	 * @param \APP\core\Context $context The journal context to query.
+	 * @param string $pluginFilesDir Directory path where temporary/plugin files
+	 *   may be written (used for debugging responses).
+	 * @return array An indexed array of catalog rows ready for display.
+	 */
+	public function getCatalogInfo($context, $pluginFilesDir) {
 		$this->pluginFilesDir = $pluginFilesDir;
 
 		$dnbCatalogInfo = $this->fetchDNBCatalogData($context);
@@ -80,11 +91,28 @@ class DNBCatalogInfoProvider {
 		return $dnbCatalogInfo;
 	}
 
-    function fetchDNBCatalogData($context, $mode = 'issn', $url = '', $dnbCatalogInfo = []) {
+    /**
+     * Recursive helper that queries the DNB SRU service and builds up a
+     * catalog information array.
+     *
+     * Each call may trigger additional queries in different modes ('issn',
+     * 'dnb_id', 'marcxml') depending on the data retrieved so far. The
+     * recursive structure allows gathering linked ISSNs and article counts.
+     *
+     * @param \APP\core\Context $context The current journal context.
+     * @param string $mode The query mode, defaults to 'issn'.
+     * @param string $url When using a custom URL (e.g. marcxml retrieval).
+     * @param array $dnbCatalogInfo Accumulator array passed between recursion steps.
+     * @return array Catalog information built so far.
+     */
+    private function fetchDNBCatalogData($context, $mode = 'issn', $url = '', $dnbCatalogInfo = []) {
 
-		// prepare query
+		// prepare query depending on the current recursion mode.  The idea is
+		// to start with the journal's ISSN, then obtain a DNB identifier, and
+		// finally fetch MARCXML to discover related ISSNs.
 		switch ($mode) {
 			case 'issn':
+				// First invocation: add the initial ISSN from the journal context.
 				if (empty($dnbCatalogInfo)) {
 					$dnbCatalogInfo[]['ISSN'] = $context->getData('onlineIssn');
 				}
@@ -116,6 +144,9 @@ class DNBCatalogInfoProvider {
 				}
 				break;
 			case 'dnb_id':
+				// When querying by DNB identifier we may receive paged responses that
+				// list article URLs in <foaf:primaryTopic> elements.  Count them and
+				// also dump the raw URLs to a CSV for debugging or later analysis.
 				$recordsNode = $xpathFilter->query('/*');
 
 				$dnbCatalogInfo[count($dnbCatalogInfo)-1]['Anzahl Artikel'] = 0;
@@ -154,9 +185,13 @@ class DNBCatalogInfoProvider {
 				$dnbCatalogInfo = $this->fetchDNBCatalogData($context, 'marcxml', $dnbCatalogQueryUrl, $dnbCatalogInfo);
 				break;
 			case 'marcxml':
-				// strategy: 
-				// 1) find linking ISSN from OJS ISSN
-				// 2) if there is a linking ISSN query Marcxml 776, 780 and 785 for other ISSNs
+				// In 'marcxml' mode we need to interpret MARC21 fields to discover
+				// additional ISSNs.  The process is:
+				// 1) look for an ISSN-L (field 022 subfield l) which groups all
+				//    manifestations of a serial title.
+				// 2) inspect fields 776, 780 and 785 for variant/predecessor/successor
+				//    titles; each may contain ISSNs in subfield x and a human-readable
+				//    label in subfield i.  These labels are later used as column names.
 				$tag022 = $xpathFilter->query('//*[@tag="022"]/*[@code="l"]'); //ISSN-L = (ISSN-Linking) ist die übergeordnete Identifikationsnummer, die für alle Erscheinungsformen des gleichen Titels gilt
 				$tag776 = $xpathFilter->query('//*[@tag="776"]/*[@code!="w" and @code!="i" and @code!="x"]');
 				$tag776ISSNs = $xpathFilter->query('//*[@tag="776"]/*[@code="x"]');
@@ -243,6 +278,15 @@ class DNBCatalogInfoProvider {
 		return $dnbCatalogInfo;
 	}
 
+	/**
+	 * Perform the HTTP request to the DNB service and return an XPath object
+	 * representing the XML response. Handles paged results for 'dnb_id' mode.
+	 *
+	 * @param string $baseUrl Base request URL to use for the query.
+	 * @param string $mode Mode indicator affecting pagination logic.
+	 * @param string $debugFileId Identifier used when dumping the response to a file.
+	 * @return \DOMXPath XPath object for the final XML document (possibly merged).
+	 */
 	private function fetchDNBRawData($baseUrl, $mode = '', $debugFileId = '') {
 
 		$exit = false;
@@ -278,6 +322,10 @@ class DNBCatalogInfoProvider {
 				// post process response to detect pagination
 				switch ($mode) {
 					case 'dnb_id':
+						// For DNB-ID queries we must follow pagination. Each response may
+						// contain a <nextRecordPosition> element indicating more pages.
+						// We merge the RDF nodes from each page into a single buffer and
+						// only exit once no further positions are reported.
 						if (!isset($buffer)) {
 							$buffer = new DOMDocument();
 						}
@@ -290,6 +338,7 @@ class DNBCatalogInfoProvider {
 						}
 						break;
 					default:
+						// non‑paged modes only run once
 						$exit = true;
 				}
 			} else {
@@ -304,6 +353,14 @@ class DNBCatalogInfoProvider {
 		return $xpathFilter;
 	}
 
+	/**
+	 * Append all <rdf:RDF> nodes from one DOMDocument into another. Used to
+	 * merge paged responses into a single DOM for easier querying.
+	 *
+	 * @param \DOMDocument $domA Destination document that will receive nodes.
+	 * @param \DOMDocument $domB Source document whose RDF nodes will be imported.
+	 * @return \DOMDocument The merged destination document.
+	 */
 	private function mergeRDFNodes(DOMDocument $domA, DOMDocument $domB) {
 		$xpath = $this->getDOMXPath($domB);
 		
@@ -313,6 +370,13 @@ class DNBCatalogInfoProvider {
 		return $domA;
 	}
 
+	/**
+	 * Create and configure a DOMXPath instance with the namespaces used by the
+	 * DNB SRU/MARCXML responses. Every query must use these prefixes.
+	 *
+	 * @param \DOMDocument $domDoc The document for which to build the XPath.
+	 * @return \DOMXPath Configured XPath object.
+	 */
 	private function getDOMXPath(DOMDocument $domDoc) {
 		$domXPath = new DOMXPath($domDoc);
 

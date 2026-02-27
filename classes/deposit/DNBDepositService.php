@@ -23,6 +23,11 @@ class DNBDepositService {
 	
 	private $plugin;
 	
+	/**
+	 * Constructor.
+	 *
+	 * @param object $plugin The plugin instance used for configuration.
+	 */
 	public function __construct($plugin) {
 		$this->plugin = $plugin;
 	}
