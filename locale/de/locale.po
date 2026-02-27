@@ -346,7 +346,7 @@ msgid "plugins.importexport.dnb.settings.form.refreshValidation.description"
 msgstr "Diese Funktion überprüft und aktualisiert den OJS-internen Status aller Einreichungen. Dies sollte nur für Einreichungen notwendig sein die mit älteren Plugin-Versionen getätigt wurden. Die Überprüfung kann einige Zeit in Anspruch nehmen."
 
 msgid "plugins.importexport.dnb.settings.form.refreshValidation.button"
-msgstr "Neu berechnen"
+msgstr "Validieren"
 
 msgid "plugins.importexport.dnb.settings.form.refreshValidation.success"
 msgstr "Validierung fur {$count} Einreichungen aktualisiert."

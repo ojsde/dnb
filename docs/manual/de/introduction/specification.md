@@ -4,6 +4,7 @@ Die hier zusammengefassten Spezifikationen entstehen in enger Absprache mit der 
 Stand: 4.2.2026
 
 Allgemein:
+
 - Autorennamen werden nur an die DNB abgeliefert wenn Vor- und Nachname mindestens einen Buchstaben enthalten.
 
 Header

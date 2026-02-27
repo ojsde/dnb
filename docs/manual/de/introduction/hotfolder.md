@@ -11,4 +11,4 @@ werden kann. Bei dieser Vorgehensweise kann man die exportierten Daten einsehen 
 2. **Vorgehensweise 2**: Automatische Übertragung der Transferpakete in den Hotfolder, die manuell im Exportbereich des Plugins ausgelöst wird. Bei dieser 
 Vorgehensweise kann man selbst bestimmen, welche Artikel abgeliefert werden.
 
-3. **Vorgehensweise 3**: Automatische Übertragung der Transferpakete in den Hotfolder, die in regelmäßigen Abständen von OJS oder einem Cronjob ausgelöst wird. Bei dieser Vorgehensweise werden alle publizierten Artikel, die noch nicht abgeliefert wurden, in den Hotfolder übertragen.
+3. **Vorgehensweise 3**: Automatische Übertragung der Transferpakete in den Hotfolder über die OJS Job Queue. Bei dieser Vorgehensweise werden alle publizierten Artikel, die noch nicht abgeliefert wurden, in den Hotfolder übertragen.

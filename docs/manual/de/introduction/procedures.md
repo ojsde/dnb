@@ -20,5 +20,5 @@ Artikel eine Weile dauern kann, Sie werden benachrichtigt, sobald der Prozess ab
 
 ## Vorgehensweise 3
 Bei dieser Vorgehensweise muss die Ablieferung nicht manuell ausgelöst werden. Alle Artikel mit 
-dem Status „Nicht abgeliefert“ werden automatisch in den Hotfolder übertragen. Nach erfolgreicher Ablieferung der Artikel ändert sich deren Status automatisch auf „Abgeliefert“. Wenn Sie diese Vorgehensweise nutzen möchten muss auf Ihrem Server ein Cronjob eingerichtet sein. Bitte konsultieren Sie dafür Ihren Systemadministrator.
+dem Status „Nicht abgeliefert“ werden automatisch in den Hotfolder übertragen. Nach erfolgreicher Ablieferung der Artikel ändert sich deren Status automatisch auf „Abgeliefert“. Diese Vorgehensweise nutzt die von Ihrem Administrator konfiguriete OJS Job Queue. Bitte konsultieren Sie dafür Ihren Systemadministrator.
 

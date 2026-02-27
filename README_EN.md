@@ -1,9 +1,9 @@
 # OJS DNB Export Plugin
-**Version: 1.6.2**
+**Version: 1.7.0**
 
 **Author: Bozana Bokan, Ronald Steffen**
 
-**Last update: June 23, 2025** !!! This Readme is currently not up to date. Please refer to the German version!
+**Last update: February 27, 2026**
 
 ---
 
@@ -20,52 +20,52 @@ This plugin is licensed under the GNU General Public License v3. See the file LI
 
 System Requirements
 -------------------
-This plugin version is compatible with...
- - OJS 3.4.0-4
+This plugin version is compatible with:
+ - OJS 3.5.0-3
  
 The `tar` executable is required and has to be configured in config.inc.php.
 
-For the depositing articles directly to the DNB Hofolder vis SFTP your server has to support SFTP via the PHP libcurl library. Please make sure the libcurl library installed on your server supports the SFTP protocol.
-Alternatively you can use the WebDav (port 443) protocol. Please see plugin settings.
+For depositing articles directly to the DNB Hotfolder via SFTP, your server must support SFTP via the PHP libcurl library. Please ensure the libcurl library installed on your server supports the SFTP protocol.
+Alternatively, you can use the WebDAV protocol (port 443). The connection protocol can be selected in the plugin settings.
 
 Installation
 ------------
-Installalion via OJS GUI:
- - download dnb-[version].tar.gz from https://github.com/ojsde/dnb/releases
+Installation via OJS GUI:
+ - Download the tar.gz archive (dnb-[version].tar.gz) from https://github.com/ojsde/dnb/releases
 
-  Please alwasy use the latest revision number (.x) of the plugin version corrsponding to your OJS version
+  Please always use the latest revision number (.x) of the plugin version corresponding to your OJS version:
    | OJS version | plugin version    |
    | ----------- | ----------------- |
    | 3.2         | 1.4.x             |
    | 3.3         | 1.5.x             |
    | 3.4         | 1.6.x             |
+   | 3.5         | 1.7.x             |
 
- - install plugin in OJS (Settings -> Website -> plugins -> „Upload a New Plugin“ -> upload dnb-[version].tar.gz)
+ - Install the plugin in your OJS instance (Settings -> Website -> Plugins -> "Upload a New Plugin" -> upload dnb-[version].tar.gz)
 
 Installation via command line without Git:
- - download archive from https://github.com/ojsde/dnb
- - unzip the archive to plugins/importexport and rename the main plugin folder to "dnb" if necessary
- - from your application's installation directory, run the upgrade script (it is recommended to back up your database first):
-   php tools/upgrade.php upgrade or php tools/installPluginVersion.php
+ - Download the archive in the desired version from https://github.com/ojsde/dnb
+ - Extract the plugin to the plugins/importexport directory
+ - If necessary, rename the main directory to "dnb"
+ - Update the database (it is recommended to back up your database first). Run from your OJS installation directory: php tools/upgrade.php upgrade or php tools/installPluginVersion.php plugins/importexport/dnb/version.xml
 
-Installation with Git:
+Installation via command line with Git:
  - cd [my_ojs_installation]/plugins/importexport
  - git clone https://github.com/ojsde/dnb
  - cd dnb
  - git checkout [branch]
  - cd [my_ojs_installation]
- - php tools/upgrade.php upgrade or php tools/installPluginVersion.php plugins/importexport/dnb/version.xml
+ - php tools/upgrade.php upgrade or php tools/installPluginVersion.php
 
-Adding the DNB SFTP server to SSH known_hosts (only on first installation on a server)
------
+Adding the DNB SFTP server to SSH known_hosts (only on first installation on a server):
 
-To enable the DNB-Plugin to deposit transfer packages on the DNB server via SFTP an SSH connection has to be initiated. To this end, the DNB server has to be added to the known_hosts file of your web server account. An easy way to achieve this is to once establish a connection to the DNB server via the command line of your web server. Depending on your system you can use one of the following commands:
+To enable the DNB Plugin to deposit transfer packages on the DNB server via SFTP, an SSH connection must be initiated. To do this, the DNB server must be added to the known_hosts file of your web server account. An easy way to achieve this is to establish a connection to the DNB server via the command line of your OJS server. Use the following command:
 
-`sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>` or `sftp -oPort=22122 <username>@hotfolder.dnb.de:<folder ID>`
+`sftp -P 22122 <username>@hotfolder.dnb.de:<folder ID>`
 
-Please replace <username> and <folder ID> by the login credentials you received from the DNB.
+Replace <username> and <folder ID> with the login credentials you received from the DNB.
 
-Advanced settings for your curl connection can be configured in the config.inc.php file. Create a section [dnb-plugin] at the end of the file. The following additional settings are supported:
+Advanced settings for curl connections can be configured in the config.inc.php file. Create a section [dnb-plugin] at the end of the file. The following additional parameters are supported:
 
 - CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
 - CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
@@ -78,34 +78,36 @@ Example:
 CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256='<put the public key here>'
 ```
 
-
-Export
+Plugin Settings
 --------------
-The plugin settings can be found at:
-Tools > Import/Export > DNB Export Plugin > Settings
+The plugin settings can be found under "Tools > DNB Export Plugin > Settings". A detailed description of the settings is available in the [documentation](docs/manual/en/settings.md).
+
+Deposit and Export
+--------------
+
+Starting with OJS 3.5, article deposits are handled via the OJS job queue in the background. You do not need to wait for deposit confirmation in the OJS backend. The status of initiated deposits is displayed in updated form the next time you open the article list.
 
 The plugin export interface can be found at:
-Tools > Import/Export > DNB Export Plugin > Articles
+Tools > DNB Export Plugin > Articles
 
 Note
 --------------
-In order to deposit articles to DNB from within OJS you will have to enter your username, password and subfolder ID in the plugin settings. 
-If you do not enter this information you'll still be able to export the DNB packages but you cannot deposit them from within OJS.
-Please note, that the password will be saved as plain text, i.e. not encrypted, due to DNB service requirements.
+If you want to deposit articles directly from OJS, you must enter your username, password, and subfolder ID in the plugin settings.
+You can export DNB packages without entering these credentials, but you cannot deposit them from within OJS.
+Please note that the password will be saved as plain text (unencrypted) due to DNB service requirements.
 
 Troubleshooting
 ---------------
 
-1) A `curl.log` file is available inside the `files/dnb` folder 
-2) Try to establish a SFTP connection as described above
-3) Try to desposit a file to the DNB hotfolder with curl via the command line:
+1) Information about the connection setup can be found in the `curl.log` file in the `files/dnb` folder.
+2) Try to establish a SFTP connection as described above.
+3) Try to deposit a test file via curl from the command line:
 
     `curl -v -T <path to your test file> sftp://<username>:<password>@hotfolder.dnb.de:22122/<folder ID>/`
 
 Contact/Support
 ---------------
 
-Please see the documentation (in German) in the `docs` folder or at https://ojs-de.net/support/anleitungen/dnb-plugin. 
+Please refer to the documentation in the `docs` folder.
 
-Documentation, bug listings, and updates can be found on this plugin's homepage
-at <http://github.com/ojsde/dnb>.
+Documentation, bug listings, and updates can be found on this plugin's homepage at <http://github.com/ojsde/dnb>.

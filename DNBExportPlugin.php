@@ -53,7 +53,7 @@ use APP\plugins\generic\dnb\classes\DNBCatalogInfoProvider;
 use APP\plugins\generic\dnb\DNBInfoSender;
 
 
-define('DEBUG', true);
+define('DEBUG', false);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 define('DNB_ADDITIONAL_PACKAGE_OPTIONS', '--format=gnu'); //use --format=gnu with tar to avoid PAX-Headers

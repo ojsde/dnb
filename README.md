@@ -3,7 +3,7 @@
 
 **Autor: Bozana Bokan, Ronald Steffen**
 
-**Letzte Änderung: 9. Februar 2026**
+**Letzte Änderung: 27. Februar 2026**
 
 ---
 
@@ -25,7 +25,7 @@ Dieses Plug-In Verison ist kompatibel mit...
 
 Das Programm `tar` wird benötigt und muss in der Datei config.inc.php konfiguriert werden.
 
-Um Artikel über SFTP direkt in den Hotfolder der DNB abzuliefern muss der Server SFTP über das PHP-Paket libcurl unterstützen. Bitte achten Sie darauf, dass das installierte libcurl-Paket das SFTP-Protokoll unterstützt.
+Um Artikel über SFTP direkt in den Hotfolder der DNB abzuliefern muss ihr OJS-Server SFTP über das PHP-Paket libcurl unterstützen. Bitte achten Sie darauf, dass das installierte libcurl-Paket das SFTP-Protokoll unterstützt.
 Alternativ können Sie das WebDav-Protokoll (über Port 443) verwenden. Das Verbindungsprotokoll kann in den Plugin-Einstellungen ausgewählt werden.
 
 Installation
@@ -82,18 +82,15 @@ CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256='<put the public key here>'
 
 Plugin-Einstellungen
 --------------
+Die Plugin-Einstellungen finden Sie unter "Werkzeuge > DNB-Export-Plug-In > Einstellungen". Eine detaillierte Beschreibung der Einstellungen steht in der [Dokumentation](docs/manual/de/settings.md) zur Verfügung.
 
-Der folgende Screenshot zeigt die Einstellungen des DNB-Export-Plugins in der Version 1.6.2. Eine detaillierte Beschreibung der Einstellungen steht in der [Dokumentation](docs/manual/de/settings.md) zur Verfügung.
-
-![Screenshot der Einstellungen des DNB-Export-Plugins](<docs/manual/de/DNB-Export-Plugin-Setting_v1.6.2.png>)
-
-Export
+Ablieferung und Export
 --------------
-Die Plug-In-Einstellungen sind hier zu finden:
-Werkzeuge > Import/Export > DNB-Export-Plug-In > Einstellungen
+
+Ab OJS 3.5 wird die Ablieferung der Artikel über die OJS Job Queue im Hintergrund abgewickelt. Sie müssen im OJS-Backend nicht auf die Bestätigung der Ablieferung warten. Der Status der initiierten Ablieferungen wird Ihnen beim erneuten Aufruf der Artikelliste in aktualisierter Form angezeigt.
 
 Die Plug-In-Export-Schnittstelle ist hier zu finden:
-Werkzeuge > Import/Export > DNB-Export-Plug-In > Artikel
+Werkzeuge > DNB-Export-Plug-In > Artikel
 
 Hinweis
 --------------

@@ -25,7 +25,7 @@ Bestimmt die Art der Verbindung zum DNB Server (SFTP oder WebDAV). Im Normalfall
 
 ## <a name="autodeposit"></a>Automatische Ablieferung 
 
-Wenn Sie die automatische Ablieferung aktivieren werden neue, nicht abgelieferte Artikel mittels eines von Ihrem Systemadminstrator konfigurieten Cronjobs in regelmäßigen Abständen automatisch in den *DNB-Hotfolder* übertragen. Wenn diese Option aktiv ist wird außerdem ein zusätzlicher Reiter mit dem letzten Ablieferungsprotokoll angezeigt.
+Wenn Sie die automatische Ablieferung aktivieren werden neue, nicht abgelieferte Artikel mittels der vom Adminsitrator konfigurieten OJS Job Queue in regelmäßigen Abständen automatisch in den *DNB-Hotfolder* übertragen. Wenn diese Option aktiv ist wird außerdem ein zusätzlicher Reiter mit dem letzten Ablieferungsprotokoll angezeigt.
 
 ## <a name="supplementary"></a>Ablieferung von Begleitmaterial
 

@@ -2,7 +2,6 @@
 
 1. [Welche Plugin-Version muss ich installieren?](installation#version)
 2. [Plugin installieren](installation#plugin)
-3. [Cronjob einrichten](installation#cronjob)
 
 ## <a name="version"></a>Welche Plugin-Version muss ich installieren?
 
@@ -55,6 +54,6 @@ Damit das DNB-Plugin Transferpakete an die DNB übertragen kann muss eine SSH-Ve
 
 Ersetzen Sie `<username>` und `<folder ID>` durch die Ihnen von der DNB mitgeteilen Login-Daten.
 
-## Aautomatische Ablieferung einrichten
+## Automatische Ablieferung einrichten
 
 Ab OJS Version 3.5 ist keine zusätzliche Konfiguration mehr notwendig. Die Ablieferung erfolgt über die bei der Installation von OJS durch den Adminsitrator eingerichtete Job-Queue (siehe https://docs.pkp.sfu.ca/admin-guide/en/deploy-jobs).

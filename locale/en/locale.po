@@ -346,7 +346,7 @@ msgid "plugins.importexport.dnb.settings.form.refreshValidation.description"
 msgstr "Recalculate cached export validation data for all submissions."
 
 msgid "plugins.importexport.dnb.settings.form.refreshValidation.button"
-msgstr "Recalculate"
+msgstr "Validate"
 
 msgid "plugins.importexport.dnb.settings.form.refreshValidation.success"
 msgstr "Validation refreshed for {$count} submissions."
