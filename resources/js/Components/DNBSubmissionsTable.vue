@@ -181,15 +181,10 @@
 									<a v-if="item.issueUrl" :href="item.issueUrl" class="text-sm">
 										{{ item.issueTitle }}
 									</a>
-									<div v-if="item.supplementariesNotAssignable"
+									<div v-if="item.supplementaryNotAssignableMessage"
 										class="flex items-center gap-1 text-negative">
 										<Icon icon="exclamation-triangle" :inline="true" />
-										<span class="text-sm">{{ item.supplementariesNotAssignable }}</span>
-									</div>
-									<div v-if="item.supplementaryNotAssignable">
-										<span class="text-sm text-negative">
-											{{ item.supplementariesNotAssignable }}
-										</span>
+										<span class="text-sm">{{ item.supplementaryNotAssignableMessage }}</span>
 									</div>
 								</div>
 								<div v-if="item.lastError" class="dnb-error">{{item.lastError}}</div>
@@ -244,7 +239,7 @@
 // ==========================================
 // Imports
 // ==========================================
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 const { useModal } = pkp.modules.useModal;
 const { useLocalize } = pkp.modules.useLocalize;
 const { t } = useLocalize();
@@ -274,6 +269,10 @@ const currentPage = ref(1);
 const isClearingFailedJobs = ref(false);
 const actionMessage = ref('');
 const actionMessageType = ref('success');
+const items = ref(Array.isArray(props.data.items) ? props.data.items : []);
+const itemsMax = ref(typeof props.data.itemsMax === 'number' ? props.data.itemsMax : items.value.length);
+const isLoading = ref(false);
+const apiStatusCounts = ref(null);
 let debounceTimeout = null;
 
 // Validation constants
@@ -281,7 +280,7 @@ const MAX_SEARCH_LENGTH = 100;
 const MAX_FILTER_COUNT = 10;
 
 // Initialize filtered items with all items
-filteredItems.value = props.data.items;
+filteredItems.value = items.value;
 
 // ==========================================
 // Computed Properties
@@ -298,16 +297,14 @@ const itemsPerPage = computed(() => {
  * Get items for current page
  */
 const paginatedItems = computed(() => {
-	const start = (currentPage.value - 1) * itemsPerPage.value;
-	const end = start + itemsPerPage.value;
-	return filteredItems.value.slice(start, end);
+	return filteredItems.value;
 });
 
 /**
  * Total number of pages
  */
 const lastPage = computed(() => {
-	return Math.ceil(filteredItems.value.length / itemsPerPage.value);
+	return Math.max(1, Math.ceil(itemsMax.value / itemsPerPage.value));
 });
 
 /**
@@ -324,7 +321,7 @@ const areAllVisibleSelected = computed(() => {
  */
 const itemCountText = computed(() => {
 	const filtered = filteredItems.value.length;
-	const total = props.data.items.length;
+	const total = itemsMax.value || items.value.length;
 	
 	if (filtered === 0) {
 		return props.data.i18n.noResults || 'No items found';
@@ -377,6 +374,9 @@ const hasActiveFilters = computed(() => {
  * Empty state message text
  */
 const noResultsText = computed(() => {
+	if (isLoading.value) {
+		return t('common.loading');
+	}
 	if (hasActiveFilters.value) {
 		return props.data.i18n.noResultsFiltered;
 	}
@@ -387,8 +387,12 @@ const noResultsText = computed(() => {
  * Counts for status filter badges
  */
 const statusCounts = computed(() => {
+	if (apiStatusCounts.value) {
+		return apiStatusCounts.value;
+	}
+
 	const counts = {
-		all: props.data.items.length,
+		all: items.value.length,
 		notDeposited: 0,
 		deposited: 0,
 		queued: 0,
@@ -397,7 +401,7 @@ const statusCounts = computed(() => {
 		excluded: 0,
 	};
 
-	props.data.items.forEach((item) => {
+	items.value.forEach((item) => {
 		switch (item.dnbStatusConst) {
 			case props.data.constants.EXPORT_STATUS_NOT_DEPOSITED:
 				counts.notDeposited += 1;
@@ -497,43 +501,100 @@ function setStatusFilter(status) {
  */
 function applyFilters() {
 	try {
-		let items = props.data.items;
+		currentPage.value = 1;
+		loadItemsFromApi();
+	} catch (error) {
+		console.error('Error applying filters:', error);
+		currentPage.value = 1;
+	}
+}
 
-		// Apply status filter
-		if (activeStatusFilter.value !== null) {
-			items = items.filter(item => item.dnbStatusConst === activeStatusFilter.value);
+function buildSearchPhrase() {
+	const terms = [...activeSearchFilters.value];
+	if (searchPhrase.value.trim()) {
+		terms.push(searchPhrase.value.trim());
+	}
+	return terms.length ? terms.join(' ') : '';
+}
+
+async function loadCountsFromApi() {
+	if (!props.data.apiUrl) {
+		return;
+	}
+
+	try {
+		const url = new URL(props.data.apiUrl, window.location.origin);
+		if (props.data.getParams) {
+			Object.entries(props.data.getParams).forEach(([key, value]) => {
+				if (value !== null && value !== undefined) {
+					url.searchParams.set(key, String(value));
+				}
+			});
+		}
+		url.searchParams.set('countsOnly', '1');
+
+		const search = buildSearchPhrase();
+		if (search) {
+			url.searchParams.set('searchPhrase', search);
 		}
 
-		// Apply search filters - item must match ALL active filters AND live search
-		const allSearchTerms = [...activeSearchFilters.value];
-		if (searchPhrase.value.trim()) {
-			allSearchTerms.push(searchPhrase.value.trim());
+		const response = await fetch(url.toString(), { credentials: 'same-origin' });
+		const result = await response.json();
+		if (result?.statusCounts) {
+			apiStatusCounts.value = result.statusCounts;
+			if (typeof result?.itemsMax === 'number') {
+				itemsMax.value = result.itemsMax;
+			}
 		}
+	} catch (error) {
+		console.error('Failed to load DNB status counts:', error);
+	}
+}
 
-		if (allSearchTerms.length > 0) {
-			items = items.filter(item => {
-				// Item must match ALL search terms
-				return allSearchTerms.every(searchTerm => {
-					const lowerPhrase = searchTerm.toLowerCase();
-					const authorsMatch = item.publication.authorsString?.toLowerCase().includes(lowerPhrase);
-					const titleMatch = item.publication.fullTitle?.toLowerCase().includes(lowerPhrase);
-					const idMatch = item.id.toString().includes(lowerPhrase);
-					const issueMatch = item.issueTitle?.toLowerCase().includes(lowerPhrase);
+async function loadItemsFromApi() {
+	if (!props.data.apiUrl || isLoading.value) {
+		return;
+	}
 
-					return authorsMatch || titleMatch || idMatch || issueMatch;
-				});
+	isLoading.value = true;
+	try {
+		const url = new URL(props.data.apiUrl, window.location.origin);
+		if (props.data.getParams) {
+			Object.entries(props.data.getParams).forEach(([key, value]) => {
+				if (value !== null && value !== undefined) {
+					url.searchParams.set(key, String(value));
+				}
 			});
 		}
 
-		filteredItems.value = items;
-		
-		// Reset to first page when filters change
-		currentPage.value = 1;
+		const pageSize = itemsPerPage.value;
+		const offset = (currentPage.value - 1) * pageSize;
+		url.searchParams.set('count', String(pageSize));
+		url.searchParams.set('offset', String(offset));
+
+		const search = buildSearchPhrase();
+		if (search) {
+			url.searchParams.set('searchPhrase', search);
+		}
+		if (activeStatusFilter.value !== null) {
+			const statusParamName = props.data.statusParamName || 'dnb::status';
+			url.searchParams.append(`${statusParamName}[]`, String(activeStatusFilter.value));
+		}
+
+		const response = await fetch(url.toString(), { credentials: 'same-origin' });
+		const result = await response.json();
+		const pageItems = Array.isArray(result?.items) ? result.items : [];
+		itemsMax.value = typeof result?.itemsMax === 'number' ? result.itemsMax : pageItems.length;
+		items.value = pageItems;
+		filteredItems.value = pageItems;
+		loadCountsFromApi();
 	} catch (error) {
-		console.error('Error applying filters:', error);
-		// Fallback to showing all items on error
-		filteredItems.value = props.data.items;
-		currentPage.value = 1;
+		console.error('Failed to load DNB submissions:', error);
+		items.value = Array.isArray(props.data.items) ? props.data.items : [];
+		itemsMax.value = items.value.length;
+		filteredItems.value = items.value;
+	} finally {
+		isLoading.value = false;
 	}
 }
 
@@ -654,9 +715,16 @@ async function performClearFailedJobs() {
  */
 function setPage(page) {
 	currentPage.value = page;
+	loadItemsFromApi();
 	// Scroll to top of table
 	document.querySelector('.dnbSubmissionsTable')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+onMounted(() => {
+	if (props.data.apiUrl) {
+		loadItemsFromApi();
+	}
+});
 </script>
 
 <style>

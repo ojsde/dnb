@@ -243,18 +243,21 @@ class DNBExportJob extends BaseJob
         // Create curl log file
         curl_setopt($curlCh, CURLOPT_VERBOSE, true);
         $logDir = Config::getVar('files', 'files_dir') . '/' . $plugin->getPluginSettingsPrefix();
-        @mkdir($logDir, 0755, true); // Create if doesn't exist
-        $verbose = fopen($logDir . '/curl.log', 'w+');
-        if ($verbose) {
-            curl_setopt($curlCh, CURLOPT_STDERR, $verbose);
+        if (!is_dir($logDir) && !@mkdir($logDir, 0755, true) && !is_dir($logDir)) {
+            $logDir = null;
+        }
+        $logFile = $logDir ? $logDir . '/lastCurlError.log' : null;
+        $logHandle = $logFile ? fopen($logFile, 'wb') : false;
+        if ($logHandle) {
+            curl_setopt($curlCh, CURLOPT_STDERR, $logHandle);
         }
 
         // Execute request
         $response = curl_exec($curlCh);
         $curlError = curl_error($curlCh);
 
-        if ($verbose) {
-            fclose($verbose);
+        if ($logHandle) {
+            fclose($logHandle);
         }
 
         if ($curlError || $response === false) {

@@ -213,11 +213,11 @@ msgstr "The galley file {$param}."
 msgid "plugins.importexport.dnb.export.error.galleyFileNoCopy.param"
 msgstr "{$sourceGalleyFilePath} could not be copied to {$targetGalleyFilePath}"
 
-msgid "plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param"
+msgid "plugins.importexport.dnb.export.error.firstAuthorNotRegistred.param"
 msgstr "Error exporting submission {$submissionId}. {$msg}"
 
-msgid "plugins.importexport.dnb.export.error.firestAuthorNotRegistred"
-msgstr "{$param} The primary auther of the submission is required to be a registered author with this journal."
+msgid "plugins.importexport.dnb.export.error.firstAuthorNotRegistred"
+msgstr "{$param} The primary author of the submission is required to be a registered author with this journal."
 
 msgid "plugins.importexport.dnb.senderTask.name"
 msgstr "DNB automatic deposit task"
@@ -335,6 +335,21 @@ msgstr "No published issues found. DNB Export Plugin can only export published i
 
 msgid "plugins.importexport.dnb.settings.form.experimentalFeatures.title"
 msgstr "Experimentel features"
+
+msgid "plugins.importexport.dnb.settings.form.maintenance.title"
+msgstr "Maintenance"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.label"
+msgstr "Refresh export validation"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.description"
+msgstr "Recalculate cached export validation data for all submissions."
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.button"
+msgstr "Recalculate"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.success"
+msgstr "Validation refreshed for {$count} submissions."
 
 msgid "plugins.importexport.dnb.settings.form.dnbCatalog.label"
 msgstr "Verification of article deposits by querying the DNB catalog"

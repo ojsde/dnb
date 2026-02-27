@@ -182,6 +182,36 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					$param = __('plugins.importexport.dnb.error.catalogQueryFailed.param', array('error' => $e->getMessage()));
 					return new \PKP\core\JSONMessage(false, __('plugins.importexport.dnb.error.catalogQueryFailed', ['param' => $param]));
 				}
+			case 'refreshExportValidation':
+				if (!$request->checkCSRF()) {
+					return new \PKP\core\JSONMessage(false, __('form.csrfInvalid'));
+				}
+
+				$user = $request->getUser();
+				$context = $request->getContext();
+				if (!$user || !$context) {
+					return new \PKP\core\JSONMessage(false, __('common.error'));
+				}
+
+				$isManager = $user->hasRole([Role::ROLE_ID_MANAGER], $context->getId());
+				$isSiteAdmin = $user->hasRole([Role::ROLE_ID_SITE_ADMIN], PKPApplication::SITE_CONTEXT_ID);
+				if (!$isManager && !$isSiteAdmin) {
+					return new \PKP\core\JSONMessage(false, __('api.403.unauthorized'));
+				}
+
+				$submissions = Repo::submission()
+					->getCollector()
+					->filterByContextIds([$context->getId()])
+					->filterByStatus([Submission::STATUS_PUBLISHED])
+					->getMany();
+
+				$count = 0;
+				foreach ($submissions as $submission) {
+					$this->updateExportValidation($submission->getId());
+					$count++;
+				}
+
+				return new \PKP\core\JSONMessage(true, __('plugins.importexport.dnb.settings.form.refreshValidation.success', ['count' => $count]));
 		}
 
 		return parent::manage($args, $request);
@@ -372,7 +402,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		}
 		
 		// Recalculate and cache export validation for this submission
-		$this->updateExportValidationCache($submissionId, $newGalley);
+		$this->updateExportValidation($submissionId, $newGalley);
 		
 		return Hook::CONTINUE;
 	}
@@ -380,7 +410,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * Update cached export validation data for a submission
 	 */
-	public function updateExportValidationCache($submissionId, $newGalley = null)
+	public function updateExportValidation($submissionId, $newGalley = null)
 	{
 		$submission = Repo::submission()->get($submissionId);
 		if (!$submission) {
@@ -505,13 +535,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 
 		// if no issue is published go back to tools 
 		// get all published submissions in the context
-		$issues = Repo::issue()
+		$issueIds = Repo::issue()
 			->getCollector()
 			->filterByContextIds([$context->getId()])
 			->filterByPublished(true)
-			->getMany()
+			->getIds()
 			->toArray();
-		if (count($issues) < 1) {
+		if (count($issueIds) < 1) {
 			//show error
 			$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noIssuesPublished')));
 			// redirect back to exportSubmissions-tab
@@ -577,121 +607,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					"contexts/" . $context->getId() . "/_plugins/generic/dnb/submissions"
 				);
 
-				// Get published submissions
-				$publishedSubmissions = Repo::submission()
-					->getCollector()
-					->filterByContextIds([$context->getId()])
-					->filterByStatus([Submission::STATUS_PUBLISHED])
-					->getMany()
-					->toArray();
-
-				// Cache frequently used values outside the loop
-				$contextPath = $context->getPath();
-				$statusNames = $this->getStatusNames();
-				$authorUserGroups = UserGroup::withContextIds([$context->getId()])
-					->withRoleIds([Role::ROLE_ID_AUTHOR])
-					->get();
-
-				// Collect all unique issue IDs for bulk fetching
-				$issueIds = array_unique(array_filter(array_map(function ($submission) {
-					return $submission->getCurrentPublication()->getData('issueId');
-				}, $publishedSubmissions)));
-
-				// Fetch all issues
-				$issues = [];
-				if (!empty($issueIds)) {
-					$issueCollection = Repo::issue()
-						->getCollector()
-						->filterByContextIds([$context->getId()])
-						->filterByIssueIds($issueIds)
-						->getMany();
-					foreach ($issueCollection as $issue) {
-						$issues[$issue->getId()] = $issue;
-					}
-				}
-
-				// Prepare submission data for table
 				$submissionItems = [];
 				$nNotRegistered = 0;
-				$pluginPrefix = $this->getPluginSettingsPrefix(); // Cache prefix
-				
-				foreach ($publishedSubmissions as $submission) {
-					$publication = $submission->getCurrentPublication();
-					$status = $submission->getData($pluginPrefix . '::status');
-					if (empty($status) || $status === self::EXPORT_STATUS_NOT_DEPOSITED) {
-						$nNotRegistered++;
-					}
-					$lastError = $submission->getData($pluginPrefix . '::lastError');
-
-					// Get issue information from cached data
-					$issueTitle = '';
-					$issueUrl = '';
-					$issueId = $publication->getData('issueId');
-					$issue = null;
-					if ($issueId && isset($issues[$issueId])) {
-						$issue = $issues[$issueId];
-						$issueTitle = $issue->getIssueIdentification();
-						$issueUrl = $request->getDispatcher()->url(
-							$request,
-							Application::ROUTE_PAGE,
-							$contextPath,
-							'issue',
-							'view',
-							[$issue->getBestIssueId()]
-						);
-					}
-
-					// Use CACHED validation results instead of calling canBeExported()
-					$supplementaryNotAssignable = $submission->getData($pluginPrefix . '::supplementaryNotAssignable');
-					$galleyCount = $submission->getData($pluginPrefix . '::galleyCount') ?? 0;
-					$supplementaryCount = $submission->getData($pluginPrefix . '::supplementaryCount') ?? 0;
-					
-					// If cache is empty, calculate now and store it
-					if ($supplementaryNotAssignable === null) {
-						$this->updateExportValidationCache($submission->getId());
-						// Re-fetch the cached values
-						$submission = Repo::submission()->get($submission->getId());
-						$supplementaryNotAssignable = $submission->getData($pluginPrefix . '::supplementaryNotAssignable');
-						$galleyCount = $submission->getData($pluginPrefix . '::galleyCount') ?? 0;
-						$supplementaryCount = $submission->getData($pluginPrefix . '::supplementaryCount') ?? 0;
-					}
-					
-					// Create warning message if issues detected with supplementary files
-					$msg = "";
-					if ($supplementaryNotAssignable) {
-						$plural = $currentLocale == "de" ? "n" : "s";
-						$msg = __(
-							'plugins.importexport.dnb.warning.supplementaryNotAssignable',
-							array(
-								'nDoc' => $galleyCount,
-								'nSupp' => $supplementaryCount,
-								'pSupp' => $supplementaryCount > 1 ? $plural : ""
-							)
-						);
-					}
-
-					$submissionItems[] = [
-						'id' => $submission->getId(),
-						'urlWorkflow' => $request->getDispatcher()->url(
-							$request,
-							Application::ROUTE_PAGE,
-							$contextPath,
-							'workflow',
-							'access',
-							[$submission->getId()]
-						),
-						'publication' => [
-							'authorsString' => $publication->getAuthorString($authorUserGroups),
-							'fullTitle' => $publication->getLocalizedFullTitle(),
-						],
-						'issueTitle' => $issueTitle,
-						'issueUrl' => $issueUrl,
-						'dnbStatus' => $statusNames[$status] ?? $statusNames[self::EXPORT_STATUS_NOT_DEPOSITED],
-						'dnbStatusConst' => $status ?: self::EXPORT_STATUS_NOT_DEPOSITED,
-						'supplementariesNotAssignable' => $msg !== "" ? $msg : false,
-						'lastError' => $lastError
-					];
-				}
 
 				// Instantiate DNBSubmissionsList
 				$dnbSubmissionsList = new DNBSubmissionsList(
@@ -813,6 +730,20 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					)
 				);
 
+				$refreshValidationUrl = $request->getDispatcher()->url(
+					$request,
+					Application::ROUTE_COMPONENT,
+					null,
+					'grid.settings.plugins.settingsPluginGridHandler',
+					'manage',
+					null,
+					array(
+						'plugin' => $this->getName(),
+						'category' => 'importexport',
+						'verb' => 'refreshExportValidation'
+					)
+				);
+
 				$clearFailedJobsUrl = $request->getDispatcher()->url(
 					$request,
 					Application::ROUTE_COMPONENT,
@@ -830,6 +761,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 				$script_data = [
 					'helpUrl' => $helpUrl,
 					'catalogFetchUrl' => $catalogFetchUrl,
+					'refreshValidationUrl' => $refreshValidationUrl,
 				];
 
 				$templateMgr->assign('clearFailedJobsUrl', $clearFailedJobsUrl);
@@ -1040,74 +972,72 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					$request->redirect(null, null, null, $path, null, $tab);
 				}
 				$exportPath = $result;
-				$journalExportPath = $basedir . '/' . $result;
+			// Keep both relative (for Flysystem) and absolute (for direct FS operations) paths
+			$exportPathRelative = $result;
+			$journalExportPath = $basedir . '/' . $result;
 
-				$errors = $exportFilesNames = [];
+			$errors = $exportFilesNames = [];
 
-				// Go through all submissions, create an deposit packages
-				foreach ($submissions as $submission) {
-					$issue = null;
-					$galleys = [];
-					$supplementaryGalleys = [];
-					// Get issue and galleys, and check if the article can be exported.
-					// canBeExported(...) returns galleys and supplementary galleys seperately
-					try {
-						if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
-							$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
-							// continue with other articles
-							continue;
-						}
-					} catch (DNBPluginException $e) {
-						// convert DNBPluginException to error messages that will be shown to the user
-						// handleExceptions() returns a single error tuple like ['key', 'param'], so wrap it in array
-						$result = $this->handleExceptions($e, $submission->getId());
-						$errors = array_merge($errors, [$result]);
+			// Go through all submissions, create an deposit packages
+			foreach ($submissions as $submission) {
+				$issue = null;
+				$galleys = [];
+				$supplementaryGalleys = [];
+				// Get issue and galleys, and check if the article can be exported.
+				// canBeExported(...) returns galleys and supplementary galleys seperately
+				try {
+					if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
+						$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
+						// continue with other articles
+						continue;
 					}
+				} catch (DNBPluginException $e) {
+					// convert DNBPluginException to error messages that will be shown to the user
+					// handleExceptions() returns a single error tuple like ['key', 'param'], so wrap it in array
+					$result = $this->handleExceptions($e, $submission->getId());
+					$errors = array_merge($errors, [$result]);
+				}
 
-					// Go through all gellyes, prepare packages and deposit
-					foreach ($galleys as $galley) {
+			// Go through all gellyes, prepare packages and deposit
+			foreach ($galleys as $galley) {
 
-						// store submission Id in galley object for internal use
-						$galley->setData('submissionId', $submission->getId());
+				// store submission Id in galley object for internal use
+				$galley->setData('submissionId', $submission->getId());
 
-						// check if it is a full text
-						// if $galleyFile is not set it might be a remote URL
-						$galleyFile = $galley->getFile();
-						if (!isset($galleyFile)) {
-							if ($galley->getData('urlRemote') == null) continue;
-						}
+				// check if it is a full text
+				// if $galleyFile is not set it might be a remote URL
+				$galleyFile = $galley->getFile();
+				if (!isset($galleyFile)) {
+					if ($galley->getData('urlRemote') == null) continue;
+				}
 
-						$exportFile = '';
-						// Get the TAR package for the galley
-						$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
+				$exportFile = '';
+				// Get the TAR package for the galley
+				$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
 
-						// If errors occured, remove all created directories and return the errors
-						if (is_array($result)) {
-							// If error occured add it to the list of errors
-							$errors = array_merge($errors, $result);
-						}
+				// If errors occured, remove all created directories and return the errors
+				if (is_array($result)) {
+					// If error occured add it to the list of errors
+					$errors = array_merge($errors, $result);
+				}
 
-						// deposit the package
-						if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
-							// Add the galley package to the list of all exported files
-							$exportFilesNames[] = $exportFile;
-						} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
-							// Deposit the galley
-							// $exportfile will be empty if XML file could not be created
-							$result = false;
-							if ($exportFile) {
-								$result = $this->depositXML($galley, $journal, $exportFile);
-							}
-							if (is_array($result)) {
-								// If error occured add it to the list of errors
-								$errors = array_merge($errors, $result);
-							}
-						}
-					}
-
-					// // Todo: Revise handling of success, is $fullyDeposited still used ???
-					// if ($fullyDeposited && $this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
-					// 	$this->updateSubmissionStatus($submission);
+				// deposit the package
+				if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
+					// Add the galley package to the list of all exported files
+					$exportFilesNames[] = $exportFile;
+			} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
+				// Deposit the galley
+				// $exportfile will be empty if XML file could not be created
+				$result = false;
+				if ($exportFile) {
+					$result = $this->depositXML($galley, $journal, $exportFile);
+				}
+				if (is_array($result)) {
+					// If error occured add it to the list of errors
+					$errors = array_merge($errors, $result);
+				}
+			}
+		}
 					// }
 				}
 
@@ -1125,17 +1055,11 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						} else {
 							$finalExportFileName = reset($exportFilesNames);
 						}
-						// TODO @RS
 						// Stream the results to the browser
-						// Starting from OJS 3.3 this would be the prefered way to stream a file for download:
-						// 	Services::get('file')->download($finalExportFileName, basename($finalExportFileName));
-						// However, this function exits execution after download not allowing for clean up of the intermediate zip file
-						// We therfore copied the appropriate functions from OJS 3.2 FileManager
-						// It was suggested (Alec) to use OJS-queues for clean up which are supposed to come with OJS 3.4 
 						$this->downloadByPath($finalExportFileName, null, false, basename($finalExportFileName));
 					}
 					// Remove the generated directories
-					Services::get('file')->fs->deleteDirectory($journalExportPath);
+					Services::get('file')->fs->deleteDirectory($exportPathRelative);
 					// redirect back to the right tab
 					// redirect causes a PHP Warning because headers were already sent by above downloadByPath call
 					// we disable warning before redirect not to spam error log
@@ -1154,7 +1078,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						);
 					}
 					// Remove the generated directories
-					Services::get('file')->fs->deleteDirectory($journalExportPath);
+					Services::get('file')->fs->deleteDirectory($exportPathRelative);
 					// redirect back to the right tab
 					$request->redirect(null, null, null, $path, null, $tab);
 				}
@@ -1216,8 +1140,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 			case \DNB_URN_SET_EXCEPTION:
 				return ['plugins.importexport.dnb.export.error.urnSet.description', $e->getMessage()];
 			case \DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION:
-				$param = __('plugins.importexport.dnb.export.error.firestAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));
-				return array('plugins.importexport.dnb.export.error.firestAuthorNotRegistred', $param);
+				$param = __('plugins.importexport.dnb.export.error.firstAuthorNotRegistred.param', array('submissionId' => $submissionId, 'msg' => $e->getMessage()));
+				return array('plugins.importexport.dnb.export.error.firstAuthorNotRegistred', $param);
 			case \DNB_REMOTE_IP_NOT_ALLOWED_EXCEPTION:
 				return array('plugins.importexport.dnb.export.error.exception', $e->getMessage());
 		}

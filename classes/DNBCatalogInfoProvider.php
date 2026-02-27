@@ -123,9 +123,9 @@ class DNBCatalogInfoProvider {
 				if ($recordsNode->length > 0) {
 					$isPrimaryTopicOf = [];
 					$exportData = [];
-					foreach ($xpathFilter->query('//foaf:isPrimaryTopicOf') as $i)  {
-						$isPrimaryTopicOf[] = parse_url($i->textContent);
-						$exportData[] = $i->textContent;
+					foreach ($xpathFilter->query('//foaf:primaryTopic') as $i)  {
+						$isPrimaryTopicOf[] = parse_url($i->getAttribute('rdf:resource'));
+						$exportData[] = $i->getAttribute('rdf:resource');
 					}
 
 					// Write the urls to a csv file.
@@ -141,12 +141,13 @@ class DNBCatalogInfoProvider {
 
 					// summarize unique urls for better display
 					$uniqueUrls = array_unique(array_column($isPrimaryTopicOf,'host'));
-					foreach ($uniqueUrls as $i) {
-						$dnbCatalogInfo[count($dnbCatalogInfo)-1]['Anzahl Artikel'] = 
-							count(array_filter($isPrimaryTopicOf, function ($e) use ($i) {
-								return $e['host'] == $i;
-							})).' => '.$i;
+					$counts = [];
+					foreach ($uniqueUrls as $host) {
+						$counts[] = count(array_filter($isPrimaryTopicOf, function ($e) use ($host) {
+							return $e['host'] == $host;
+						})) . ' => ' . $host;
 					}
+					$dnbCatalogInfo[count($dnbCatalogInfo)-1]['Anzahl Artikel'] = implode('; ', $counts);
 				}
 
 				$dnbCatalogQueryUrl = "https://d-nb.info/".$dnbCatalogInfo[count($dnbCatalogInfo)-1]['dnb_id']."/about/marcxml";

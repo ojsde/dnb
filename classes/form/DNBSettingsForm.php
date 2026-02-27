@@ -170,6 +170,25 @@ class DNBSettingsForm extends FormComponent {
 
 		// group experimental features
 		$this->addGroup([
+			'id' => 'maintenance',
+			'label' => __('plugins.importexport.dnb.settings.form.maintenance.title'),
+		]);
+
+		$refreshDescription = __('plugins.importexport.dnb.settings.form.refreshValidation.description');
+		$refreshButtonLabel = __('plugins.importexport.dnb.settings.form.refreshValidation.button');
+		$refreshHtml = '<p>' . $refreshDescription . '</p>' .
+			'<p><button type="button" class="pkp_button" data-dnb-refresh-validation="1">' .
+			$refreshButtonLabel .
+			'</button> <span class="dnbRefreshValidation__spinner dnb-spinner" style="display:none;border:2px solid rgba(0,0,0,0.2);border-top-color:#333;vertical-align:middle;" aria-hidden="true"></span> <span class="dnbRefreshValidation__status" aria-live="polite"></span></p>';
+
+		$this->addField(new FieldHTML('refreshValidation', [
+			'label' => __('plugins.importexport.dnb.settings.form.refreshValidation.label'),
+			'description' => $refreshHtml,
+			'groupId' => 'maintenance',
+		]));
+
+		// group experimental features
+		$this->addGroup([
 			'id' => 'experimentalFeatures',
 			'label' => __('plugins.importexport.dnb.settings.form.experimentalFeatures.title'),
 		]);
@@ -179,7 +198,7 @@ class DNBSettingsForm extends FormComponent {
 		$catalogHtml = '<p>' . $catalogDescription . '</p>' .
 			'<p><button type="button" class="pkp_button" data-dnb-catalog-fetch="1">' .
 			$catalogButtonLabel .
-			'</button> <span class="dnbCatalogFetch__status" aria-live="polite"></span></p>';
+			'</button> <span class="dnbCatalogFetch__spinner dnb-spinner" style="display:none;border:2px solid rgba(0,0,0,0.2);border-top-color:#333;vertical-align:middle;" aria-hidden="true"></span> <span class="dnbCatalogFetch__status" aria-live="polite"></span></p>';
 
 		$this->addField(new FieldHTML('dnbCatalogFetch', [
 			'label' => __('plugins.importexport.dnb.settings.form.dnbCatalog.label'),
