@@ -13,10 +13,10 @@
  * @brief DNB export plugin
  */
 
+namespace APP\plugins\generic\dnb;
+
 // Import constants
 require_once __DIR__ . '/classes/form/DNBSettingsForm.php';
-
-namespace APP\plugins\generic\dnb;
 
 use APP\core\Application;
 use APP\plugins\PubObjectsExportPlugin;
