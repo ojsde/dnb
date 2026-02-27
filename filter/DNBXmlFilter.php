@@ -234,6 +234,8 @@ class DNBXmlFilter extends NativeExportFilter {
 		// Marc 254 title
 		// title
 		;
+		// the function getLocalizedTitle by default returns plain text, removing any HTML tags 
+		// getLocalizedTitle($galleyLocale, 'html'); would return HTML tags
 		$title = $publication->getLocalizedTitle($galleyLocale);
 		if (empty($title)) $title = $publication->getLocalizedTitle($submission->getData('locale'));
 		assert(!empty($title));
