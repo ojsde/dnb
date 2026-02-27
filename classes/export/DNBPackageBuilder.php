@@ -45,14 +45,14 @@ class DNBPackageBuilder
 	 * @param Galley $galley Primary galley object.
 	 * @param Galley[] $supplementaryGalleys Array of supplementary galley objects.
 	 * @param string $filter Filter identifier used for metadata export.
-	 * @param bool $noValidation Skip XML validation if true.
+	 * @param bool|null $noValidation Skip XML validation if true.
 	 * @param Context $journal Journal context object.
 	 * @param string $exportPathBase Base path within files_dir where export occurs.
 	 * @param string &$exportPackageName Output parameter; will hold full path to final TAR file.
 	 * @param int $submissionId Submission identifier used in path naming.
 	 * @return bool|array True on success or array of error messages.
 	 */
-	public function assemblePackage(Galley $galley, array $supplementaryGalleys, string $filter, bool $noValidation, Context $journal, string $exportPathBase, string &$exportPackageName, int $submissionId): bool|array
+	public function assemblePackage(Galley $galley, array $supplementaryGalleys, string $filter, ?bool $noValidation = true, Context $journal, string $exportPathBase, string &$exportPackageName, int $submissionId): bool|array
 	{
 		// Export filter must be provided and not empty
 		if (empty($filter)) {
@@ -84,7 +84,7 @@ class DNBPackageBuilder
 		}
 
 		// Export metadata XML
-		$outputErrors = null;
+		$outputErrors = [];
 		try {
 			$metadataXML = $this->plugin->exportXML($galley, $filter, $journal, $noValidation, $outputErrors);
 

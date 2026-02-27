@@ -46,7 +46,7 @@ class DNBExportJob extends BaseJob
         int $contextId,
         int $submissionId,
         array $supplementaryGalleyIds = [],
-        bool $noValidation = false,
+        bool $noValidation = true,
         ?string $filename = null
     ) {
         parent::__construct();

@@ -55,7 +55,7 @@ use APP\plugins\generic\dnb\classes\DNBCatalogInfoProvider;
 use APP\plugins\generic\dnb\DNBInfoSender;
 
 
-define('DEBUG', false);
+define('DEBUG', true);
 
 define('DNB_STATUS_DEPOSITED', 'deposited');
 define('DNB_ADDITIONAL_PACKAGE_OPTIONS', '--format=gnu'); //use --format=gnu with tar to avoid PAX-Headers
@@ -930,7 +930,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @copydoc PubObjectsExportPlugin::executeExportAction()
 	 */
 
-	public function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null, $shouldRedirect = true): mixed
+	public function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = true, $shouldRedirect = true): mixed
 	{
 		$journal = $request->getContext();
 		$path = array('plugin', $this->getName());
@@ -1114,7 +1114,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 *
 	 * @return bool|array[] True for success or 2D array [['locale.key', 'param'], ...] on error
 	 */
-	function getGalleyPackage(Galley $galley, array $supplementaryGalleys, string $filter, ?bool $noValidation, Journal $journal, string $exportPathBase, string &$exportPackageName, int $submissionId): bool|array
+	function getGalleyPackage(Galley $galley, array $supplementaryGalleys, string $filter, ?bool $noValidation = true, Journal $journal, string $exportPathBase, string &$exportPackageName, int $submissionId): bool|array
 	{
 		return $this->packageBuilder->assemblePackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, $exportPackageName, $submissionId);
 	}

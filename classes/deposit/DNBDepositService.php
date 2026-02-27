@@ -73,8 +73,7 @@ class DNBDepositService {
 						$context->getId(),
 						$object->getData('submissionId'),
 						[], // No supplementary galleys needed when package is pre-built
-						'', // No filter needed
-						false, // No validation flag needed
+						true, // Skip validation 
 						$filename // Pre-built package path
 					)
 				);

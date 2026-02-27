@@ -127,8 +127,7 @@ class DNBInfoSender extends ScheduledTask
 									$journal->getId(),
 									$submission->getId(),
 									$suppIds,
-									$filter,
-									true // noValidation
+									true // noValidation: false = enable validation, true = skip validation
 								));
 
 								// Update status to queued immediately
