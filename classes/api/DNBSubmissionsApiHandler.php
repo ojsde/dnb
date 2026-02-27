@@ -23,6 +23,7 @@ use PKP\db\DAORegistry;
 use PKP\userGroup\UserGroup;
 use PKP\facades\Locale;
 use PKP\core\PKPRequest;
+use APP\submission\Collector as Collector;
 
 class DNBSubmissionsApiHandler {
 	
@@ -64,7 +65,7 @@ class DNBSubmissionsApiHandler {
 			->getIds()
 			->toArray();
 			
-		$collector = Repo::submission()
+		$collector = Repo::submission() /** @var $collector Collector **/
 			->getCollector()
 			->filterByContextIds([$context->getId()])
 			->filterByIssueIds(isset($args['issueIds']) ? $args['issueIds'] : $issueIds)
@@ -74,7 +75,7 @@ class DNBSubmissionsApiHandler {
 			$collector->filterBySectionIds($args['sectionIds']);
 		}
 		if (isset($args['searchPhrase'])) {
-			$collector->filterBySearchPhrase($args['searchPhrase']);
+			$collector->filterBySearchPhrase($args['searchPhrase']); /** @var $collector Collector **/
 		}
 		
 		$itemsMax = $collector->getCount();

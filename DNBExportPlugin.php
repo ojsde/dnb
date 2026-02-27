@@ -13,6 +13,9 @@
  * @brief DNB export plugin
  */
 
+// Import constants
+require_once __DIR__ . '/classes/form/DNBSettingsForm.php';
+
 namespace APP\plugins\generic\dnb;
 
 use APP\core\Application;
@@ -33,9 +36,7 @@ use PKP\userGroup\UserGroup;
 use PKP\core\PKPRequest;
 use PKP\galley\Galley;
 use PKP\core\PKPApplication;
-
-// Import constants
-require_once __DIR__ . '/classes/form/DNBSettingsForm.php';
+use APP\issue\Issue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use PKP\security\Role;
@@ -272,7 +273,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	}
 
 	public function registerSchedules(PKPScheduler $scheduler): void
-    {
+	{
 		if (DEBUG) {
 			$scheduler
 				->addSchedule(new DNBInfoSender([]))
@@ -284,7 +285,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 				->name(DNBInfoSender::class)
 				->withoutOverlapping();
 		}
-    }
+	}
 
 	/**
 	 * Initialize service instances
@@ -316,64 +317,64 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 			// Add our variables to the submission schema
 			Hook::add('Schema::get::submission', function ($hookname, $params) {
 				$schema = &$params[0];
-				$schema->properties->{$this->getPluginSettingsPrefix().'::lastError'} = (object)[
+				$schema->properties->{$this->getPluginSettingsPrefix() . '::lastError'} = (object)[
 					'type' => 'string',
 					'apiSummary' => true,
 					'validation' => ['nullable'],
 					'description' => 'Last error message from DNB export',
 				];
-			$schema->properties->{$this->getPluginSettingsPrefix().'::canExport'} = (object)[
-				'type' => 'boolean',
-				'apiSummary' => true,
-				'validation' => ['nullable'],
-				'description' => 'Cached result: Can this submission be exported to DNB',
-			];
-			$schema->properties->{$this->getPluginSettingsPrefix().'::supplementaryNotAssignable'} = (object)[
-				'type' => 'boolean',
-				'apiSummary' => true,
-				'validation' => ['nullable'],
-				'description' => 'Cached result: Supplementary files cannot be unambiguously assigned',
-			];
-			$schema->properties->{$this->getPluginSettingsPrefix().'::hasSupplementary'} = (object)[
-				'type' => 'boolean',
-				'apiSummary' => true,
-				'validation' => ['nullable'],
-				'description' => 'Cached result: Has supplementary files',
-			];
-			$schema->properties->{$this->getPluginSettingsPrefix().'::galleyCount'} = (object)[
-				'type' => 'integer',
-				'apiSummary' => true,
-				'validation' => ['nullable'],
-				'description' => 'Cached count of PDF/EPUB galleys',
-			];
-			$schema->properties->{$this->getPluginSettingsPrefix().'::supplementaryCount'} = (object)[
-				'type' => 'integer',
-				'apiSummary' => true,
-				'validation' => ['nullable'],
-				'description' => 'Cached count of supplementary galleys',
-			];
-			return Hook::CONTINUE;
-		});
+				$schema->properties->{$this->getPluginSettingsPrefix() . '::canExport'} = (object)[
+					'type' => 'boolean',
+					'apiSummary' => true,
+					'validation' => ['nullable'],
+					'description' => 'Cached result: Can this submission be exported to DNB',
+				];
+				$schema->properties->{$this->getPluginSettingsPrefix() . '::supplementaryNotAssignable'} = (object)[
+					'type' => 'boolean',
+					'apiSummary' => true,
+					'validation' => ['nullable'],
+					'description' => 'Cached result: Supplementary files cannot be unambiguously assigned',
+				];
+				$schema->properties->{$this->getPluginSettingsPrefix() . '::hasSupplementary'} = (object)[
+					'type' => 'boolean',
+					'apiSummary' => true,
+					'validation' => ['nullable'],
+					'description' => 'Cached result: Has supplementary files',
+				];
+				$schema->properties->{$this->getPluginSettingsPrefix() . '::galleyCount'} = (object)[
+					'type' => 'integer',
+					'apiSummary' => true,
+					'validation' => ['nullable'],
+					'description' => 'Cached count of PDF/EPUB galleys',
+				];
+				$schema->properties->{$this->getPluginSettingsPrefix() . '::supplementaryCount'} = (object)[
+					'type' => 'integer',
+					'apiSummary' => true,
+					'validation' => ['nullable'],
+					'description' => 'Cached count of supplementary galleys',
+				];
+				return Hook::CONTINUE;
+			});
 
-		// Listen to galley changes to update cached export validation
-		Hook::add('Galley::add', [$this, 'handleGalleyChange']); // At this stage an empty galley (i.e. without galley file) is added, we should be able to catch remote galleys here		Hook::add('Galley::edit', [$this, 'handleGalleyChange']);
-		Hook::add('Galley::edit', [$this, 'handleGalleyChange']); // Galley file is changed or uploaded. ISSUE: $galley->getFile() returns null here!
-		Hook::add('Galley::delete', [$this, 'handleGalleyChange']); // Galley is deleted, we update galley counts
-		Hook::add('Publication::publish', [$this, 'handleGalleyChange']);
+			// Listen to galley changes to update cached export validation
+			Hook::add('Galley::add', [$this, 'handleGalleyChange']); // At this stage an empty galley (i.e. without galley file) is added, we should be able to catch remote galleys here		Hook::add('Galley::edit', [$this, 'handleGalleyChange']);
+			Hook::add('Galley::edit', [$this, 'handleGalleyChange']); // Galley file is changed or uploaded. ISSUE: $galley->getFile() returns null here!
+			Hook::add('Galley::delete', [$this, 'handleGalleyChange']); // Galley is deleted, we update galley counts
+			Hook::add('Publication::publish', [$this, 'handleGalleyChange']);
 
-		// Register API endpoints if this is an API request
-		$request = Application::get()->getRequest();
-		$router = $request->getRouter();
+			// Register API endpoints if this is an API request
+			$request = Application::get()->getRequest();
+			$router = $request->getRouter();
 
-		if ($router instanceof \PKP\core\APIRouter) {
-			Hook::add(
-				"APIHandler::endpoints::{$router->getEntity()}",
-				[$this, 'setupAPIEndpoints']
-			);
+			if ($router instanceof \PKP\core\APIRouter) {
+				Hook::add(
+					"APIHandler::endpoints::{$router->getEntity()}",
+					[$this, 'setupAPIEndpoints']
+				);
+			}
 		}
-	}
 
-	return $success;
+		return $success;
 	}
 
 	/**
@@ -385,27 +386,27 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		$newGalley = $args[0]; // First argument is always (add/edit) the new galley object
 		$oldGalley = $args[1]; // Second argument is the old galley object for edit/delete hooks
 		$submissionFileId = $args[2]; // Third argument is the submission file ID of the new galley file
-		
+
 		// Galleys have publicationId, not submissionId directly
 		$publicationId = $newGalley->getData('publicationId');
 		if (!$publicationId) {
 			return Hook::CONTINUE;
 		}
-		
+
 		// Get the publication to find the submission
 		$publication = Repo::publication()->get($publicationId);
 		if (!$publication) {
 			return Hook::CONTINUE;
 		}
-		
+
 		$submissionId = $publication->getData('submissionId');
 		if (!$submissionId) {
 			return Hook::CONTINUE;
 		}
-		
+
 		// Recalculate and cache export validation for this submission
 		$this->updateExportValidation($submissionId, $newGalley);
-		
+
 		return Hook::CONTINUE;
 	}
 
@@ -418,17 +419,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		if (!$submission) {
 			return;
 		}
-		
+
 		$issue = null;
 		$galleys = [];
 		$supplementaryGalleys = [];
-		
+
 		// Run the validation
 		$canExport = $this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys, $newGalley);
-		
+
 		// Get the supplementaryNotAssignable flag that was set by canBeExported
-		$supplementaryNotAssignable = $submission->getData($this->getPluginSettingsPrefix().'::supplementaryNotAssignable') ?? false;
-		
+		$supplementaryNotAssignable = $submission->getData($this->getPluginSettingsPrefix() . '::supplementaryNotAssignable') ?? false;
+
 		// Cache the results in the database
 		Repo::submission()->edit($submission, [
 			$this->getPluginSettingsPrefix() . '::canExport' => $canExport,
@@ -554,7 +555,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 
 		// if no object is selected go back to export submission tab
 		if (!empty($args)) {
-			if (empty((array) $request->getUserVar('selectedSubmissions')) || (($args[0] !== 'exportSubmissions') &&
+			if (
+				empty((array) $request->getUserVar('selectedSubmissions')) || (($args[0] !== 'exportSubmissions') &&
 					($args[0] !== self::EXPORT_ACTION_EXPORT) &&
 					($args[0] !== self::EXPORT_ACTION_DEPOSIT) &&
 					($args[0] !== self::EXPORT_ACTION_MARKREGISTERED))
@@ -640,7 +642,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 				$templateMgr->assign([
 					'pageComponent' => 'ImportExportPage',
 					'baseurl' => $request->getBaseUrl(),
-					'debugModeWarning' => $this->getSetting($context->getId(), 'connectionType') ? __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_WEBDAV_SERVER, 'port' => DNB_WEBDAV_PORT]):__("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_SFTP_SERVER, 'port' => DNB_SFTP_PORT]),
+					'debugModeWarning' => $this->getSetting($context->getId(), 'connectionType') ? __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_WEBDAV_SERVER, 'port' => DNB_WEBDAV_PORT]) : __("plugins.importexport.dnb.settings.debugModeActive.contents", ['server' => DNB_SFTP_SERVER, 'port' => DNB_SFTP_PORT]),
 					'nNotRegistered' => $nNotRegistered,
 					'remoteEnabled' => $this->getSetting($context->getId(), 'exportRemoteGalleys') ? "Remote On" : "",
 					'suppDisabled' => $this->getSetting($context->getId(), 'submitSupplementaryMode') === "none" ? "Supplementary Off" : "",
@@ -962,72 +964,72 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					$request->redirect(null, null, null, $path, null, $tab);
 				}
 				$exportPath = $result;
-			// Keep both relative (for Flysystem) and absolute (for direct FS operations) paths
-			$exportPathRelative = $result;
-			$journalExportPath = $basedir . '/' . $result;
+				// Keep both relative (for Flysystem) and absolute (for direct FS operations) paths
+				$exportPathRelative = $result;
+				$journalExportPath = $basedir . '/' . $result;
 
-			$errors = $exportFilesNames = [];
+				$errors = $exportFilesNames = [];
 
-			// Go through all submissions, create an deposit packages
-			foreach ($submissions as $submission) {
-				$issue = null;
-				$galleys = [];
-				$supplementaryGalleys = [];
-				// Get issue and galleys, and check if the article can be exported.
-				// canBeExported(...) returns galleys and supplementary galleys seperately
-				try {
-					if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
-						$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
-						// continue with other articles
-						continue;
+				// Go through all submissions, create an deposit packages
+				foreach ($submissions as $submission) {
+					$issue = null;
+					$galleys = [];
+					$supplementaryGalleys = [];
+					// Get issue and galleys, and check if the article can be exported.
+					// canBeExported(...) returns galleys and supplementary galleys seperately
+					try {
+						if (!$this->canBeExported($submission, $issue, $galleys, $supplementaryGalleys)) {
+							$errors[] = array('plugins.importexport.dnb.export.error.articleCannotBeExported', $submission->getId());
+							// continue with other articles
+							continue;
+						}
+					} catch (DNBPluginException $e) {
+						// convert DNBPluginException to error messages that will be shown to the user
+						// handleExceptions() returns a single error tuple like ['key', 'param'], so wrap it in array
+						$result = $this->handleExceptions($e, $submission->getId());
+						$errors = array_merge($errors, [$result]);
 					}
-				} catch (DNBPluginException $e) {
-					// convert DNBPluginException to error messages that will be shown to the user
-					// handleExceptions() returns a single error tuple like ['key', 'param'], so wrap it in array
-					$result = $this->handleExceptions($e, $submission->getId());
-					$errors = array_merge($errors, [$result]);
-				}
 
-			// Go through all gellyes, prepare packages and deposit
-			foreach ($galleys as $galley) {
+					// Go through all gellyes, prepare packages and deposit
+					foreach ($galleys as $galley) {
 
-				// store submission Id in galley object for internal use
-				$galley->setData('submissionId', $submission->getId());
+						// store submission Id in galley object for internal use
+						$galley->setData('submissionId', $submission->getId());
 
-				// check if it is a full text
-				// if $galleyFile is not set it might be a remote URL
-				$galleyFile = $galley->getFile();
-				if (!isset($galleyFile)) {
-					if ($galley->getData('urlRemote') == null) continue;
-				}
+						// check if it is a full text
+						// if $galleyFile is not set it might be a remote URL
+						$galleyFile = $galley->getFile();
+						if (!isset($galleyFile)) {
+							if ($galley->getData('urlRemote') == null) continue;
+						}
 
-				$exportFile = '';
-				// Get the TAR package for the galley
-				$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
+						$exportFile = '';
+						// Get the TAR package for the galley
+						$result = $this->getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPath, $exportFile, $submission->getData('id'));
 
-				// If errors occured, remove all created directories and return the errors
-				if (is_array($result)) {
-					// If error occured add it to the list of errors
-					$errors = array_merge($errors, $result);
-				}
+						// If errors occured, remove all created directories and return the errors
+						if (is_array($result)) {
+							// If error occured add it to the list of errors
+							$errors = array_merge($errors, $result);
+						}
 
-				// deposit the package
-				if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
-					// Add the galley package to the list of all exported files
-					$exportFilesNames[] = $exportFile;
-			} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
-				// Deposit the galley
-				// $exportfile will be empty if XML file could not be created
-				$result = false;
-				if ($exportFile) {
-					$result = $this->depositXML($galley, $journal, $exportFile);
-				}
-				if (is_array($result)) {
-					// If error occured add it to the list of errors
-					$errors = array_merge($errors, $result);
-				}
-			}
-		}
+						// deposit the package
+						if ($this->_exportAction == self::EXPORT_ACTION_EXPORT) {
+							// Add the galley package to the list of all exported files
+							$exportFilesNames[] = $exportFile;
+						} elseif ($this->_exportAction == self::EXPORT_ACTION_DEPOSIT) {
+							// Deposit the galley
+							// $exportfile will be empty if XML file could not be created
+							$result = false;
+							if ($exportFile) {
+								$result = $this->depositXML($galley, $journal, $exportFile);
+							}
+							if (is_array($result)) {
+								// If error occured add it to the list of errors
+								$errors = array_merge($errors, $result);
+							}
+						}
+					}
 					// }
 				}
 
@@ -1092,6 +1094,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 			default:
 				return parent::executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation);
 		}
+		return null;
 	}
 
 	function updateSubmissionStatus(Submission $submission): void
