@@ -18,19 +18,29 @@ use PKP\config\Config;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\UnableToCopyFile;
 use PKP\file\FileManager;
+use PKP\galley\Galley;
 
 class DNBFileManager {
 	
-	private $plugin;
+	private object $plugin;
 	
-	public function __construct($plugin) {
+	/**
+	 * Constructor for file manager service.
+	 *
+	 * @param object $plugin The DNB export plugin instance.
+	 */
+	public function __construct(object $plugin) {
 		$this->plugin = $plugin;
 	}
 	
 	/**
-	 * Copy galley file to export path
+	 * Copy galley file to export path.
+	 *
+	 * @param Galley $galley The galley object to copy.
+	 * @param string $exportPath Target export directory path.
+	 * @return string|array Full path on success, or array of error messages.
 	 */
-	public function copyGalleyFile($galley, $exportPath): string|array {
+	public function copyGalleyFile(Galley $galley, string $exportPath): string|array {
 		$galleyFile = $galley->getFile();
 		$basedir = Config::getVar('files', 'files_dir');
 		
@@ -58,9 +68,13 @@ class DNBFileManager {
 	}
 	
 	/**
-	 * Handle remote galley file
+	 * Handle remote galley file by downloading and storing it.
+	 *
+	 * @param Galley $galley The remote galley object.
+	 * @param string $exportPath Target export directory path.
+	 * @return string|array Full path on success, or array of error messages.
 	 */
-	private function handleRemoteGalley($galley, $exportPath): string|array {
+	private function handleRemoteGalley(Galley $galley, string $exportPath): string|array {
 		$basedir = Config::getVar('files', 'files_dir');
 		
 		if (!$this->plugin->exportRemote()) {
@@ -126,9 +140,14 @@ class DNBFileManager {
 	}
 	
 	/**
-	 * Get export path, creating directories if needed
+	 * Get or create export path, preparing directories as needed.
+	 *
+	 * @param int|null $journalId Journal ID for path naming.
+	 * @param string|null $currentExportPath Current export path base.
+	 * @param string|null $exportContentDir Subdirectory name within export path.
+	 * @return string|array Export path with trailing slash on success, or array of error messages.
 	 */
-	public function getExportPath($journalId = null, $currentExportPath = null, $exportContentDir = null): string|array {
+	public function getExportPath(?int $journalId = null, ?string $currentExportPath = null, ?string $exportContentDir = null): string|array {
 		if (!$currentExportPath) {
 			$exportPath = $this->plugin->getPluginSettingsPrefix() . '/' . $journalId . '-' . date('Ymd-His');
 		} else {
@@ -158,9 +177,13 @@ class DNBFileManager {
 	}
 	
 	/**
-	 * Read file from path
+	 * Read file contents from a file path.
+	 *
+	 * @param string $filePath Path to the file to read.
+	 * @param bool $output If true, output file directly; if false, return contents.
+	 * @return string|bool File contents, true if output to browser, or false on failure.
 	 */
-	public function readFileFromPath($filePath, $output = false) {
+	public function readFileFromPath(string $filePath, bool $output = false): string|bool {
 		if (is_readable($filePath)) {
 			if ($output) {
 				readfile($filePath);
@@ -172,9 +195,15 @@ class DNBFileManager {
 	}
 	
 	/**
-	 * Download file to browser
+	 * Download file to browser with appropriate headers.
+	 *
+	 * @param string $filePath Path to the file to download.
+	 * @param string|null $mediaType MIME type; defaults to application/octet-stream.
+	 * @param bool $inline If true, display inline; if false, force download.
+	 * @param string|null $fileName Custom filename for download.
+	 * @return bool True on success, false if file not readable.
 	 */
-	public function downloadByPath($filePath, $mediaType = null, $inline = false, $fileName = null): bool {
+	public function downloadByPath(string $filePath, ?string $mediaType = null, bool $inline = false, ?string $fileName = null): bool {
 		if (!is_readable($filePath)) {
 			return false;
 		}

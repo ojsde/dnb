@@ -15,28 +15,36 @@ namespace APP\plugins\generic\dnb\classes\api;
 use APP\core\Application;
 use APP\facades\Repo;
 use APP\submission\Submission;
+use PKP\context\Context;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request as IlluminateRequest;
 use Illuminate\Support\Facades\DB;
 use PKP\db\DAORegistry;
 use PKP\userGroup\UserGroup;
 use PKP\facades\Locale;
+use PKP\core\PKPRequest;
 
 class DNBSubmissionsApiHandler {
 	
-	private $plugin;
+	private object $plugin;
 	
-	public function __construct($plugin) {
+	/**
+	 * Constructor for the submissions API handler.
+	 *
+	 * @param object $plugin The DNB export plugin instance.
+	 */
+	public function __construct(object $plugin) {
 		$this->plugin = $plugin;
 	}
 	
 	/**
 	 * Process an API request to list submissions for the DNB export plugin.
 	 *
-	 * @param \Illuminate\Http\Request $illuminateRequest The Laravel request object containing query parameters.
-	 * @param \PKP\classes\core\PKPRequest $request OJS request providing context and user information.
+	 * @param IlluminateRequest $illuminateRequest The Laravel request object containing query parameters.
+	 * @param PKPRequest $request OJS request providing context and user information.
 	 * @return JsonResponse JSON response containing items, totals and optional status counts.
 	 */
-	public function handle($illuminateRequest, $request): JsonResponse {
+	public function handle(IlluminateRequest $illuminateRequest, PKPRequest $request): JsonResponse {
 		$context = $request->getContext();
 		$params = $illuminateRequest->query();
 		$args = array_merge($params, $illuminateRequest->input() ?? []);
@@ -161,14 +169,14 @@ class DNBSubmissionsApiHandler {
 	 * Add plugin-specific properties (deposit status, export URLs, etc.) to the
 	 * mapped submission items.
 	 *
-	 * @param \PKP\submission\Submission[] $submissions The raw submission objects.
-	 * @param array $mappedItems Schema-mapped representations keyed by submission id.
-	 * @param \PKP\classes\core\PKPRequest $request Current request context.
-	 * @param \APP\core\Context $context Journal context.
+	 * @param Submission[] $submissions The raw submission objects.
+	 * @param array<int, array> $mappedItems Schema-mapped representations keyed by submission id.
+	 * @param PKPRequest $request Current request context.
+	 * @param Context $context Journal context.
 	 * @param string $statusName Export status setting identifier.
-	 * @return array The enriched items array.
+	 * @return array<int, array> The enriched items array.
 	 */
-	private function enrichWithDNBData($submissions, $mappedItems, $request, $context, $statusName): array {
+	private function enrichWithDNBData(array $submissions, array $mappedItems, PKPRequest $request, Context $context, string $statusName): array {
 		$items = [];
 		$pluginPrefix = $this->plugin->getPluginSettingsPrefix();
 		$contextPath = $context->getPath();

@@ -14,14 +14,22 @@ namespace APP\plugins\generic\dnb\classes\export;
 
 use APP\core\Services;
 use PKP\config\Config;
+use PKP\galley\Galley;
+use PKP\context\Context;
 
 class DNBPackageBuilder
 {
 
-	private $plugin;
-	private $fileManager;
+	private object $plugin;
+	private DNBFileManager $fileManager;
 
-	public function __construct($plugin, $fileManager)
+	/**
+	 * Constructor for the package builder service.
+	 *
+	 * @param object $plugin The DNB export plugin instance.
+	 * @param DNBFileManager $fileManager File operations manager.
+	 */
+	public function __construct(object $plugin, DNBFileManager $fileManager)
 	{
 		$this->plugin = $plugin;
 		$this->fileManager = $fileManager;
@@ -34,17 +42,17 @@ class DNBPackageBuilder
 	 * gathers supplementary files, creates the package directory structure,
 	 * and generates the final TAR archive ready for deposit to the DNB.
 	 *
-	 * @param \APP\submission\Galley $galley Primary galley object.
-	 * @param array $supplementaryGalleys Array of supplementary galley objects.
+	 * @param Galley $galley Primary galley object.
+	 * @param Galley[] $supplementaryGalleys Array of supplementary galley objects.
 	 * @param string $filter Filter identifier used for metadata export.
 	 * @param bool $noValidation Skip XML validation if true.
-	 * @param \APP\core\Context $journal Journal context object.
+	 * @param Context $journal Journal context object.
 	 * @param string $exportPathBase Base path within files_dir where export occurs.
 	 * @param string &$exportPackageName Output parameter; will hold full path to final TAR file.
 	 * @param int $submissionId Submission identifier used in path naming.
 	 * @return bool|array True on success or array of error messages.
 	 */
-	public function assemblePackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, &$exportPackageName, $submissionId): bool|array
+	public function assemblePackage(Galley $galley, array $supplementaryGalleys, string $filter, bool $noValidation, Context $journal, string $exportPathBase, string &$exportPackageName, int $submissionId): bool|array
 	{
 		// Export filter must be provided and not empty
 		if (empty($filter)) {
@@ -113,26 +121,31 @@ class DNBPackageBuilder
 	 * remove the original directory after archiving.
 	 *
 	 * @param string $exportPath Relative export directory path inside files_dir.
-	 * @return void
+	 * @return bool|array True on success or array with error info on failure.
 	 */
-	private function tarSupplementaryFiles($exportPath): void
+	private function tarSupplementaryFiles(string $exportPath): bool|array
 	{
 		$supplementaryPath = Config::getVar('files', 'files_dir') . '/' . $exportPath . 'content/supplementary/';
 		$supplementaryTar = Config::getVar('files', 'files_dir') . '/' . $exportPath . 'content/supplementary.tar';
-		$this->createTarArchive($supplementaryPath, $supplementaryTar);
+		$result = $this->createTarArchive($supplementaryPath, $supplementaryTar);
+		if (is_array($result)) {
+			return $result;
+		}
+
 		Services::get('file')->fs->deleteDirectory($exportPath . 'content/supplementary');
+		return true;
 	}
 
 	/**
-	 * Execute system tar command to create an archive.
+	* Execute system tar command to create an archive.
 	 *
 	 * @param string $targetPath Directory to change into before running tar.
 	 * @param string $targetFile Full path to output tar file.
-	 * @param array|null $sourceFiles List of files (relative to targetPath) to include. If null all files are added.
+	 * @param string[]|null $sourceFiles List of files (relative to targetPath) to include. If null all files are added.
 	 * @param bool $gzip Whether to gzip the resulting archive.
-	 * @return void
-	 */
-	public function createTarArchive($targetPath, $targetFile, $sourceFiles = null, $gzip = false): void
+	* @return bool|array True on success or array with error info on failure.
+	*/
+    public function createTarArchive(string $targetPath, string $targetFile, ?array $sourceFiles = null, bool $gzip = false): bool|array
 	{
 		$tarCommand = '';
 		$tarOptions = $gzip ? ' -czf ' : ' -cf ';
@@ -162,6 +175,17 @@ class DNBPackageBuilder
 			$tarCommand .= ' ' . escapeshellarg($sourceFile);
 		}
 
-		exec($tarCommand);
+		exec($tarCommand, $output, $returnVar);
+
+		if ($returnVar !== 0) {
+			return [['plugins.importexport.dnb.export.error.createTarFailed', implode("\n", $output)]];
+		}
+
+		// Ensure the archive exists
+		if (!file_exists($targetFile)) {
+			return [['plugins.importexport.dnb.export.error.createTarFailed', 'archive_not_created']];
+		}
+
+		return true;
 	}
 }

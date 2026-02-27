@@ -16,13 +16,14 @@
 namespace APP\plugins\generic\dnb\classes;
 
 use APP\core\Services;
+use PKP\context\Context;
 use PKP\config\Config;
 use DOMDocument;
 use DOMXPath;
 
 class DNBCatalogInfoProvider {
 
-	private $pluginFilesDir;
+	private string $pluginFilesDir;
 
 	/**
 	 * Retrieve catalog information for the given journal context.
@@ -30,12 +31,12 @@ class DNBCatalogInfoProvider {
 	 * The result is an array of associative arrays containing ISSN, DNB
 	 * identifier, article counts and optionally predecessor/successor titles.
 	 *
-	 * @param \APP\core\Context $context The journal context to query.
+	 * @param Context $context The journal context to query.
 	 * @param string $pluginFilesDir Directory path where temporary/plugin files
 	 *   may be written (used for debugging responses).
-	 * @return array An indexed array of catalog rows ready for display.
+	 * @return array<int, array> An indexed array of catalog rows ready for display.
 	 */
-	public function getCatalogInfo($context, $pluginFilesDir) {
+	public function getCatalogInfo(Context $context, string $pluginFilesDir): array {
 		$this->pluginFilesDir = $pluginFilesDir;
 
 		$dnbCatalogInfo = $this->fetchDNBCatalogData($context);
@@ -99,13 +100,13 @@ class DNBCatalogInfoProvider {
      * 'dnb_id', 'marcxml') depending on the data retrieved so far. The
      * recursive structure allows gathering linked ISSNs and article counts.
      *
-     * @param \APP\core\Context $context The current journal context.
+     * @param Context $context The current journal context.
      * @param string $mode The query mode, defaults to 'issn'.
      * @param string $url When using a custom URL (e.g. marcxml retrieval).
-     * @param array $dnbCatalogInfo Accumulator array passed between recursion steps.
-     * @return array Catalog information built so far.
+     * @param array<int, array> $dnbCatalogInfo Accumulator array passed between recursion steps.
+     * @return array<int, array> Catalog information built so far.
      */
-    private function fetchDNBCatalogData($context, $mode = 'issn', $url = '', $dnbCatalogInfo = []) {
+    private function fetchDNBCatalogData(Context $context, string $mode = 'issn', string $url = '', array $dnbCatalogInfo = []): array {
 
 		// prepare query depending on the current recursion mode.  The idea is
 		// to start with the journal's ISSN, then obtain a DNB identifier, and
@@ -285,9 +286,9 @@ class DNBCatalogInfoProvider {
 	 * @param string $baseUrl Base request URL to use for the query.
 	 * @param string $mode Mode indicator affecting pagination logic.
 	 * @param string $debugFileId Identifier used when dumping the response to a file.
-	 * @return \DOMXPath XPath object for the final XML document (possibly merged).
+	 * @return DOMXPath XPath object for the final XML document (possibly merged).
 	 */
-	private function fetchDNBRawData($baseUrl, $mode = '', $debugFileId = '') {
+	private function fetchDNBRawData(string $baseUrl, string $mode = '', string $debugFileId = ''): DOMXPath {
 
 		$exit = false;
 		do {

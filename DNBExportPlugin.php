@@ -23,6 +23,7 @@ use APP\facades\Repo;
 use APP\template\TemplateManager;
 use PKP\config\Config;
 use APP\submission\Submission;
+use APP\journal\Journal;
 use APP\plugins\generic\dnb\classes\components\DNBSubmissionsList;
 use APP\plugins\generic\dnb\classes\components\DNBCatalogTable;
 use PKP\plugins\GenericPlugin;
@@ -30,6 +31,7 @@ use ErrorException;
 use PKP\scheduledTask\ScheduledTaskHelper as PKPScheduledTaskHelper;
 use PKP\userGroup\UserGroup;
 use PKP\core\PKPRequest;
+use PKP\galley\Galley;
 use PKP\core\PKPApplication;
 
 // Import constants
@@ -378,7 +380,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * Handle galley changes to recalculate export status
 	 * Called when galleys are added, edited, or deleted
 	 */
-	public function handleGalleyChange($hookName, $args)
+	public function handleGalleyChange(string $hookName, array $args): int
 	{
 		$newGalley = $args[0]; // First argument is always (add/edit) the new galley object
 		$oldGalley = $args[1]; // Second argument is the old galley object for edit/delete hooks
@@ -410,7 +412,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * Update cached export validation data for a submission
 	 */
-	public function updateExportValidation($submissionId, $newGalley = null)
+	public function updateExportValidation(int $submissionId, ?Galley $newGalley = null): void
 	{
 		$submission = Repo::submission()->get($submissionId);
 		if (!$submission) {
@@ -439,7 +441,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * Register API endpoints for this plugin
 	 */
-	public function setupAPIEndpoints($hook, $controller, $apiHandler)
+	public function setupAPIEndpoints(string $hook, $controller, $apiHandler): int
 	{
 		$request = Application::get()->getRequest();
 		$router = $request->getRouter();
@@ -480,7 +482,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc Plugin::getName()
 	 */
-	function setSettingsForm($form)
+	public function setSettingsForm(object $form): void
 	{
 		$this->_settingsForm = $form;
 	}
@@ -488,7 +490,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc Plugin::getName()
 	 */
-	function getSettingsFormActionURL()
+	public function getSettingsFormActionURL(): ?string
 	{
 		return $this->_settingsFormURL;
 	}
@@ -496,7 +498,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc Plugin::getName()
 	 */
-	function getName()
+	public function getName(): string
 	{
 		return 'DNBExportPlugin';
 	}
@@ -504,7 +506,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc Plugin::getDisplayName()
 	 */
-	function getDisplayName()
+	public function getDisplayName(): string
 	{
 		return __('plugins.importexport.dnb.displayName');
 	}
@@ -512,7 +514,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc Plugin::getDescription()
 	 */
-	function getDescription()
+	public function getDescription(): string
 	{
 		return __('plugins.importexport.dnb.description');
 	}
@@ -520,7 +522,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc setContextId()
 	 */
-	function setContextId($Id)
+	public function setContextId(int $Id): void
 	{
 		$this->_currentContextId = $Id;
 	}
@@ -813,7 +815,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * Get submissions list for export with DNB status
 	 * API endpoint handler
 	 */
-	protected function getSubmissionsForExport(Request $illuminateRequest, $request): JsonResponse
+	protected function getSubmissionsForExport(Request $illuminateRequest, PKPRequest $request): JsonResponse
 	{
 		return $this->submissionsApiHandler->handle($illuminateRequest, $request);
 	}
@@ -824,7 +826,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * Get help content for documentation
 	 * API endpoint handler
 	 */
-	protected function getHelpContent($lang, $topic, $request): JsonResponse
+	protected function getHelpContent(?string $lang, ?string $topic, PKPRequest $request): JsonResponse
 	{
 		return $this->helpApiHandler->handle($lang, $topic);
 	}
@@ -833,7 +835,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc PubObjectsExportPlugin::getStatusNames()
 	 */
-	function getStatusNames()
+	public function getStatusNames(): array
 	{
 		return array(
 			self::EXPORT_STATUS_ANY => __('plugins.importexport.dnb.status.notDeposited'),
@@ -849,7 +851,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc PubObjectsExportPlugin::getExportActionNames()
 	 */
-	function getExportActionNames()
+	public function getExportActionNames(): array
 	{
 		return array_merge(parent::getExportActionNames(), array(
 			self::EXPORT_ACTION_DEPOSIT => __('plugins.importexport.dnb.deposit'),
@@ -860,7 +862,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc ImportExportPlugin::getPluginSettingsPrefix()
 	 */
-	function getPluginSettingsPrefix()
+	public function getPluginSettingsPrefix(): string
 	{
 		return 'dnb';
 	}
@@ -868,27 +870,23 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc PubObjectsExportPlugin::getSubmissionFilter()
 	 */
-	function getSubmissionFilter()
+	public function getSubmissionFilter(): string
 	{
 		return 'galley=>dnb-xml';
 	}
 
 	/**
 	 * Return the location of the plugin's CSS file
-	 *
-	 * @return string
 	 */
-	function getStyleSheet()
+	public function getStyleSheet(): string
 	{
 		return $this->getPluginPath() . '/css/dnbplugin.css';
 	}
 
 	/**
 	 * Return the location of the help files
-	 *
-	 * @return string
 	 */
-	function getHelpPath()
+	public function getHelpPath(): string
 	{
 		return $this->getPluginPath() . '/docs/manual/';
 	}
@@ -896,7 +894,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc PubObjectsExportPlugin::getExportActions()
 	 */
-	function getExportActions($context)
+	public function getExportActions($context): array
 	{
 		return array(self::EXPORT_ACTION_DEPOSIT, self::EXPORT_ACTION_EXPORT, self::EXPORT_ACTION_MARKREGISTERED, DNB_EXPORT_ACTION_MARKEXCLUDED);
 	}
@@ -904,32 +902,24 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	/**
 	 * @copydoc PubObjectsExportPlugin::getExportDeploymentClassName()
 	 */
-	function getExportDeploymentClassName()
+	public function getExportDeploymentClassName(): string
 	{
-		return '\APP\plugins\generic\dnb\DNBExportDeployment';
+		return '\\APP\\plugins\\generic\\dnb\\DNBExportDeployment';
 	}
 
 	/**
 	 * @copydoc PubObjectsExportPlugin::getSettingsFormClassName()
 	 */
-	function getSettingsFormClassName()
+	public function getSettingsFormClassName(): string
 	{
-		return '\APP\plugins\generic\dnb\classes\form\DNBSettingsForm';
-	}
-
-	/**
-	 * @copydoc PubObjectsExportPlugin::getDepositSuccessNotificationMessageKey()
-	 */
-	function getDepositSuccessNotificationMessageKey()
-	{
-		return 'plugins.importexport.dnb.deposited.success';
+		return '\\APP\\plugins\\generic\\dnb\\classes\\form\\DNBSettingsForm';
 	}
 
 	/**
 	 * @copydoc PubObjectsExportPlugin::depositXML()
 	 * @return bool|array[] True on success, or 2D array [['locale.key', 'param'], ...] on error
 	 */
-	function depositXML($object, $context, $filename)
+	public function depositXML($object, $context, $filename): bool|array
 	{
 		// Dispatch through the deposit service which will queue the job
 		return $this->depositService->deposit($object, $context, $filename);
@@ -940,7 +930,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @copydoc PubObjectsExportPlugin::executeExportAction()
 	 */
 
-	public function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null, $shouldRedirect = true)
+	public function executeExportAction($request, $submissions, $filter, $tab, $submissionsFileNamePart, $noValidation = null, $shouldRedirect = true): mixed
 	{
 		$journal = $request->getContext();
 		$path = array('plugin', $this->getName());
@@ -1073,7 +1063,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 						// Provide the user with some visual feedback that deposit was successful
 						$this->_sendNotification(
 							$request->getUser(),
-							$this->getDepositSuccessNotificationMessageKey(),
+							'plugins.importexport.dnb.deposited.success',
 							Notification::NOTIFICATION_TYPE_SUCCESS
 						);
 					}
@@ -1104,7 +1094,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		}
 	}
 
-	function updateSubmissionStatus(Submission $submission)
+	function updateSubmissionStatus(Submission $submission): void
 	{
 		// update submission status in memory
 		$submission->setData($this->getDepositStatusSettingName(), DNB_STATUS_DEPOSITED);
@@ -1124,7 +1114,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 *
 	 * @return bool|array[] True for success or 2D array [['locale.key', 'param'], ...] on error
 	 */
-	function getGalleyPackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, &$exportPackageName, $submissionId)
+	function getGalleyPackage(Galley $galley, array $supplementaryGalleys, string $filter, ?bool $noValidation, Journal $journal, string $exportPathBase, string &$exportPackageName, int $submissionId): bool|array
 	{
 		return $this->packageBuilder->assemblePackage($galley, $supplementaryGalleys, $filter, $noValidation, $journal, $exportPathBase, $exportPackageName, $submissionId);
 	}
@@ -1156,7 +1146,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @return string|array The export directory name or an array with
 	 *  errors if something went wrong.
 	 */
-	function copyGalleyFile($galley, $exportPath)
+	function copyGalleyFile($galley, string $exportPath): string|array
 	{
 		return $this->fileManager->copyGalleyFile($galley, $exportPath);
 	}
@@ -1177,7 +1167,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @return string|array[] String with export directory path on success, or 2D array [['locale.key', 'param'], ...] on error
 	 */
 
-	function getExportPath($journalId = null, $currentExportPath = null, $exportContentDir = null)
+	public function getExportPath(?int $journalId = null, ?string $currentExportPath = null, ?string $exportContentDir = null): string|array
 	{
 		return $this->fileManager->getExportPath($journalId, $currentExportPath, $exportContentDir);
 	}
@@ -1192,7 +1182,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $galleys array Filtered (i.e. PDF and EPUB) submission full text galleys
 	 * @return boolean
 	 */
-	function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = [], $newGalley = null)
+	public function canBeExported(Submission $submission, ?Issue &$issue = null, array &$galleys = [], array &$supplementaryGalleys = [], ?Galley $newGalley = null): bool
 	{
 		return $this->validator->canBeExported($submission, $issue, $galleys, $supplementaryGalleys, $newGalley);
 	}
@@ -1204,7 +1194,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $galley ArticleGalley
 	 * @return boolean
 	 */
-	function filterGalleys($galley)
+	public function filterGalleys(Galley $galley): bool
 	{
 		return $this->galleyFilter->filterPDFAndEPUB($galley);
 	}
@@ -1216,7 +1206,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $galley ArticleGalley
 	 * @return boolean
 	 */
-	function filterSupplementaryGalleys($galley)
+	public function filterSupplementaryGalleys(Galley $galley): bool
 	{
 		return $this->galleyFilter->filterSupplementary($galley);
 	}
@@ -1227,7 +1217,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * Test whether the tar binary is available.
 	 * @return bool|array[] True if available, otherwise 2D array [['locale.key', 'param'], ...] on error
 	 */
-	function checkForTar()
+	public function checkForTar(): array|bool
 	{
 		$result = $this->validator->checkForTar();
 		$this->_checkedForTar = true;
@@ -1239,7 +1229,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @return boolean|array True if available otherwise
 	 *  an array with an error message.
 	 */
-	function checkForExportFilter()
+	public function checkForExportFilter(): array|bool
 	{
 		return $this->validator->checkForExportFilter();
 	}
@@ -1255,7 +1245,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $sourceFiles array (optional) If null, everything in the target path is considered
 	 * @param $gzip boolean (optional) If TAR file should be gzipped
 	 */
-	function createTarArchive($targetPath, $targetFile, $sourceFiles = null, $gzip = false)
+	public function createTarArchive(string $targetPath, string $targetFile, ?array $sourceFiles = null, bool $gzip = false): bool|array
 	{
 		assert($this->_checkedForTar);
 
@@ -1264,8 +1254,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 			$sourceFiles = array_map('basename', $sourceFiles);
 		}
 
-		// Delegate to PackageBuilder's createTarArchive method
-		$this->packageBuilder->createTarArchive($targetPath, $targetFile, $sourceFiles, $gzip);
+		// Delegate to PackageBuilder's createTarArchive method and return its result
+		return $this->packageBuilder->createTarArchive($targetPath, $targetFile, $sourceFiles, $gzip);
 	}
 
 	/**
@@ -1273,7 +1263,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $journal Journal
 	 * @return boolean
 	 */
-	function checkPluginSettings($journal)
+	public function checkPluginSettings(Journal $journal): array|bool
 	{
 		return $this->validator->checkPluginSettings($journal);
 	}
@@ -1282,19 +1272,17 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * Check whether this journal is OA.
 	 * @return boolean
 	 */
-	function isOAJournal($journal = NULL)
+	public function isOAJournal(?Journal $journal = NULL): bool
 	{
-		return $this->validator->isOAJournal($journal);
+		if (empty($journal)) return false;
+		return !$journal->getData('publishingMode') || $journal->getData('publishingMode') != Journal::PUBLISHING_MODE_SUBSCRIPTION;
 	}
-
-
-
 	/**
 	 * Get the name of the settings file
 	 * creation.
 	 * @return string
 	 */
-	function getContextSpecificPluginSettingsFile()
+	public function getContextSpecificPluginSettingsFile(): ?string
 	{
 		return $this->getPluginPath() . '/settings.xml';
 	}
@@ -1304,7 +1292,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $request Request
 	 * @param $errors array
 	 */
-	function errorNotification($request, $errors)
+	public function errorNotification(PKPRequest $request, array $errors): void
 	{
 		foreach ($errors as $error) {
 			assert(is_array($error) && count($error) >= 1);
@@ -1324,7 +1312,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $output boolean output the file's contents instead of returning a string
 	 * @return string|boolean
 	 */
-	function readFileFromPath($filePath, $output = false)
+	public function readFileFromPath(string $filePath, bool $output = false): string|bool
 	{
 		return $this->fileManager->readFileFromPath($filePath, $output);
 	}
@@ -1340,24 +1328,24 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $fileName string Optional filename to use on the client side
 	 * @return boolean
 	 */
-	function downloadByPath($filePath, $mediaType = null, $inline = false, $fileName = null)
+	public function downloadByPath(string $filePath, ?string $mediaType = null, bool $inline = false, ?string $fileName = null): bool
 	{
 		return $this->fileManager->downloadByPath($filePath, $mediaType, $inline, $fileName);
 	}
 
 
 
-	function getFileGenre($galleyFile)
+	public function getFileGenre($galleyFile): int
 	{
 		return $this->galleyFilter->getFileGenre($galleyFile);
 	}
 
-	function exportRemote()
+	public function exportRemote(): bool
 	{
 		return $this->getSetting($this->_currentContextId, 'exportRemoteGalleys') == "on";
 	}
 
-	function isAllowedRemoteIP($url)
+	public function isAllowedRemoteIP(string $url): bool
 	{
 		$remoteIP = gethostbyname(parse_url($url, PHP_URL_HOST));
 		$pattern = $this->getSetting($this->_currentContextId, 'allowedRemoteIPs');
@@ -1374,7 +1362,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $context Context
 	 * @return array
 	 */
-	function getUnregisteredArticles($context)
+	public function getUnregisteredArticles($context): array
 	{
 		$submissions = parent::getUnregisteredArticles($context);
 		return array_filter($submissions, array($this, 'filterMarkExcluded'));
@@ -1386,7 +1374,7 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * @param $context Context
 	 * @return array
 	 */
-	function getPublishedSubmissions($submissionIds, $context)
+	public function getPublishedSubmissions($submissionIds, $context): array
 	{
 		$submissions = parent::getPublishedSubmissions($submissionIds, $context);
 		if ($this->_exportAction != DNB_EXPORT_ACTION_MARKEXCLUDED) {
@@ -1395,12 +1383,12 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		return $submissions;
 	}
 
-	function filterMarkExcluded($submission)
+	public function filterMarkExcluded($submission): bool
 	{
 		return ($submission->getData($this->getDepositStatusSettingName()) !== DNB_EXPORT_STATUS_MARKEXCLUDED);
 	}
 
-	function array_keys_multi(array $array)
+	public function array_keys_multi(array $array): array
 	{
 		$keys = array();
 

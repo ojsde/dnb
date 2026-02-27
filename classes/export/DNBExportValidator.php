@@ -13,15 +13,24 @@
 namespace APP\plugins\generic\dnb\classes\export;
 
 use APP\facades\Repo;
+use APP\submission\Submission;
+use APP\issue\Issue;
+use APP\journal\Journal;
 use PKP\config\Config;
 use PKP\db\DAORegistry;
 
 class DNBExportValidator {
 	
-	private $plugin;
-	private $galleyFilter;
+	private object $plugin;
+	private object $galleyFilter;
 	
-	public function __construct($plugin, $galleyFilter) {
+	/**
+	 * Constructor for the export validator.
+	 *
+	 * @param object $plugin The DNB export plugin instance.
+	 * @param object $galleyFilter The galley filter service.
+	 */
+	public function __construct(object $plugin, object $galleyFilter) {
 		$this->plugin = $plugin;
 		$this->galleyFilter = $galleyFilter;
 	}
@@ -29,14 +38,14 @@ class DNBExportValidator {
 	/**
 	 * Determine whether a submission meets the requirements for export.
 	 *
-	 * @param \APP\submission\Submission $submission The submission to test.
-	 * @param \APP\issue\Issue|null &$issue Optional issue; if not provided it will be looked up.
+	 * @param Submission $submission The submission to test.
+	 * @param Issue|null &$issue Optional issue; if not provided it will be looked up.
 	 * @param array &$galleys Will be populated with eligible galleys (PDF/EPUB).
 	 * @param array &$supplementaryGalleys Will be populated with supplementary files.
-	 * @param mixed $newGalley Optionally provide a new galley object to merge.
+	 * @param object|null $newGalley Optionally provide a new galley object to merge.
 	 * @return bool True if exportable, false otherwise.
 	 */
-	public function canBeExported($submission, &$issue = null, &$galleys = [], &$supplementaryGalleys = [], $newGalley = null): bool {
+	public function canBeExported(Submission $submission, ?Issue &$issue = null, array &$galleys = [], array &$supplementaryGalleys = [], ?object $newGalley = null): bool {
 
 		// Ensure we have an issue and that it is published; unpublished
 		// submissions are not exportable.
@@ -125,10 +134,10 @@ class DNBExportValidator {
 	/**
 	 * Confirm that required plugin settings are present for the given journal.
 	 *
-	 * @param \APP\journal\Journal $journal Journal object to inspect.
+	 * @param Journal $journal Journal object to inspect.
 	 * @return bool True if configuration is sufficient.
 	 */
-	public function checkPluginSettings($journal): bool {
+	public function checkPluginSettings(Journal $journal): bool {
 		// If journal is not open access, archive access setting is required
 		return $this->isOAJournal($journal) || $this->plugin->getSetting($journal->getId(), 'archiveAccess');
 	}
@@ -136,10 +145,10 @@ class DNBExportValidator {
 	/**
 	 * Determine whether the journal is open access (no site or article restrictions).
 	 *
-	 * @param \APP\journal\Journal|null $journal Optional journal object; current context is used if omitted.
+	 * @param Journal|null $journal Optional journal object; current context is used if omitted.
 	 * @return bool True if journal is open access.
 	 */
-	public function isOAJournal($journal = null): bool {
+	public function isOAJournal(?Journal $journal = null): bool {
 		if (!isset($journal)) {
 			$request = \APP\core\Application::get()->getRequest();
 			$journal = $request->getContext();
