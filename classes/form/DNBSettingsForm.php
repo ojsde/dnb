@@ -14,6 +14,7 @@
 
 namespace APP\plugins\generic\dnb\classes\form;
 
+use App;
 use APP\core\Application;
 use PKP\components\forms\FormComponent;
 use PKP\components\forms\FieldText;
@@ -44,6 +45,7 @@ class DNBSettingsForm extends FormComponent {
 		$this->action = $plugin->getSettingsFormActionUrl();
 		$this->_plugin = $plugin;
 		$this->_contextId = $contextId;
+		$context = Application::get()->getRequest()->getContext();
 
 		$plugin->setSettingsForm($this);
 
@@ -140,7 +142,7 @@ class DNBSettingsForm extends FormComponent {
 			]));
 
 		// group archive access
-		if ($plugin->isOAJournal()) {
+		if ($plugin->isOAJournal($context)) {
 			$this->addGroup([
 				'id' => 'archiveAccess',
 				'label' => __('plugins.importexport.dnb.archiveAccess'),
@@ -163,7 +165,7 @@ class DNBSettingsForm extends FormComponent {
 					['value' => "b", 'label' => __('plugins.importexport.dnb.settings.form.archiveAccess.b')],
 					['value' => "d", 'label' => __('plugins.importexport.dnb.settings.form.archiveAccess.d')],
 				],
-				'value' => $plugin->isOAJournal() ? "b" : $plugin->getSetting($contextId, 'archiveAccess'),
+				'value' => $plugin->isOAJournal($context) ? "b" : $plugin->getSetting($contextId, 'archiveAccess'),
 				'tooltip' => __('plugins.importexport.dnb.settings.form.archiveAccess.description'),
 			]));
 		}
@@ -249,10 +251,11 @@ class DNBSettingsForm extends FormComponent {
 	 */
 	function execute(...$functionArgs) {
 		$request = Application::get()->getRequest();
+		$context = $request->getContext();
 		foreach($this->getFormFields() as $settingName => $settingType) {
 			// do not save the access option for OA journals -- it is always 'b'
 			// but also to be able to check the missing option for closed journals
-			if ($this->_plugin->isOAJournal() && $settingName == 'archiveAccess') continue;
+			if ($this->_plugin->isOAJournal($context) && $settingName == 'archiveAccess') continue;
 			if ($settingName == 'allowedRemoteIPs' &&
 				$request->getUserVar('exportRemoteGalleys') == "false") continue; // handle remote galleys disabled
 			$this->_plugin->updateSetting($this->_contextId, $settingName, $request->getUserVar($settingName), $settingType);
@@ -292,6 +295,6 @@ class DNBSettingsForm extends FormComponent {
 	 * @return mixed The setting value.
 	 */
 	function getSetting($settingName) {
-		return $this->_plugin->getSetting($this->contextId, $settingName);
+		return $this->_plugin->getSetting($this->_contextId, $settingName);
 	}
 }

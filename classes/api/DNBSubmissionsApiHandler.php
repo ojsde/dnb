@@ -75,7 +75,7 @@ class DNBSubmissionsApiHandler {
 			$collector->filterBySectionIds($args['sectionIds']);
 		}
 		if (isset($args['searchPhrase'])) {
-			$collector->filterBySearchPhrase($args['searchPhrase']); /** @var $collector Collector **/
+			$collector->SearchPhrase($args['searchPhrase']); /** @var $collector Collector **/
 		}
 		
 		$itemsMax = $collector->getCount();

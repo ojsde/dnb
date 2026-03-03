@@ -1275,9 +1275,8 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 * Check whether this journal is OA.
 	 * @return boolean
 	 */
-	public function isOAJournal(?Journal $journal = NULL): bool
+	public function isOAJournal(Journal $journal): bool
 	{
-		if (empty($journal)) return false;
 		return !$journal->getData('publishingMode') || $journal->getData('publishingMode') != Journal::PUBLISHING_MODE_SUBSCRIPTION;
 	}
 	/**
@@ -1407,4 +1406,4 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	}
 }
 
-class DNBPluginException extends \ErrorException {}
+class DNBPluginException extends ErrorException {}
