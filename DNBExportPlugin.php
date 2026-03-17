@@ -42,6 +42,8 @@ use Illuminate\Http\Request;
 use PKP\security\Role;
 use PKP\notification\Notification;
 use PKP\scheduledTask\PKPScheduler;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 // Import new service classes
 use APP\plugins\generic\dnb\classes\api\DNBHelpApiHandler;
@@ -362,6 +364,24 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 			Hook::add('Galley::delete', [$this, 'handleGalleyChange']); // Galley is deleted, we update galley counts
 			Hook::add('Publication::publish', [$this, 'handleGalleyChange']);
 
+			// Add to submission seach query
+			Hook::add('Submission::Collector', function ($hookname, $object) {
+				// Search on the issue title
+				$q = $object[0]; /** @var $q Builder */
+				$collector = $object[1]; /** @var $collector \APP\submission\Collector **/
+				$likePattern = DB::raw("CONCAT('%', LOWER(?), '%')");
+                $q->orWhereIn(
+					'po.issue_id',
+					fn (Builder $query) => $query
+						->select('i.issue_id')->from('issues AS i')
+						->join('issue_settings AS is', 'i.issue_id', '=', 'is.issue_id')
+						->where('is.setting_name', '=', 'title')
+						->where(DB::raw('LOWER(is.setting_value)'), 'LIKE', $likePattern)
+						->addBinding($collector->searchPhrase)
+				);
+				return Hook::CONTINUE;
+			});
+			
 			// Register API endpoints if this is an API request
 			$request = Application::get()->getRequest();
 			$router = $request->getRouter();

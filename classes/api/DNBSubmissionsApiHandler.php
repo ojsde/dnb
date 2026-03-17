@@ -79,6 +79,7 @@ class DNBSubmissionsApiHandler {
 		if (isset($args['searchPhrase'])) {
 			$collector->SearchPhrase($args['searchPhrase']); /** @var $collector Collector **/
 		}
+		$test = $collector->getMany()->toArray();
 		
 		$itemsMax = $collector->getCount();
 		if ($countsOnly) {
