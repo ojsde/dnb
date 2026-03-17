@@ -56,6 +56,8 @@ class DNBSubmissionsApiHandler {
 		$itemsPerPage = isset($args['count']) ? (int) $args['count'] : $defaultItemsPerPage;
 		$itemsPerPage = max(1, min(100, $itemsPerPage));
 		$offset = isset($args['offset']) ? max(0, (int) $args['offset']) : 0;
+		$statusFilterValues = $this->getStatusFilterValues($args, $statusName);
+		$hasStatusFilter = !empty($statusFilterValues);
 
 		// Get all published submissions
 		$issueIds = Repo::issue()
@@ -88,11 +90,19 @@ class DNBSubmissionsApiHandler {
 				'statusCounts' => $statusCounts,
 			], 200);
 		}
-		$submissionsIterator = $collector
-			->limit($itemsPerPage)
-			->offset($offset)
-			->getMany()
-			->remember();
+		if ($hasStatusFilter) {
+			// Status filtering is applied on enriched items. Load the full candidate set first
+			// so itemsMax and pagination reflect the filtered result correctly.
+			$submissionsIterator = $collector
+				->getMany()
+				->remember();
+		} else {
+			$submissionsIterator = $collector
+				->limit($itemsPerPage)
+				->offset($offset)
+				->getMany()
+				->remember();
+		}
 		$submissions = $submissionsIterator->all();
 			
 		// Get default submission list properties
@@ -111,9 +121,10 @@ class DNBSubmissionsApiHandler {
 		$items = $this->enrichWithDNBData($submissions, $mappedItems, $request, $context, $statusName);
 		
 		// Filter by DNB status
-		$items = $this->filterByDNBStatus($items, $args, $statusName);
-		if (isset($args[$statusName])) {
+		$items = $this->filterByDNBStatus($items, $statusFilterValues, $statusName);
+		if ($hasStatusFilter) {
 			$itemsMax = count($items);
+			$items = array_slice(array_values($items), $offset, $itemsPerPage);
 		}
 
 		// Paginate
@@ -285,20 +296,38 @@ class DNBSubmissionsApiHandler {
 	 * @param string $statusName The name of the status field to match.
 	 * @return array Filtered array retaining only matching statuses.
 	 */
-	private function filterByDNBStatus(array $items, array $args, string $statusName): array {
-		return array_filter($items, function ($item) use ($args, $statusName) {
-			if (isset($args[$statusName])) {
-				$result = false;
-				foreach ($args[$statusName] as $status) {
-					if ($item[$statusName] == NULL && $status == $this->plugin::EXPORT_STATUS_NOT_DEPOSITED) {
-						$result = true;
-						break;
-					}
-					$result = $result || $item[$statusName] == $status;
+	private function filterByDNBStatus(array $items, array $statusFilterValues, string $statusName): array {
+		if (empty($statusFilterValues)) {
+			return $items;
+		}
+
+		return array_filter($items, function ($item) use ($statusFilterValues, $statusName) {
+			foreach ($statusFilterValues as $status) {
+				if ($item[$statusName] == NULL && (string) $status === (string) $this->plugin::EXPORT_STATUS_NOT_DEPOSITED) {
+					return true;
 				}
-				return $result;
+				if ((string) ($item[$statusName] ?? '') === (string) $status) {
+					return true;
+				}
 			}
-			return true;
+
+			return false;
 		});
+	}
+
+	/**
+	 * Extract status filter values from request arguments as a normalized list.
+	 *
+	 * @param array $args Request arguments.
+	 * @param string $statusName Name of the status parameter.
+	 * @return array<int, scalar> Normalized list of requested statuses.
+	 */
+	private function getStatusFilterValues(array $args, string $statusName): array {
+		if (!isset($args[$statusName])) {
+			return [];
+		}
+
+		$values = is_array($args[$statusName]) ? $args[$statusName] : [$args[$statusName]];
+		return array_values(array_filter($values, fn ($value) => $value !== '' && $value !== null));
 	}
 }

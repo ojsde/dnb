@@ -542,9 +542,6 @@ async function loadCountsFromApi() {
 		const result = await response.json();
 		if (result?.statusCounts) {
 			apiStatusCounts.value = result.statusCounts;
-			if (typeof result?.itemsMax === 'number') {
-				itemsMax.value = result.itemsMax;
-			}
 		}
 	} catch (error) {
 		console.error('Failed to load DNB status counts:', error);
