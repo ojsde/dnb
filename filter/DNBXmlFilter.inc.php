@@ -103,6 +103,7 @@ class DNBXmlFilter extends NativeExportFilter {
 		$day = date('d', strtotime($datePublished));
 
 		// get contributers
+		$publication = $submission->getCurrentPublication();
 		$contributors = $publication->getData('authors');
 		// filter contributers by given name and family name, both should have at least one character [A-Z,a-z]
 		$contributors = array_filter((array) $contributors, function($contributor) use ($galleyLocale, $submission) {
