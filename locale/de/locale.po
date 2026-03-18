@@ -1,0 +1,397 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2021-05-28T09:35:13+00:00\n"
+"PO-Revision-Date: 2021-05-28T09:35:13+00:00\n"
+"importexport-dnb/de/>\n"
+"Language: de_DE\n"
+
+msgid "plugins.generic.dnb.displayName"
+msgstr "DNB-Export-Plug-In"
+
+msgid "plugins.generic.dnb.description"
+msgstr "Artikel im DNB-Format exportieren oder an die Deutsche Nationalbibliothek abliefern."
+
+msgid "plugins.importexport.dnb.displayName"
+msgstr "DNB-Export-Plug-In"
+
+msgid "plugins.importexport.dnb.description"
+msgstr "Artikel im DNB-Format exportieren oder abliefern."
+
+msgid "plugins.importexport.dnb.exportArticle"
+msgstr "Artikel abliefern"
+
+msgid "plugins.importexport.dnb.archiveAccess"
+msgstr "Archivzugriff"
+
+msgid "plugins.importexport.dnb.dnbLogin"
+msgstr "Hotfolder Login"
+
+msgid "plugins.importexport.dnb.deposition"
+msgstr "Ablieferung"
+
+msgid "plugins.importexport.dnb.archiveAccess.required"
+msgstr "<strong>Hinweis:</strong> Diese Zeitschrift ist keine Open-Access-Zeitschrift, so dass Sie zuerst eine der möglichen Zugriffsoptionen für die bei der DNB archivierten Artikeln in den Plug-In-Einstellungen auswählen müssen, bevor Sie mit dem Export fortgahren können."
+
+msgid "plugins.importexport.dnb.registrationIntro"
+msgstr "Um Artikel direkt aus OJS heraus abliefern zu können, müssen Sie Ihren Benutzernamen, Ihr Passwort und Ihre Unterordner-ID eintragen. Exportieren können Sie die DNB-Pakete aber auch ohne die Zugangsdaten eingetragen zu haben."
+
+msgid "plugins.importexport.dnb.noISSN"
+msgstr "ISSN (s. <a href=\"{$journalSettingsUrl}\" target=\"_blank\">Setup-Seite</a>) wird für Export und Ablieferung benötigt."
+
+msgid "plugins.importexport.dnb.noTAR"
+msgstr "TAR-Befehl (s. Teil \"cli\" in der Datei config.inc.php) wird für Export und Ablieferung benötigt."
+
+msgid "plugins.importexport.dnb.noExportFilter"
+msgstr "Exportfilter nicht registriert! Haben Sie das Installationsskript ausgeführt?"
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess"
+msgstr "Arts des Zugriffs auf die Artikel im DNB-Archiv"
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.description"
+msgstr "Für Open-Access-Zeitschriften und -Artikel ist der Zugriff auf die archivierte Version automatisch uneingeschränkt für alle. Geschlossene Zeitschriften und Zeitschriften mit beschränktem Zugriff müssen eine von den durch die DNB zur Verfügung gestellten Zugriffsoptionen für Archivexemplare auswählen. Bitte beachten Sie, dass auf Ausgaben oder Artikelebene vergebene Zugriffsrechte vorgang von den hier gesetzten Zugriffrechten haben."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.descriptionOA"
+msgstr "Diese Zeitschrift ist als Open-Access-Zeitschrift konfiguriert. Alle abgelieferten Fahnen werden automatisch als Open-Access deklariert."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.a"
+msgstr "Beschränkter Zugriff, d.h. nur an speziellen Rechnern in den Lesesälen der DNB."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.b"
+msgstr "Uneingeschränkter Zugriff für alle."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccess.d"
+msgstr "Zugriff für registrierte Nutzer/innen auch von außerhalb der DNB."
+
+msgid "plugins.importexport.dnb.settings.form.archiveAccessRequired"
+msgstr "Bitte definieren Sie die Zugriffsberechtigungen auf die archivierten Artikel."
+
+msgid "plugins.importexport.dnb.settings.form.hotfolderAccess"
+msgstr "Zugangsdaten DNB Hotfolder"
+
+msgid "plugins.importexport.dnb.settings.form.folderId"
+msgstr "Unterordner-ID"
+
+msgid "plugins.importexport.dnb.settings.form.folderId.description"
+msgstr "Das ist der Unterordner in Ihrem DNB-Hotfolder, in den die exportierten Pakete hochgeladen werden sollen."
+
+msgid "plugins.importexport.dnb.settings.form.username"
+msgstr "Benutzername"
+
+msgid "plugins.importexport.dnb.settings.form.password.description"
+msgstr "Bitte beachten Sie, dass das Passwort im Klartext, d.h. unverschlüsselt, gespeichert wird."
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit.title"
+msgstr "Automatische Ablieferung"
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit"
+msgstr "Automatisch Fahnen an die DNB abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit.description"
+msgstr "OJS prüft regelmäßig, ob es Artikel gibt, die noch nicht an die DNB abgeliefert wurden (d.h. Artikel, die noch nicht über OJS in den DNB Hotfolder abgeliefert und nicht als registriert markiert wurden) und liefert diese automatisch in den DNB Hotfolder ab. Bitte beachten Sie, dass eine kurze Zeitspanne zur Verarbeitung nach der Veröffentlichung benötigt wird. Sie können alle nicht abgelieferten Artikel in der Artikelauflistung überprüfen. Bitte beachten Sie, dass für die Nutzung dieser Funktion ein cronjob auf ihrem Server konfiguriert werden muss."
+
+msgid "plugins.importexport.dnb.settings.form.automaticDeposit.checkBoxLabel"
+msgstr "Ja, ich möchte Fahnen automatisch abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.connectionType.title"
+msgstr "Verbindungstyp"
+
+msgid "plugins.importexport.dnb.settings.form.connectionType"
+msgstr "Art der Verbindung zum DNB Server (SFTP oder WebDAV)"
+
+msgid "plugins.importexport.dnb.settings.form.connectionType.description"
+msgstr "Im Normalfall wird zur Ablieferung eine SFTP-Verbindung über Port 22122 hergestellt. Falls Ihre Institution diesen Port nicht erlaubt aktivieren Sie hier die Ablieferung über WebDAV (Port 443)."
+
+msgid "plugins.importexport.dnb.settings.form.connectionType.checkBoxLabel"
+msgstr "WebDAV statt SFTP zu Ablieferung der Artikel benutzen."
+
+msgid "plugins.importexport.dnb.status.notDeposited"
+msgstr "Nicht abgeliefert"
+
+msgid "plugins.importexport.dnb.status.deposited"
+msgstr "Abgeliefert"
+
+msgid "plugins.importexport.dnb.status.queued"
+msgstr "Warteschlange"
+
+msgid "plugins.importexport.dnb.status.failed"
+msgstr "Fehler"
+
+msgid "plugins.importexport.dnb.status.legend"
+msgstr ""
+"\n"
+"\t\t<p>Ein Artikel kann einen der folgenden Status haben:<br/>\n"
+"\t\t<strong>Nicht abgeliefert</strong>: Der Artikel wurde noch nicht bei der DNB abgeliefert (er wurde nicht über OJS in den DNB Hotfolder und auch nicht extern, z.B. über das DNB Webformular abgeliefert).<br/>\n"
+"\t\t<strong>Abgeliefert</strong>: Der Artikel wurde über OJS in den DNB-Hotfolder abgeliefert.<br/>\n"
+"\t\t<strong>Als registriert markiert</strong>: Der Artikel wurde manuell als registriert markiert. Sie können Artikel als registriert markieren (s. Button \"Als registriert markieren\"), um anzuzeigen, dass dieser Artikel außerhalb von OJS an die DNB abgeliefert wurde, z.B. über das DNB Webformular.\n"
+"\t\t</p>"
+
+msgid "plugins.importexport.dnb.deposited.success"
+msgstr "Die ausgewählten Artikel wurden zur Ablieferung in die Warteschlange gesetzt."
+
+msgid "plugins.importexport.dnb.deposit"
+msgstr "Abliefern"
+
+msgid "plugins.importexport.dnb.export"
+msgstr "Exportieren"
+
+msgid "plugins.importexport.dnb.deposit.confirm"
+msgstr "Sie haben schon abgelieferte Artikel ausgewählt. Sind Sie sicher, dass Sie mit der Ablieferung fortfahren möchten?"
+
+msgid "plugins.importexport.dnb.deposit.notice"
+msgstr "<strong>Hinweis:</strong> Die Ablieferung kann lange dauern. Bitte wählen Sie wenige Artikel aus und haben Sie Geduld, nachdem Sie den \"Abliefern\"-Knopf gedrückt haben. Sie werden benachrichtigt werden, wenn der Prozess fertig ist."
+
+msgid "plugins.importexport.dnb.selectAll"
+msgstr "Alle auswählen"
+
+msgid "plugins.importexport.dnb.deselectAll"
+msgstr "Alle abwählen"
+
+msgid "plugins.importexport.dnb.failedJobs.clearButton"
+msgstr "Fehlgeschlagene Artikel zurücksetzen"
+
+msgid "plugins.importexport.dnb.failedJobs.confirm"
+msgstr "Alle fehlgeschlagenen DNB-Export-Jobs aus der Warteschlange löschen? Diese Aktion setzt den Artikelstatus zurück auf \"Nicht registriert\" und löscht die letzte Fehlermeldung."
+
+msgid "plugins.importexport.dnb.failedJobs.success"
+msgstr "Es wurden {$count} fehlgeschlagene DNB-Export-Jobs entfernt."
+
+msgid "plugins.importexport.dnb.failedJobs.error"
+msgstr "Fehler beim Entfernen der fehlgeschlagenen DNB-Export-Jobs."
+
+msgid "plugins.importexport.dnb.export.error.articleCannotBeExported"
+msgstr "Der Artikel {$param} (oder eine der seiner Zusatzdateien) kann nicht exportiert werden, weil er nicht als Dokumentfahne markiert wurde oder der Dateityp der Fahne oder Zusatzdatei nicht PDF oder EPUB ist."
+
+msgid "plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters"
+msgstr "Die XML-Datei mit der Einreichungs-ID {$param} Es wurden keine Artikel exportiert!"
+
+msgid "plugins.importexport.dnb.export.error.articleMetadataInvalidCharacters.param"
+msgstr "{$submissionId} konnte nicht erstellt werden. Ein Feld enthält enhält Zeichen die in der XML 1.0 Spezifikation nicht erlaubt sind: \"{$node}\"."
+
+msgid "plugins.importexport.dnb.export.error.outputFileNotWritable"
+msgstr "Die Ausgabedatei {$param} ist nicht schreibbar."
+
+msgid "plugins.importexport.dnb.deposit.error.noObjectsSelected"
+msgstr "Sie müssen mindestens ein Objekt für den Export auswählen."
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed"
+msgstr "Das Hochladen per SFTP ist fehlgeschlagen: {$param}."
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.param"
+msgstr "Die Paketdatei {$package} des Artikels {$articleId} konnte nicht hochgeladen werden. Fehler: {$error}"
+
+msgid "plugins.importexport.dnb.export.error.curlError"
+msgstr "Bei der Ausführung von curl ist ein Fehler aufgetreten: {$param}. Export abgebrochen!"
+
+msgid "plugins.importexport.dnb.export.error.remoteGalleysNotEnabled"
+msgstr "Der Export von extern gehosteten Fahnen ist nicht aktiviert. Bitte aktivieren Sie den Export von extern gehosteten Fahnen in den Plugin-Einstellungen."
+
+msgid "plugins.importexport.dnb.export.error.remoteGalleyContentTypeNotValid"
+msgstr "Der entfernte Server meldet den nicht akzeptierten Inhaltstyp: {$param}. Export aller Artikel abgebrochen!"
+
+msgid "plugins.importexport.dnb.export.error.remoteFileMimeTypeNotValid"
+msgstr "Mime type der Galley mit der ID {$param} nicht akzeptiert. Export abgebrochen!"
+
+msgid "plugins.importexport.dnb.export.error.urnSet"
+msgstr "Eine URN wurde gesetzt für den Artikel mit der ID {$submissionId}."
+
+msgid "plugins.importexport.dnb.export.error.urnSet.description"
+msgstr "{$param} Das DNB Export Plugin exportiert keine Artikel mit URNs auf Artikelebene. Bitte wenden Sie sich an die Deutsche Nationalbibliothek für mehr Informationen."
+
+msgid "plugins.importexport.dnb.export.error.galleyFileNotFound"
+msgstr "Die Fahnendatei {$param} konnte nicht gefunden werden."
+
+msgid "plugins.importexport.dnb.export.error.galleyFileNoCopy"
+msgstr "Die Fahnendatei {$param} kopiert werden."
+
+msgid "plugins.importexport.dnb.export.error.galleyFileNoCopy.param"
+msgstr "{$sourceGalleyFilePath} konnte nicht nach {$targetGalleyFilePath}"
+
+msgid "plugins.importexport.dnb.export.error.firstAuthorNotRegistred.param"
+msgstr "Fehler beim Export der Fahne {$submissionId}. {$msg}"
+
+msgid "plugins.importexport.dnb.export.error.firstAuthorNotRegistred"
+msgstr "{$param} Der Erstautor der Fahe muss bei dieser Zeitschrift als Autor registriert sein."
+
+msgid "plugins.importexport.dnb.senderTask.name"
+msgstr "DNB automatic deposit task"
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.FileNotFound.param"
+msgstr "Die Paketdatei {$package} des Artikels {$articleId} konnte nicht hochgeladen werden. Fehler: Paketdatei nicht gefunden!"
+
+msgid "plugins.importexport.dnb.deposit.error.hotfolderCredentialsMissing"
+msgstr "Bitte geben Sie Ihre Login-Daten in den Plugin-Einstellungen an bevor Sie Artikel abliefern."
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.title"
+msgstr "Ablieferung von Begleitmaterial"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.none"
+msgstr "Begleitmaterial nicht abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.all"
+msgstr "Mit jeder Dokumentfahne das gesamte Begleitmaterial des Artikels abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.Info"
+msgstr "Die Ablieferung von Begleitmaterial beschränkt sich auf nicht-ausführbare Dateien. Ausführebare Dateien werden nicht an die DNB übertragen."
+
+msgid "plugins.importexport.dnb.settings.form.submitSupplementary.warning"
+msgstr "<strong>Achtung</strong>: Es besteht eine Ablieferungspflich für Begleitmaterial. Bitte deaktivieren Sie diese Funktion nur, wenn technische Probleme die Ablieferung des Begleitmaterials verhindern."
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.title"
+msgstr "Fahnen die an einem externen Ort bereitgestellt werden (Remote Galleys) abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.description"
+msgstr "Es werden nur PDF- und EPUB-Fahnen abgeliefert."
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.label"
+msgstr "Extern gehostete Fahnen abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.exportRemoteGalleys.checkboxLabel"
+msgstr "Ja, ich möchte extern gehostete PDF- und EPUB-Fahnen abliefern"
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.label"
+msgstr "Erlaubte IP-Adressen"
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.description"
+msgstr "Liste von IP-Adressen oder IP-Adressräumen von denen das runterladen von Fahnen erlaubt werden soll. Mehrere Werte müssen durch \"|\" getrennt werden. Beispiel: \"160.45.|160.70.\""
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.error"
+msgstr "Diese Feld darf nur die Ziffern, Punkte oder \"|\" enthalten."
+
+msgid "plugins.importexport.dnb.settings.form.allowedRemoteIPs.errorRequired"
+msgstr "Dies ist ein Pflichtfeld wenn die Ablieferung von extern gehosteten Fahnen aktiviert ist."
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.title"
+msgstr "Das Plugin befindet sich im Debugmodus!"
+
+msgid "plugins.importexport.dnb.settings.debugModeActive.contents"
+msgstr "Der SFTP/WebDAV Server ist konfiguriert als: {$server} port {$port}"
+
+msgid "plugins.importexport.dnb.warning.supplementaryNotAssignable"
+msgstr "Dieser Artikel enthält {$nDoc} Dokumentfahnen und {$nSupp} Fahne{$pSupp} mit Begleitmaterial. Eine eindeutige automatische Zuodnung ist nicht möglich. Bitte konsultieren Sie die Hilfe für weitere Informationen."
+
+msgid "plugins.importexport.dnb.export.error.remoteIPNotAllowed"
+msgstr "Die IP-Adresse {$remoteIP} der externen Fahne ist nicht für den Export erlaubt."
+
+msgid "plugins.importexport.dnb.export.error.tempFileNotCreated"
+msgstr "Es konnte keine temporäre Datei für den Export erstellt werden. Bitte überprüfen Sie die Zugriffsrechte auf dem Server."
+
+msgid "plugins.importexport.dnb.export.error.exception"
+msgstr "{$param}"
+
+msgid "plugins.importexport.dnb.logFileTabTitle"
+msgstr "Log-Datei"
+
+msgid "plugins.importexport.dnb.logFileTabInfo"
+msgstr "Log-Datei der letzen automatischen Ablieferung an die DNB:"
+
+msgid "plugins.importexport.dnb.export.error.noError"
+msgstr "Alle Artikel erfolgreich an die Job Queue gesendet."
+
+msgid "plugins.importexport.dnb.logFile.info.conutArticles"
+msgstr "{$param} Artikel zum exportieren gefunden."
+
+msgid "plugins.importexport.dnb.logFile.info.nocredentials"
+msgstr "Hotfolder Zugangsdaten nicht gesetzt oder automatische Ablieferung nicht aktiviert. Eine automatische Ablieferung ist nicht möglich."
+
+msgid "plugins.importexport.dnb.exclude"
+msgstr "Ausschließen/Einschließen"
+
+msgid "plugins.importexport.dnb.status.excluded"
+msgstr "Ausgeschlossen"
+
+msgid "plugins.importexport.dnb.searchLabel"
+msgstr "Suchen (Enter drücken zum Fixieren)"
+
+msgid "plugins.importexport.dnb.filterHint"
+msgstr "Versuchen Sie, Filter anzupassen oder zu entfernen, um mehr Ergebnisse zu sehen."
+
+msgid "plugins.importexport.dnb.noResultsFiltered"
+msgstr "Keine Einreichungen entsprechen Ihren Filtern."
+
+msgid "plugins.importexport.dnb.noResults"
+msgstr "Keine Einreichungen verfügbar."
+
+msgid "plugins.importexport.dnb.itemCount"
+msgstr "{$count} {$count, plural, one {Eintrag} other {Einträge}}"
+
+msgid "plugins.importexport.dnb.itemCountFiltered"
+msgstr "{$filtered} von {$total} Einträgen angezeigt"
+
+msgid "plugins.importexport.dnb.export.error.articleMarkedExcluded"
+msgstr "Der Artikel {$param} wurde nicht abgeliefert da er als "Ausgeschlossen" markiert ist."
+
+msgid "plugins.importexport.dnb.export.error.noNoArticlesToDeposit"
+msgstr "Keine Artikel zur Ablieferung gefunden."
+
+msgid "plugins.importexport.dnb.deposit.error.noIssuesPublished"
+msgstr "Keine publizierten Ausgaben gefunden. Das DNB Export Plugin kann nur publizierte Ausgaben exportieren."
+
+msgid "plugins.importexport.dnb.settings.form.experimentalFeatures.title"
+msgstr "Experimentelle Funktionen"
+
+msgid "plugins.importexport.dnb.settings.form.maintenance.title"
+msgstr "Wartung"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.label"
+msgstr "Export-Validierung aktualisieren"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.description"
+msgstr "Diese Funktion überprüft und aktualisiert den OJS-internen Status aller Einreichungen. Dies sollte nur für Einreichungen notwendig sein die mit älteren Plugin-Versionen getätigt wurden. Die Überprüfung kann einige Zeit in Anspruch nehmen."
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.button"
+msgstr "Validieren"
+
+msgid "plugins.importexport.dnb.settings.form.refreshValidation.success"
+msgstr "Validierung fur {$count} Einreichungen aktualisiert."
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.label"
+msgstr "Überprüfung der Ablieferungen über DNB-Katalogabfrage"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.description"
+msgstr "Diese Funktion fragt die zur ISSN dieser Zeitschrift im DNB-Katalog verfübaren Einträge ab und zeigt Informationen dazu an. Das Abrufen und verarbeiten der Daten kann möglicherweise länger dauern. Nach Abschluss der Verarbeitung erscheint ein neuer Reiter \"DNB Kaltalog Info\"."
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.checkboxLabel"
+msgstr "DNB-Katalogabfrage aktivieren"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.fetchButton"
+msgstr "Kataloginformationen abrufen"
+
+msgid "plugins.importexport.dnb.curl.error.dnbCatalog"
+msgstr "Fehler beim Verbindungsaufbau zum DNB-Katalog: {$param}"
+
+msgid "plugins.importexport.dnb.dnbCataloTabTitle"
+msgstr "DNB Katalog Info"
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.fetchSuccess"
+msgstr "Kataloginformationen wurden aktualisiert."
+
+msgid "plugins.importexport.dnb.settings.form.dnbCatalog.catalogInfo.issnNotFound"
+msgstr "Die ISSN dieser Zeitschrift wurde im DNB-Katalog nicht gefunden."
+
+msgid "plugins.importexport.dnb.dnbCatalogTabInfo"
+msgstr "Die hier dargestellten Informationen aus dem DNB-Katalog basieren auf einer Suche nach der für diese Zeitschrift angegebenen ISSN.<br>Dies ist eine experimentelle Funkltion. Es wird keine Garantie für die Vollständigkeit der Ergebnisse übernommen."
+
+msgid "plugins.importexport.dnb.dnbCatalogInfo.ISSNTableCaption"
+msgstr "Für diese Zeitschrift gefundene ISSNs"
+
+msgid "plugins.importexport.dnb.error.catalogQueryFailed"
+msgstr "DNB-Katalogabfrage erzeugte den Fehler: {$param}"
+
+msgid "plugins.importexport.dnb.error.catalogQueryFailed.param"
+msgstr "{$error}"
+
+msgid "plugins.importexport.dnb.deposit.error.fileUploadFailed.curlInfoErrorMessage"
+msgstr "Curl erzeugte den Rückgabewert False ohne eine HTTP-Fehlermeldung! Dies kann z.B. bei Problemen mit dem Zertifikat bei der Verbindungsherstellung auftreten. Bitte schauen Sie in das PHP Fehler Log für mehr Informationen"
+
+msgid "plugins.importexport.dnb.status.queued"
+msgstr "Warteschlange"
+
+msgid "plugins.importexport.dnb.export.error.xmlExportFailed"
+msgstr "XML-Export fehlgeschlagen. {$param}"
