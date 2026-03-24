@@ -47,7 +47,7 @@ Bitte immer die neuste Revisionsnummer (.x) des Plugins für die installierte OJ
  - ggf. Umbenennen des Hauptverzeichnisses in `dnb`
  - Aktualisierung der Datenbank (es empfiehlt sich, zuerst ein Backup der Datenbank zu erstellen),
    führen Sie dazu aus Ihrem OJS-Verzeichnis aus:
-   `php tools/installPluginVersion.php plugins/importexport/dnb/version.xml`
+   `php lib/pkp/tools/installPluginVersion.php plugins/generic/dnb/version.xml`
 
 ### Installation über die Kommandozeile mit Git:
 
@@ -57,7 +57,7 @@ git clone https://github.com/ojsde/dnb
 cd dnb
 git checkout [branch]
 cd [my_ojs_installation]
-php tools/installPluginVersion.php
+php lib/pkp/tools/installPluginVersion.php plugins/generic/dnb/version.xml
 ``` 
 
 ###  Ersteinrichtung
