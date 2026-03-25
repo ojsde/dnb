@@ -384,9 +384,9 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 					'po.issue_id',
 					fn (Builder $query) => $query
 						->select('i.issue_id')->from('issues AS i')
-						->join('issue_settings AS is', 'i.issue_id', '=', 'is.issue_id')
-						->where('is.setting_name', '=', 'title')
-						->where(DB::raw('LOWER(is.setting_value)'), 'LIKE', $likePattern)
+						->join('issue_settings AS iset', 'i.issue_id', '=', 'iset.issue_id')
+						->where('iset.setting_name', '=', 'title')
+						->where(DB::raw('LOWER(iset.setting_value)'), 'LIKE', $likePattern)
 						->addBinding($collector->searchPhrase)
 				);
 				return Hook::CONTINUE;
