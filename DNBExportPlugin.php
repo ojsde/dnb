@@ -366,9 +366,19 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 
 			// Add to submission seach query
 			Hook::add('Submission::Collector', function ($hookname, $object) {
+				$request = Application::get()->getRequest();
+				$requestPath = (string) $request->getRequestPath();
+				if (strpos($requestPath, '/_plugins/generic/dnb/submissions') === false) {
+					return Hook::CONTINUE;
+				}
+
 				// Search on the issue title
 				$q = $object[0]; /** @var $q Builder */
 				$collector = $object[1]; /** @var $collector \APP\submission\Collector **/
+				if (empty($collector->searchPhrase)) {
+					return Hook::CONTINUE;
+				}
+
 				$likePattern = DB::raw("CONCAT('%', LOWER(?), '%')");
                 $q->orWhereIn(
 					'po.issue_id',
