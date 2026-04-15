@@ -93,7 +93,8 @@ class DNBXmlFilter extends NativeExportFilter {
 		};
 		
 		// Data we will need later
-		$language = AppLocale::get3LetterIsoFromLocale($galley->getLocale());
+		$galleyLocale = $galley->getLocale();
+		$language = AppLocale::get3LetterIsoFromLocale($galleyLocale);
 		$datePublished = $submission->getDatePublished();
 		if (!$datePublished) $datePublished = $issue->getDatePublished();
 		assert(!empty($datePublished));
@@ -117,17 +118,8 @@ class DNBXmlFilter extends NativeExportFilter {
 			}
 		});
 
-		// and split into authors and translators
-		$authors = $translators = [];
-		foreach ($contributors as $contributor) {
-			$userGroup = Repo::userGroup()->get($contributor->getData('userGroupId'))->toArray();
-			$nameLocalKey = $userGroup['nameLocaleKey'];
-			if ($nameLocalKey == 'default.groups.name.author') {
-				$authors[] = $contributor;
-			} elseif ($nameLocalKey == 'default.groups.name.translator') {
-				$translators[] = $contributor;
-			};
-		}
+		// extract submission authors
+		$authors = array_filter($contributors, array($this, '_filterAuthors'));
 
 		// get primary author
 		if (is_array($authors) && !empty($authors)) {
