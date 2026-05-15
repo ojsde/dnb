@@ -127,9 +127,6 @@ class DNBXmlFilter extends NativeExportFilter {
 			// so the array can be used later in the field 700 1 _
 			$firstAuthor = array_shift($authors);
 		}
-		if (!$firstAuthor) {
-			throw new ErrorException("DNBXmlFilter Error: ", FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
-		}
 
 		// extract submission translators
 		$translators = array_filter($contributors, array($this, '_filterTranslators'));
@@ -214,12 +211,18 @@ class DNBXmlFilter extends NativeExportFilter {
 		}
 
 		// first author
-		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
-		$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false,true));
-		if (!empty($firstAuthor->getData('orcidAccessToken'))) {
-            $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename($firstAuthor->getOrcid()));
-    	}
-		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
+		if ($firstAuthor) {
+			// Historically all publications require at least one author
+			// With the changes applied in 01/2026 concerning author content filtering (see above)
+			// it might happen that there is no author left after filtering, only in this case (author exists but name is filtred)
+			// the DNB allows field 100 to be skipped
+			$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
+			$this->createSubfieldNode($doc, $datafield100, 'a', $firstAuthor->getFullName(false,true));
+			if (!empty($firstAuthor->getData('orcidAccessToken'))) {
+	            $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename($firstAuthor->getOrcid()));
+	    	}
+			$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
+		}
 
 		// title
 		$title = $submission->getTitle($galley->getLocale());
