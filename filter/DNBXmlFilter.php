@@ -139,9 +139,6 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 			// so the array can be used later in the field 700 1 _
 			$firstAuthor = array_shift($authors);
 		}
-		if (!$firstAuthor) {
-			throw new DNBPluginException("DNBXmlFilter Error: ", DNB_FIRST_AUTHOR_NOT_REGISTERED_EXCEPTION);
-		}
 		
 		// is open access
 		$openAccess = false;
@@ -223,14 +220,20 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		}
 
 		// Marc 100 first author
-		$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
-		$locale = $firstAuthor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getLocale();
-		$this->createSubfieldNode($doc, $datafield100, 'a', trim($firstAuthor->getFamilyName($locale)).', '.trim($firstAuthor->getGivenName($locale)));
-		if (!empty($firstAuthor->getData('orcidAccessToken'))) {
-            $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename(trim($firstAuthor->getOrcid())));
-    	}
-		$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
-
+		if ($firstAuthor) {
+			// Historically all publications require at least one author
+			// With the changes applied in 01/2026 concerning author content filtering (see above)
+			// it might happen that there is no author left after filtering, only in this case (author exists but name is filtred)
+			// the DNB allows field 100 to be skipped
+			$datafield100 = $this->createDatafieldNode($doc, $recordNode, '100', '1', ' ');
+			$locale = $firstAuthor->getFamilyName($galleyLocale)?$galleyLocale:$submission->getLocale();
+			$this->createSubfieldNode($doc, $datafield100, 'a', trim($firstAuthor->getFamilyName($locale)).', '.trim($firstAuthor->getGivenName($locale)));
+			if (!empty($firstAuthor->getData('orcidAccessToken'))) {
+	            $this->createSubfieldNode($doc, $datafield100, '0', '(orcid)'.basename(trim($firstAuthor->getOrcid())));
+	    	}
+			$this->createSubfieldNode($doc, $datafield100, '4', 'aut');
+		}
+		
 		// Marc 254 title
 		// title
 		$title = $submission->getTitle($galleyLocale);
