@@ -220,7 +220,7 @@ class DNBXmlFilter extends \PKP\plugins\importexport\native\filter\NativeExportF
 		}
 
 		// Marc 100 first author
-		if ($firstAuthor) {
+		if (isset($firstAuthor)) {
 			// Historically all publications require at least one author
 			// With the changes applied in 01/2026 concerning author content filtering (see above)
 			// it might happen that there is no author left after filtering, only in this case (author exists but name is filtred)
