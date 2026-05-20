@@ -1,9 +1,9 @@
 # OJS DNB-Export-Plugin
-**Version: 1.7.1**
+**Version: 1.7.2**
 
 **Autor: Ronald Steffen**
 
-**Letzte Änderung: 25. März 2026**
+**Letzte Änderung: 20. Mai 2026**
 
 -----
 Dieses Plugin ermöglicht den Export von Artikel-Metadaten und -Volltexten (im PDF- und EPUB-Format) zwecks ihrer Pflichtablieferung an die Deutsche Nationalbibliothek (DNB)
