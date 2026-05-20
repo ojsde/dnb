@@ -23,8 +23,13 @@ class DNBPluginMigration extends Migration {
     public function up() {
         echo "Running DNBPluginMigration ...\n";
         // ===== Filters ===== //
+        // OJS 3.3
         DB::table('filters')
             ->where('class_name', '=', 'plugins.importexport.dnb.filter.DNBXmlFilter')
+            ->update(['class_name' => 'APP\plugins\generic\dnb\filter\DNBXmlFilter']);
+        // OJS 3.4
+        DB::table('filters')
+            ->where('class_name', '=', 'APP\plugins\importexport\dnb\filter\DNBXmlFilter')
             ->update(['class_name' => 'APP\plugins\generic\dnb\filter\DNBXmlFilter']);
     }
 }
