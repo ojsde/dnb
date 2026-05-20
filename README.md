@@ -1,9 +1,9 @@
 # OJS DNB-Export-Plug-In
-**Version: 1.6.4**
+**Version: 1.6.5**
 
 **Autor: Bozana Bokan, Ronald Steffen**
 
-**Letzte Änderung: 18. März 2026**
+**Letzte Änderung: 20. Mai 2026**
 
 ---
 
