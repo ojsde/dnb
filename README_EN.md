@@ -1,9 +1,9 @@
 # OJS DNB Export Plugin
-**Version: 1.6.4**
+**Version: 1.6.5**
 
 **Author: Bozana Bokan, Ronald Steffen**
 
-**Last update: March 18, 2026** !!! This Readme is currently not up to date. Please refer to the German version!
+**Last update: May 20, 2026** !!! This Readme is currently not up to date. Please refer to the German version!
 
 ---
 
