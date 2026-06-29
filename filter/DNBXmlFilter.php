@@ -356,7 +356,9 @@ class DNBXmlFilter extends NativeExportFilter {
 		if (!empty($keywords)) {
 			$datafield653 = $this->createDatafieldNode($doc, $recordNode, '653', ' ', ' ');
 			foreach ($keywords as $keyword) {
-				$this->createSubfieldNode($doc, $datafield653, 'a', $keyword);
+				// OJS 3.5.0-4 introduced a breaking change in the keywords data structure
+				// For backwards compatibility we check whether the keyword is an array (OJS 3.5.0-4) or a string (OJS < 3.5.0-4) and handle it accordingly
+				$this->createSubfieldNode($doc, $datafield653, 'a', is_array($keyword) ? $keyword['name'] : $keyword);
 			}
 		}
 
