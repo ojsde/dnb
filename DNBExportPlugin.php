@@ -570,23 +570,6 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 		$context = $request->getContext();
 		$currentLocale = $request->getSession()->get('currentLocale') ?? $context->getPrimaryLocale();
 
-		// if no issue is published go back to tools 
-		// get all published submissions in the context
-		$issueIds = Repo::issue()
-			->getCollector()
-			->filterByContextIds([$context->getId()])
-			->filterByPublished(true)
-			->getIds()
-			->toArray();
-		if (count($issueIds) < 1) {
-			//show error
-			$this->errorNotification($request, array(array('plugins.importexport.dnb.deposit.error.noIssuesPublished')));
-			// redirect back to exportSubmissions-tab
-			$path = array('plugin', $this->getName());
-			$request->redirectUrl($request->getRouter()->url($request, null, 'management', 'tools'));
-			return;
-		}
-
 		// if no object is selected go back to export submission tab
 		if (!empty($args)) {
 			if (
