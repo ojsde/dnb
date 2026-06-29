@@ -1,9 +1,9 @@
 # OJS DNB-Export-Plugin
-**Version: 1.7.2**
+**Version: 1.7.3**
 
 **Autor: Ronald Steffen**
 
-**Letzte Änderung: 20. Mai 2026**
+**Letzte Änderung: 29. Juni 2026**
 
 -----
 Dieses Plugin ermöglicht den Export von Artikel-Metadaten und -Volltexten (im PDF- und EPUB-Format) zwecks ihrer Pflichtablieferung an die Deutsche Nationalbibliothek (DNB)
@@ -18,7 +18,7 @@ Das Plugin ist unter GNU General Public License v3 lizenziert. Sehen Sie die Dat
 ## Systemanforderungen
 
 Diese Plugin Verison ist kompatibel mit...
- - OJS 3.5.0-3
+ - OJS 3.5.0-4
 
 Das Programm `tar` wird benötigt und muss in der Datei config.inc.php konfiguriert werden.
 
@@ -33,7 +33,7 @@ Bitte immer die neuste Revisionsnummer (.x) des Plugins für die installierte OJ
   | 3.2         | 1.4.x             | Support eingestellt |
   | 3.3         | 1.5.x             | aktiv |
   | 3.4         | 1.6.x             | aktiv |
-  | 3.5         | 1.7.x             | aktiv |
+  | 3.5         | 1.7.3             | aktiv |
 
 ### Installation über die OJS-Benutzeroberfläche:
  - Download  des tar.gz-Archivs (dnb-[Version].tar.gz)von https://github.com/ojsde/dnb 
