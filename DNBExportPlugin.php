@@ -413,9 +413,13 @@ class DNBExportPlugin extends PubObjectsExportPlugin
 	 */
 	public function handleGalleyChange(string $hookName, array $args): int
 	{
+		if (!isset($args[0]) || !($args[0] instanceof Galley)) {
+			return Hook::CONTINUE;
+		}
+
 		$newGalley = $args[0]; // First argument is always (add/edit) the new galley object
-		$oldGalley = $args[1]; // Second argument is the old galley object for edit/delete hooks
-		$submissionFileId = $args[2]; // Third argument is the submission file ID of the new galley file
+		$oldGalley = isset($args[1]) ? $args[1] : null; // Second argument is the old galley object for edit/delete hooks
+		$submissionFileId = isset($args[2]) ? (int) $args[2] : null; // Third argument is the submission file ID of the new galley file
 
 		// Galleys have publicationId, not submissionId directly
 		$publicationId = $newGalley->getData('publicationId');
